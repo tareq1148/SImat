@@ -33,38 +33,42 @@ export async function GET() {
       supabase.from("approvals").select("id, flow_id").eq("status", "pending"),
     ]);
 
+  // آخر ٧ أيام تقويمية (بتوقيت الرياض UTC+3) — حتى يظهر أثر أي أتمتة جديدة في يومها فورًا
   const now = Date.now();
-  const WEEK = 7 * 24 * 3600 * 1000;
+  const DAY = 24 * 3600 * 1000;
+  const KSA = 3 * 3600 * 1000;
+  const todayStart = Math.floor((now + KSA) / DAY) * DAY - KSA;
   const minutesOf = (flowId: string) =>
     (flows ?? []).find((f) => f.id === flowId)?.manual_minutes_per_run ?? 15;
 
-  const weekLabels = [
-    "قبل ٥ أسابيع",
-    "قبل ٤ أسابيع",
-    "قبل ٣ أسابيع",
-    "قبل أسبوعين",
-    "الأسبوع الماضي",
-    "هذا الأسبوع",
+  const dayLabels = [
+    "قبل ٦ أيام",
+    "قبل ٥ أيام",
+    "قبل ٤ أيام",
+    "قبل ٣ أيام",
+    "قبل يومين",
+    "أمس",
+    "اليوم",
   ];
-  const weeks = weekLabels.map((label, idx) => {
-    const age = 5 - idx; // 0 = هذا الأسبوع
-    const start = now - (age + 1) * WEEK;
-    const end = now - age * WEEK;
-    const inWeek = (runs ?? []).filter((r) => {
+  const weeks = dayLabels.map((label, idx) => {
+    const age = 6 - idx; // 0 = اليوم
+    const start = todayStart - age * DAY;
+    const end = start + DAY;
+    const inDay = (runs ?? []).filter((r) => {
       const t = new Date(r.started_at).getTime();
-      return t > start && t <= end;
+      return t >= start && t < end;
     });
-    const closed = inWeek.filter((r) => r.status === "success");
+    const closed = inDay.filter((r) => r.status === "success");
     return {
       label,
       closed: closed.length,
-      failed: inWeek.filter((r) => r.status === "error").length,
+      failed: inDay.filter((r) => r.status === "error").length,
       minutes_saved: closed.reduce((s, r) => s + minutesOf(r.flow_id), 0),
     };
   });
 
-  const thisWeek = weeks[5];
-  const lastWeek = weeks[4];
+  const thisWeek = weeks[6]; // اليوم
+  const lastWeek = weeks[5]; // أمس
   const wow =
     lastWeek.closed > 0
       ? Math.round(((thisWeek.closed - lastWeek.closed) / lastWeek.closed) * 100)
@@ -140,14 +144,14 @@ export async function GET() {
   if (wow < 0 && plan.length < 4) {
     plan.push({
       icon: "📉",
-      title: "أسبوعك أهدأ من الماضي",
-      why: `أقفلت ${thisWeek.closed} مقابل ${lastWeek.closed} الأسبوع الماضي — شغّل مساراتك المفعّلة أو جدولها.`,
-      cta: { label: "افتح مساراتك", href: "/dashboard" },
+      title: "يومك أهدأ من أمس",
+      why: `أقفلت ${thisWeek.closed} مقابل ${lastWeek.closed} أمس — شغّل مساراتك المفعّلة أو جدولها.`,
+      cta: { label: "افتح مساراتك", href: "/chat" },
     });
   }
   plan.push({
     icon: "✨",
-    title: "أضف أتمتة جديدة هذا الأسبوع",
+    title: "أضف أتمتة جديدة اليوم",
     why: "خذ أكثر مهمة تكررت عليك هالأيام وابدأ فيها مقابلة — 5 دقائق وصفًا توفر ساعات.",
     cta: { label: "ابدأ المقابلة", href: "/chat" },
   });

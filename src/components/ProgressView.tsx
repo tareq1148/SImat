@@ -246,15 +246,15 @@ export default function ProgressView() {
   const wowChip =
     headline.wow > 0
       ? {
-          text: `أكفأ من الأسبوع الماضي بنسبة ${headline.wow}%`,
+          text: `أنشط من أمس بنسبة ${headline.wow}%`,
           cls: "border-emerald-400/40 text-emerald-300 bg-emerald-400/10",
         }
       : headline.wow < 0
         ? {
-            text: `أهدأ من الأسبوع الماضي بنسبة ${Math.abs(headline.wow)}%`,
+            text: `أهدأ من أمس بنسبة ${Math.abs(headline.wow)}%`,
             cls: "border-amber-400/40 text-amber-300 bg-amber-400/10",
           }
-        : { text: "نفس وتيرة الأسبوع الماضي", cls: "chip-neutral" };
+        : { text: "نفس وتيرة أمس", cls: "chip-neutral" };
 
   return (
     <div className="space-y-5">
@@ -262,7 +262,7 @@ export default function ProgressView() {
       <div className="card p-6 rise">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
           <h1 className="text-[1.35rem] font-bold">
-            هذا الأسبوع: الأتمتة قفلت لك{" "}
+            اليوم: الأتمتة قفلت لك{" "}
             <span className="text-[var(--accent)]">{headline.closed_this_week}</span>{" "}
             {headline.closed_this_week === 1 ? "مهمة" : "مهام"}
           </h1>
@@ -272,7 +272,9 @@ export default function ProgressView() {
       </div>
 
       <div className="card p-6 rise-1">
-        <h2 className="font-semibold text-[0.95rem] mb-4">مهام أقفلتها الأتمتة أسبوعيًا</h2>
+        <h2 className="font-semibold text-[0.95rem] mb-4">
+          مهام أقفلتها الأتمتة — آخر ٧ أيام
+        </h2>
         <WeeklyBars weeks={weeks} />
       </div>
 

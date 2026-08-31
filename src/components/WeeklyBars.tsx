@@ -41,7 +41,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
         viewBox={`0 0 ${W} ${H}`}
         className="w-full h-auto"
         role="img"
-        aria-label="مهام أقفلتها الأتمتة أسبوعيًا"
+        aria-label="مهام أقفلتها الأتمتة يوميًا"
       >
         {[0.5, 1].map((f) => (
           <line
@@ -140,7 +140,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
         <table className="w-full text-xs mt-2">
           <thead>
             <tr className="text-slate-500 border-b border-[var(--line-soft)]">
-              <th className="text-right py-1 font-medium">الأسبوع</th>
+              <th className="text-right py-1 font-medium">اليوم</th>
               <th className="text-right py-1 font-medium">مهام مقفلة</th>
               <th className="text-right py-1 font-medium">دقائق موفَّرة</th>
             </tr>
