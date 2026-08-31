@@ -237,12 +237,17 @@ export async function POST(req: NextRequest) {
 
         sse(controller, { type: "done", specId, confirmed });
       } catch (err) {
-        const msg =
-          err instanceof Anthropic.APIError
-            ? `خطأ من نموذج المقابلة (${err.status}): ${err.message}`
-            : err instanceof Error
-              ? err.message
-              : "خطأ غير متوقع";
+        // رسائل صديقة — لا JSON خام أمام المستخدم أبدًا
+        const raw = err instanceof Error ? err.message : "";
+        const msg = raw.includes("credit balance")
+          ? "رصيد الذكاء الاصطناعي انتهى — اشحن رصيد مفتاح Anthropic من console.anthropic.com ثم أعد المحاولة."
+          : raw.includes("rate_limit")
+            ? "ضغط مؤقت على النموذج — انتظر ثواني وأعد الإرسال."
+            : raw.includes("overloaded")
+              ? "النموذج مشغول الآن — أعد المحاولة بعد لحظات."
+              : err instanceof Anthropic.APIError
+                ? "تعذر الوصول لنموذج المقابلة مؤقتًا — أعد المحاولة."
+                : raw || "خطأ غير متوقع";
         sse(controller, { type: "error", error: msg });
       } finally {
         controller.close();
