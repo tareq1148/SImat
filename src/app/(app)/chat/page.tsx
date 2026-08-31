@@ -117,8 +117,10 @@ export default function ChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // التفريغ الصوتي يعبّئ خانة الكتابة فقط — الإرسال قرار المستخدم دائمًا
   const voice = useVoice((text) => {
-    send(undefined, text);
+    setInput((prev) => (prev.trim() ? prev.trimEnd() + " " : "") + text);
+    textInputRef.current?.focus();
   });
 
   useEffect(() => {
