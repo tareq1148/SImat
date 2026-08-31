@@ -5,6 +5,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useLang } from "@/lib/i18n";
+import { PROVIDER_LABELS, type Provider } from "@/lib/types";
+import { providerIcon } from "./icons";
 import WeeklyBars, { type WeekDatum } from "./WeeklyBars";
 
 const LEVEL_EN: Record<string, string> = {
@@ -84,13 +86,15 @@ function DiagramNode({
   value,
   style,
   engine,
+  brandIcon,
 }: {
-  kind: string;
+  kind?: string;
   category: string;
   label: string;
   value?: string;
   style: React.CSSProperties;
   engine?: boolean;
+  brandIcon?: React.ReactNode;
 }) {
   return (
     <div
@@ -103,16 +107,22 @@ function DiagramNode({
         borderColor: engine ? "color-mix(in srgb, var(--accent-bg) 55%, var(--line))" : undefined,
       }}
     >
-      <span
-        className="shrink-0 rounded-[9px] flex items-center justify-center"
-        style={{
-          width: engine ? 34 : 30,
-          height: engine ? 34 : 30,
-          background: "var(--accent-bg)",
-        }}
-      >
-        <NodeIcon kind={kind} size={engine ? 34 : 30} />
-      </span>
+      {brandIcon ? (
+        <span className="shrink-0 w-[30px] h-[30px] rounded-[9px] bg-[var(--well)] border border-[var(--line-soft)] flex items-center justify-center">
+          {brandIcon}
+        </span>
+      ) : (
+        <span
+          className="shrink-0 rounded-[9px] flex items-center justify-center"
+          style={{
+            width: engine ? 34 : 30,
+            height: engine ? 34 : 30,
+            background: "var(--accent-bg)",
+          }}
+        >
+          <NodeIcon kind={kind ?? "tasks"} size={engine ? 34 : 30} />
+        </span>
+      )}
       <span className="min-w-0 flex-1">
         <span
           dir="ltr"
@@ -133,30 +143,70 @@ function DiagramNode({
   );
 }
 
+const PROVIDER_CATEGORY: Record<Provider, string> = {
+  gmail: "GMAIL",
+  google_sheets: "SHEETS",
+  google_drive: "DRIVE",
+  openai: "AI",
+  telegram: "TELEGRAM",
+  slack: "SLACK",
+  instagram: "INSTAGRAM",
+  tiktok: "TIKTOK",
+};
+
 function ArchDiagram({
   closed,
   hours,
   active,
+  providers,
 }: {
   closed: number;
   hours: number;
   active: number;
+  providers: Provider[];
 }) {
-  const { t } = useLang();
-  // إحداثيات ثابتة داخل حاوية 640×250 قابلة للتمرير على الجوال
-  const edges = [
-    { d: "M 482 125 C 452 125, 425 125, 397 125" },
-    { d: "M 247 125 C 222 125, 222 38, 198 38" },
-    { d: "M 247 125 C 230 125, 215 125, 198 125" },
-    { d: "M 247 125 C 222 125, 222 212, 198 212" },
+  const { lang, t } = useLang();
+  // اليمين: حساباتك المربوطة فعليًا (بأسمائها الحقيقية) ← سِمَاط ← النتائج
+  const provs = providers.slice(0, 6);
+  const rows = Math.max(provs.length, 3);
+  const H = Math.max(250, rows * 84);
+  const NODE_H = 56;
+  const slotTop = (count: number, i: number) => {
+    const s = H / count;
+    return Math.round(i * s + s / 2 - NODE_H / 2);
+  };
+  const engineTop = Math.round(H / 2 - NODE_H / 2);
+  const engineY = engineTop + NODE_H / 2;
+
+  // حواف الأعمدة داخل حاوية 640 عرضًا (إحداثيات SVG من اليسار)
+  const P_LEFT = 640 - 4 - 150; // حافة عقدة الموقع اليسرى
+  const E_RIGHT = 640 - 243; // حافة سِمَاط اليمنى
+  const E_LEFT = 640 - 243 - 152;
+  const R_RIGHT = 4 + 194;
+
+  const provEdges = (provs.length ? provs : [null]).map((_, i) => {
+    const y = slotTop(Math.max(provs.length, 1), i) + NODE_H / 2;
+    return `M ${P_LEFT} ${y} C ${P_LEFT - 34} ${y}, ${E_RIGHT + 34} ${engineY}, ${E_RIGHT} ${engineY}`;
+  });
+  const resultEdges = [0, 1, 2].map((i) => {
+    const y = slotTop(3, i) + NODE_H / 2;
+    return `M ${E_LEFT} ${engineY} C ${E_LEFT - 26} ${engineY}, ${R_RIGHT + 26} ${y}, ${R_RIGHT} ${y}`;
+  });
+  const edges = [...provEdges, ...resultEdges];
+
+  const results = [
+    { kind: "done", category: "DONE", label: t("diagram.done"), value: String(closed) },
+    { kind: "time", category: "TIME", label: t("diagram.time"), value: String(hours) },
+    { kind: "active", category: "ACTIVE", label: t("diagram.active"), value: String(active) },
   ];
+
   return (
     <div className="overflow-x-auto">
       <div
         className="relative mx-auto"
         style={{
           width: 640,
-          height: 250,
+          height: H,
           backgroundImage: "radial-gradient(var(--edge) 1.2px, transparent 1.2px)",
           backgroundSize: "20px 20px",
         }}
@@ -164,59 +214,62 @@ function ArchDiagram({
         <svg
           className="absolute inset-0"
           width="640"
-          height="250"
-          viewBox="0 0 640 250"
+          height={H}
+          viewBox={`0 0 640 ${H}`}
           fill="none"
         >
-          {edges.map((e, i) => (
-            <path key={`b${i}`} d={e.d} stroke="var(--edge)" strokeWidth="1.1" opacity="0.55" />
+          {edges.map((d, i) => (
+            <path key={`b${i}`} d={d} stroke="var(--edge)" strokeWidth="1.1" opacity="0.55" />
           ))}
-          {edges.map((e, i) => (
+          {edges.map((d, i) => (
             <path
               key={`a${i}`}
               className="nn-edge arch-edge"
-              d={e.d}
+              d={d}
               stroke="var(--accent)"
               strokeWidth="1.6"
-              style={{ animationDelay: `${i * 0.25}s` }}
+              style={{ animationDelay: `${(i % 5) * 0.22}s` }}
             />
           ))}
         </svg>
 
-        <DiagramNode
-          kind="tasks"
-          category="TASKS"
-          label={t("diagram.tasks")}
-          style={{ right: 4, top: 96, width: 152 }}
-        />
+        {provs.length > 0 ? (
+          provs.map((p, i) => (
+            <DiagramNode
+              key={p}
+              category={PROVIDER_CATEGORY[p]}
+              label={PROVIDER_LABELS[p]}
+              brandIcon={providerIcon(p, 17)}
+              style={{ right: 4, top: slotTop(provs.length, i), width: 150 }}
+            />
+          ))
+        ) : (
+          <DiagramNode
+            kind="tasks"
+            category="CONNECT"
+            label={lang === "ar" ? "اربط حساباتك" : "Connect accounts"}
+            style={{ right: 4, top: slotTop(1, 0), width: 150 }}
+          />
+        )}
+
         <DiagramNode
           kind="engine"
           category="ENGINE"
           label={t("brand")}
           engine
-          style={{ right: 243, top: 94, width: 152 }}
+          style={{ right: 243, top: engineTop, width: 152 }}
         />
-        <DiagramNode
-          kind="done"
-          category="DONE"
-          label={t("diagram.done")}
-          value={String(closed)}
-          style={{ left: 4, top: 10, width: 194 }}
-        />
-        <DiagramNode
-          kind="time"
-          category="TIME"
-          label={t("diagram.time")}
-          value={String(hours)}
-          style={{ left: 4, top: 97, width: 194 }}
-        />
-        <DiagramNode
-          kind="active"
-          category="ACTIVE"
-          label={t("diagram.active")}
-          value={String(active)}
-          style={{ left: 4, top: 184, width: 194 }}
-        />
+
+        {results.map((r, i) => (
+          <DiagramNode
+            key={r.kind}
+            kind={r.kind}
+            category={r.category}
+            label={r.label}
+            value={r.value}
+            style={{ left: 4, top: slotTop(3, i), width: 194 }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -228,6 +281,7 @@ export default function ProgressView() {
   const { lang, t } = useLang();
   const [data, setData] = useState<ProgressData | null>(null);
   const [active, setActive] = useState(0);
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -238,6 +292,14 @@ export default function ProgressView() {
     fetch("/api/reports")
       .then((r) => r.json())
       .then((d) => setActive(d.totals?.active ?? 0))
+      .catch(() => {});
+    fetch("/api/connections")
+      .then((r) => r.json())
+      .then((d) =>
+        setProviders(
+          ((d.connections ?? []) as { provider: Provider }[]).map((c) => c.provider)
+        )
+      )
       .catch(() => {});
   }, []);
 
@@ -289,7 +351,12 @@ export default function ProgressView() {
           </h1>
           <span className={`chip ${wowChip.cls}`}>{wowChip.text}</span>
         </div>
-        <ArchDiagram closed={headline.closed_this_week} hours={hours} active={active} />
+        <ArchDiagram
+          closed={headline.closed_this_week}
+          hours={hours}
+          active={active}
+          providers={providers}
+        />
       </div>
 
       <div className="card p-6 rise-1">

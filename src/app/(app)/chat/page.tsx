@@ -265,8 +265,10 @@ export default function ChatPage() {
       {messages.length === 0 && (
         <div className="pt-14 pb-8 space-y-8">
           <div className="rise text-center">
-            <h1 className="text-[1.9rem] md:text-[2.3rem] font-bold leading-snug mb-2.5">
-              {t("home.title")}
+            <h1 className="text-[2.1rem] md:text-[2.7rem] font-bold leading-snug mb-2.5 tracking-tight">
+              {t("home.w1")}.{" "}
+              {t("home.w2")}.{" "}
+              <span className="text-[var(--accent)]">{t("home.w3")}.</span>
             </h1>
             <p className="text-[0.95rem] text-[var(--text-soft)]">{t("home.sub")}</p>
           </div>
