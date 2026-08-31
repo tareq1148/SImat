@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json()) as {
     provider: Provider;
+    token?: string;
     openai_api_key?: string;
     revoke?: boolean;
   };
@@ -54,26 +55,46 @@ export async function POST(req: NextRequest) {
   let credentialId: string | undefined;
   let label = PROVIDER_LABELS[body.provider];
 
-  if (body.provider === "openai" && body.openai_api_key) {
-    // مفتاح المستخدم يُخزَّن كسر داخل خزنة المحرك فقط؛ منصتنا تحتفظ بمرجع الاتصال لا بالمفتاح
+  // التوكن الخاص بالمستخدم يُخزَّن كسر داخل خزنة المحرك فقط؛ المنصة تحتفظ بمرجع الاتصال لا بالمفتاح
+  const TOKEN_CREDS: Partial<
+    Record<Provider, (t: string) => { type: string; data: Record<string, string> }>
+  > = {
+    openai: (t) => ({ type: "openAiApi", data: { apiKey: t } }),
+    telegram: (t) => ({ type: "telegramApi", data: { accessToken: t } }),
+    slack: (t) => ({ type: "slackApi", data: { accessToken: t } }),
+    tiktok: (t) => ({
+      type: "httpHeaderAuth",
+      data: { name: "Authorization", value: `Bearer ${t}` },
+    }),
+  };
+
+  const token = (body.token ?? body.openai_api_key)?.trim();
+  const maker = TOKEN_CREDS[body.provider];
+
+  if (token && maker) {
     if (!hasN8nKey()) {
       return Response.json(
         { error: "لا يمكن حفظ المفتاح الآن — مفتاح محرك التنفيذ غير مضبوط (N8N_API_KEY)" },
         { status: 500 }
       );
     }
+    const { type, data } = maker(token);
     const cred = await createN8nCredential(
-      `muhawwil-openai-${user.id.slice(0, 8)}`,
-      "openAiApi",
-      { apiKey: body.openai_api_key }
+      `muhawwil-${body.provider}-${user.id.slice(0, 8)}`,
+      type,
+      data
     );
     credentialId = cred.id;
-    label = "OpenAI (مفتاحك الخاص)";
+    label = `${PROVIDER_LABELS[body.provider]} (حسابك)`;
   } else {
     credentialId = PLATFORM_CREDS[body.provider];
     if (!credentialId) {
       return Response.json(
-        { error: `اتصال ${PROVIDER_LABELS[body.provider]} غير متاح — أضف معرف الاعتماد في الإعدادات` },
+        {
+          error: maker
+            ? `أدخل توكن ${PROVIDER_LABELS[body.provider]} الخاص بك — اتبع الخطوات أعلاه للحصول عليه`
+            : `اتصال ${PROVIDER_LABELS[body.provider]} غير متاح حاليًا`,
+        },
         { status: 400 }
       );
     }

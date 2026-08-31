@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AutomationSummaryCard from "@/components/AutomationSummaryCard";
+import NeuralThinking from "@/components/NeuralThinking";
 import OverviewStats from "@/components/OverviewStats";
 import VoiceWave from "@/components/VoiceWave";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -102,6 +103,7 @@ export default function ChatPage() {
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [evaluating, setEvaluating] = useState(false);
+  const [building, setBuilding] = useState(false);
   const [flowId, setFlowId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<
@@ -243,6 +245,7 @@ export default function ChatPage() {
 
   async function buildFromChat() {
     if (!flowId) return;
+    setBuilding(true);
     try {
       const res = await fetch(`/api/flows/${flowId}/build`, { method: "POST" });
       const data = await res.json().catch(() => ({}));
@@ -250,6 +253,7 @@ export default function ChatPage() {
       router.push(`/flow/${flowId}?tab=run`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
+      setBuilding(false);
     }
   }
 
@@ -287,11 +291,7 @@ export default function ChatPage() {
             >
               {cleanText(m.text) ||
                 (busy && i === messages.length - 1 ? (
-                  <span className="inline-flex gap-1">
-                    <span className="typing-dot">●</span>
-                    <span className="typing-dot">●</span>
-                    <span className="typing-dot">●</span>
-                  </span>
+                  <NeuralThinking phase="thinking" />
                 ) : (
                   ""
                 ))}
@@ -308,24 +308,34 @@ export default function ChatPage() {
       )}
 
       {confirmed && !flowId && (
-        <div className="mb-3 card border-emerald-400/40 px-4 py-3 flex items-center justify-between gap-4">
-          <span className="text-sm text-emerald-300">
-            اكتملت المواصفة وتم تأكيدها — جاهزة للتقييم.
-          </span>
-          <button className="btn btn-primary" onClick={evaluate} disabled={evaluating}>
-            {evaluating ? "نقيّم..." : "اعرض التقييم ←"}
-          </button>
+        <div className="mb-3 card px-5 py-3.5">
+          {evaluating ? (
+            <NeuralThinking phase="evaluating" />
+          ) : (
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-emerald-300">المواصفة جاهزة للتقييم.</span>
+              <button className="btn btn-primary" onClick={evaluate}>
+                اعرض التقييم ←
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {flowId && (
         <div className="mb-3">
-          <AutomationSummaryCard
-            flowId={flowId}
-            variant="full"
-            onOpenFlow={() => router.push(`/flow/${flowId}`)}
-            onBuild={buildFromChat}
-          />
+          {building ? (
+            <div className="card px-5 py-4">
+              <NeuralThinking phase="building" />
+            </div>
+          ) : (
+            <AutomationSummaryCard
+              flowId={flowId}
+              variant="full"
+              onOpenFlow={() => router.push(`/flow/${flowId}`)}
+              onBuild={buildFromChat}
+            />
+          )}
         </div>
       )}
 

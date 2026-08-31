@@ -332,6 +332,26 @@ html.light .bg-cyan-400\/10 { background-color: rgba(8, 145, 178, 0.08); }
   transform-origin: center;
 }
 
+/* الشبكة العصبية الحية */
+@keyframes edgeflow {
+  to { stroke-dashoffset: -24; }
+}
+.nn-edge {
+  stroke-dasharray: 3 9;
+  stroke-linecap: round;
+  animation: edgeflow 1.3s linear infinite;
+}
+@keyframes nodepulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.nn-node {
+  animation: nodepulse 1.7s ease-in-out infinite;
+}
+html:not(.light) .nn-node {
+  filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.6));
+}
+
 @keyframes pulse-dot {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }

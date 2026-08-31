@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { callFlowWebhook } from "@/lib/n8n";
+import { callFlowWebhook, friendlyWebhookError, isInactiveWebhook } from "@/lib/n8n";
 import type { TaskSpec, WorkflowIR } from "@/lib/types";
 
 export async function POST(
@@ -63,16 +63,16 @@ export async function POST(
   });
 
   if (!hook.ok) {
+    const friendly = friendlyWebhookError(hook.status, hook.text);
     await supabase
       .from("test_runs")
-      .update({
-        passed: false,
-        error: `تعذر الوصول لمحرك التنفيذ (${hook.status}): ${hook.text.slice(0, 300)}`,
-      })
+      .update({ passed: false, error: friendly })
       .eq("id", testRun.id);
-    await supabase.from("flows").update({ status: "NeedsRepair" }).eq("id", id);
+    // عدم التفعيل نقصُ معلومات وليس عطلًا — لا نحوّله لحالة إصلاح
+    if (!isInactiveWebhook(hook.status, hook.text))
+      await supabase.from("flows").update({ status: "NeedsRepair" }).eq("id", id);
     return Response.json(
-      { error: "فشل استدعاء سير العمل", detail: hook.text.slice(0, 300) },
+      { error: friendly, detail: hook.text.slice(0, 300) },
       { status: 502 }
     );
   }

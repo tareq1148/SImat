@@ -16,6 +16,38 @@ interface ConnRow {
   status: string;
 }
 
+// دليل ربط موجَّه لكل تكامل يقبل توكن المستخدم — خطوات قصيرة ثم لصق
+const GUIDES: Partial<
+  Record<Provider, { steps: string[]; placeholder: string; platformOption?: boolean }>
+> = {
+  telegram: {
+    steps: [
+      "افتح @BotFather داخل تيليجرام",
+      "أرسل /newbot وسمِّ البوت",
+      "انسخ الـToken والصقه هنا",
+    ],
+    placeholder: "123456789:AAH...",
+    platformOption: true,
+  },
+  openai: {
+    steps: ["افتح platform.openai.com/api-keys", "أنشئ Secret key جديدًا", "الصقه هنا"],
+    placeholder: "sk-...",
+    platformOption: true,
+  },
+  slack: {
+    steps: [
+      "api.slack.com/apps ← Create New App",
+      "OAuth & Permissions ← أضف chat:write ثم Install",
+      "انسخ Bot User OAuth Token",
+    ],
+    placeholder: "xoxb-...",
+  },
+  tiktok: {
+    steps: ["افتح developers.tiktok.com", "فعّل صلاحيات نشر الفيديو لتطبيقك", "انسخ Access Token"],
+    placeholder: "act....",
+  },
+};
+
 export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
@@ -24,6 +56,8 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const [connected, setConnected] = useState<Set<Provider>>(new Set());
   const [busy, setBusy] = useState<Provider | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [guideFor, setGuideFor] = useState<Provider | null>(null);
+  const [token, setToken] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/connections");
@@ -47,24 +81,36 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [load, onClose]);
 
-  async function toggle(p: Provider) {
+  async function connect(p: Provider, opts?: { token?: string; revoke?: boolean }) {
     setBusy(p);
     setErr(null);
     try {
-      const revoke = connected.has(p);
       const res = await fetch("/api/connections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(revoke ? { provider: p, revoke: true } : { provider: p }),
+        body: JSON.stringify({ provider: p, ...opts }),
       });
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error ?? "تعذر الربط");
+      setGuideFor(null);
+      setToken("");
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "خطأ");
     } finally {
       setBusy(null);
     }
+  }
+
+  function onConnectClick(p: Provider) {
+    if (connected.has(p)) return connect(p, { revoke: true });
+    if (GUIDES[p]) {
+      setErr(null);
+      setToken("");
+      setGuideFor(guideFor === p ? null : p);
+      return;
+    }
+    connect(p); // Google: حساب المنصة الموثّق عبر OAuth — ضغطة واحدة
   }
 
   function toggleSpeakPref() {
@@ -112,37 +158,86 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
             <div className="space-y-1.5">
               {providers.map((p) => {
                 const isOn = connected.has(p);
+                const guide = GUIDES[p];
+                const open = guideFor === p;
                 return (
-                  <div
-                    key={p}
-                    className="flex items-center gap-3 rounded-xl border border-[var(--line-soft)] px-3 py-2.5"
-                  >
-                    <span className="w-8 h-8 rounded-lg bg-[var(--well)] flex items-center justify-center shrink-0">
-                      {providerIcon(p, 17)}
-                    </span>
-                    <span className="flex-1 text-[0.83rem] font-medium">
-                      {PROVIDER_LABELS[p]}
-                    </span>
-                    <span
-                      className="status-dot"
-                      style={{ background: isOn ? "var(--ok)" : "var(--edge)" }}
-                    />
-                    <button
-                      onClick={() => toggle(p)}
-                      disabled={busy === p}
-                      className={`text-[0.72rem] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
-                        isOn
-                          ? "border-[var(--line)] text-[var(--text-soft)] hover:text-[var(--bad)]"
-                          : "border-transparent text-white"
-                      }`}
-                      style={isOn ? undefined : { background: "var(--accent-bg)" }}
-                    >
-                      {busy === p ? "..." : isOn ? "فصل" : "+ اربط"}
-                    </button>
+                  <div key={p} className="rounded-xl border border-[var(--line-soft)]">
+                    <div className="flex items-center gap-3 px-3 py-2.5">
+                      <span className="w-8 h-8 rounded-lg bg-[var(--well)] flex items-center justify-center shrink-0">
+                        {providerIcon(p, 17)}
+                      </span>
+                      <span className="flex-1 text-[0.83rem] font-medium">
+                        {PROVIDER_LABELS[p]}
+                      </span>
+                      <span
+                        className="status-dot"
+                        style={{ background: isOn ? "var(--ok)" : "var(--edge)" }}
+                      />
+                      <button
+                        onClick={() => onConnectClick(p)}
+                        disabled={busy === p}
+                        className={`text-[0.72rem] font-semibold px-3 py-1.5 rounded-lg border transition-colors ${
+                          isOn
+                            ? "border-[var(--line)] text-[var(--text-soft)] hover:text-[var(--bad)]"
+                            : "border-transparent text-white"
+                        }`}
+                        style={isOn ? undefined : { background: "var(--accent-bg)" }}
+                      >
+                        {busy === p ? "..." : isOn ? "فصل" : "+ اربط"}
+                      </button>
+                    </div>
+
+                    {open && guide && !isOn && (
+                      <div className="border-t border-[var(--line-soft)] px-3.5 py-3 space-y-2.5 rise">
+                        <ol className="space-y-1.5">
+                          {guide.steps.map((s, i) => (
+                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-[var(--text-soft)]">
+                              <span
+                                className="shrink-0 w-4.5 h-4.5 rounded-full text-[0.62rem] font-bold text-white flex items-center justify-center mt-px"
+                                style={{ background: "var(--accent-bg)" }}
+                              >
+                                {i + 1}
+                              </span>
+                              <span dir="auto">{s}</span>
+                            </li>
+                          ))}
+                        </ol>
+                        <input
+                          className="input text-xs"
+                          dir="ltr"
+                          type="password"
+                          placeholder={guide.placeholder}
+                          value={token}
+                          onChange={(e) => setToken(e.target.value)}
+                        />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => connect(p, { token })}
+                            disabled={busy === p || !token.trim()}
+                            className="btn btn-primary text-[0.72rem] py-1.5 flex-1"
+                          >
+                            {busy === p ? "نربط..." : "ربط بحسابي"}
+                          </button>
+                          {guide.platformOption && (
+                            <button
+                              onClick={() => connect(p)}
+                              disabled={busy === p}
+                              className="btn btn-ghost text-[0.72rem] py-1.5"
+                            >
+                              اعتماد المنصة
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
+            <p className="mt-2.5 text-[0.68rem] text-[var(--text-soft)] opacity-80">
+              حسابات Google ترتبط عبر حساب المنصة الموثّق بضغطة واحدة. التوكنات
+              تُحفظ مشفّرة في خزنة المحرك — لا تمر على المنصة.
+            </p>
             {err && <p className="mt-2 text-xs text-amber-300">{err}</p>}
           </section>
 

@@ -78,6 +78,18 @@ export async function createN8nCredential(
   return api("POST", "/credentials", { name, type, data });
 }
 
+// ترجمة أخطاء الاستدعاء لرسائل عربية موجِّهة
+export function friendlyWebhookError(status: number, text: string): string {
+  if (status === 404 && text.includes("not registered"))
+    return "المسار غير مفعّل في المحرك بعد — غالبًا تنقصه معلومات. أكملها من تبويب «الرسم والربط» ثم اضغط «إعادة البناء».";
+  return `تعذر الوصول لمحرك التنفيذ (${status})`;
+}
+
+// هل الفشل بسبب عدم تفعيل المسار (وليس عطلًا يحتاج إصلاحًا)؟
+export function isInactiveWebhook(status: number, text: string): boolean {
+  return status === 404 && text.includes("not registered");
+}
+
 // استدعاء Webhook الإنتاجي لسير عمل مفعّل
 export async function callFlowWebhook(
   path: string,

@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { callFlowWebhook } from "@/lib/n8n";
+import { callFlowWebhook, friendlyWebhookError } from "@/lib/n8n";
 import type { WorkflowIR } from "@/lib/types";
 
 export async function POST(
@@ -56,7 +56,7 @@ export async function POST(
       .from("runs")
       .update({
         status: "error",
-        error: `تعذر الوصول لمحرك التنفيذ (${hook.status})`,
+        error: friendlyWebhookError(hook.status, hook.text),
         finished_at: new Date().toISOString(),
       })
       .eq("id", run.id);
