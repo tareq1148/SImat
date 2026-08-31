@@ -33,6 +33,7 @@ export function useVoice(onTranscript: (text: string) => void) {
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [speakEnabled, setSpeakEnabled] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -64,9 +65,16 @@ export function useVoice(onTranscript: (text: string) => void) {
       if (v) {
         audioRef.current?.pause();
         if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        setSpeaking(false);
       }
       return !v;
     });
+  }, []);
+
+  const stopSpeaking = useCallback(() => {
+    audioRef.current?.pause();
+    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+    setSpeaking(false);
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -157,7 +165,12 @@ export function useVoice(onTranscript: (text: string) => void) {
           audioRef.current?.pause();
           const audio = new Audio(url);
           audioRef.current = audio;
-          audio.onended = () => URL.revokeObjectURL(url);
+          audio.onplay = () => setSpeaking(true);
+          audio.onpause = () => setSpeaking(false);
+          audio.onended = () => {
+            setSpeaking(false);
+            URL.revokeObjectURL(url);
+          };
           await audio.play();
           return;
         } catch {
@@ -169,6 +182,9 @@ export function useVoice(onTranscript: (text: string) => void) {
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "ar-SA";
         u.rate = 1.05;
+        u.onstart = () => setSpeaking(true);
+        u.onend = () => setSpeaking(false);
+        u.onerror = () => setSpeaking(false);
         window.speechSynthesis.speak(u);
       }
     },
@@ -180,10 +196,12 @@ export function useVoice(onTranscript: (text: string) => void) {
     recording,
     transcribing,
     speakEnabled,
+    speaking,
     error,
     startRecording,
     stopRecording,
     toggleSpeak,
+    stopSpeaking,
     speak,
     clearError: () => setError(null),
   };

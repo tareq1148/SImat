@@ -397,14 +397,14 @@ export default function FlowWorkspace({
           />
           <div className="flex items-center justify-between flex-wrap gap-3">
             <p className="text-sm text-slate-400">
-              هذا الرسم يطابق ما سيُنفَّذ فعليًا. اضغط أي عقدة لمراجعتها وربط حسابها.
+              اضغط أي عقدة لمراجعتها وربطها.
             </p>
             <button className="btn btn-primary" onClick={build} disabled={busy === "build"}>
               {busy === "build"
                 ? "نبني في المحرك..."
                 : flow.n8n_workflow_id
-                  ? "🔄 إعادة البناء والنشر"
-                  : "إنشاء الحل في محرك التنفيذ"}
+                  ? "إعادة البناء"
+                  : "ابنِ المسار"}
             </button>
           </div>
 
@@ -501,14 +501,10 @@ export default function FlowWorkspace({
 
           <div className="card p-5">
             <h3 className="font-bold mb-2 text-sm">طلب تعديل — بكلامك</h3>
-            <p className="text-xs text-slate-400 mb-3">
-              اطلب تعديلًا محددًا وسيُطبَّق كإصدار جديد مع الحفاظ على بقية المسار كما هو
-              (مثال: «غيّر مستلم الإيميل إلى manager@co.com» أو «أضف خطوة تنبيه تيليجرام بعد التسجيل»).
-            </p>
             <div className="flex gap-2">
               <input
                 className="input flex-1"
-                placeholder="اكتب التعديل المطلوب..."
+                placeholder="مثال: غيّر مستلم الإيميل إلى manager@co.com"
                 value={modifyText}
                 onChange={(e) => setModifyText(e.target.value)}
                 disabled={busy === "modify"}
@@ -722,10 +718,8 @@ export default function FlowWorkspace({
           </div>
 
           <div className="card p-5">
-            <h3 className="font-bold mb-2 text-sm">كم دقيقة كانت تأخذ منك يدويًا في كل مرة؟</h3>
-            <p className="text-xs text-slate-400 mb-3">
-              نستخدمها لحساب الوقت الموفَّر (الافتراضي 15 دقيقة).
-            </p>
+            <h3 className="font-bold mb-2 text-sm">كم دقيقة تأخذ يدويًا؟</h3>
+            <p className="text-xs text-slate-400 mb-3">لحساب الوقت الموفَّر.</p>
             <div className="flex gap-2 max-w-xs">
               <input
                 className="input flex-1"

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AutomationSummaryCard from "@/components/AutomationSummaryCard";
+import VoiceWave from "@/components/VoiceWave";
 import { useVoice } from "@/lib/useVoice";
 
 interface Msg {
@@ -209,30 +210,31 @@ export default function ChatPage() {
 
   return (
     <main className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4">
-      <div className="flex items-center justify-between py-4 border-b border-[var(--line-soft)]">
-        <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white">
-          → لوحة المسارات
+      <div className="flex items-center justify-between py-3.5 border-b border-[var(--line-soft)]">
+        <Link
+          href="/dashboard"
+          title="رجوع"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m9 6 6 6-6 6" />
+          </svg>
         </Link>
-        <span className="text-sm font-semibold text-slate-300">مقابلة المهمة</span>
+        <span className="text-sm font-semibold">المحادثة</span>
         {voice.mode !== "none" ? (
           <button
             onClick={voice.toggleSpeak}
-            className={`chip cursor-pointer transition-colors ${
+            title={voice.speakEnabled ? "أوقف نطق الردود" : "اسمع الردود"}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
               voice.speakEnabled
-                ? "border-cyan-400/50 text-cyan-300 bg-cyan-400/10"
-                : "border-slate-500/40 text-slate-400 bg-slate-500/5"
+                ? "text-[var(--accent)] bg-[var(--accent-soft)]"
+                : "text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)]"
             }`}
-            title={
-              voice.mode === "voicestudio"
-                ? "الصوت عبر VoiceStudio المحلي"
-                : "الصوت عبر المتصفح (شغّل VoiceStudio لجودة أعلى)"
-            }
           >
             <ToolIcon kind="speaker" />
-            {voice.speakEnabled ? "الردود مسموعة" : "اسمع الردود"}
           </button>
         ) : (
-          <span className="w-20" />
+          <span className="w-8" />
         )}
       </div>
 
@@ -358,6 +360,20 @@ export default function ChatPage() {
         </div>
       )}
 
+      {voice.speaking && !voice.recording && (
+        <div className="mb-2 card px-4 py-2 flex items-center gap-3">
+          <span className="text-[0.72rem] text-[var(--text-soft)] shrink-0">سِمَاط يتحدث</span>
+          <VoiceWave mode="ambient" height={20} />
+          <button
+            onClick={voice.stopSpeaking}
+            title="إيقاف"
+            className="text-[var(--text-soft)] hover:text-[var(--text)] shrink-0"
+          >
+            <ToolIcon kind="stop" />
+          </button>
+        </div>
+      )}
+
       <form onSubmit={send} className="pb-6 flex gap-2 items-center">
         <button
           type="button"
@@ -391,16 +407,21 @@ export default function ChatPage() {
             <ToolIcon kind={voice.recording ? "stop" : "mic"} />
           </button>
         )}
-        <input
-          ref={textInputRef}
-          className="input flex-1"
-          placeholder={
-            voice.recording ? "نسمعك... تكلّم عن مهمتك" : "اكتب هنا... أو اضغط المايك وتكلّم"
-          }
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          disabled={busy}
-        />
+        {voice.recording ? (
+          <div className="input flex-1 flex items-center gap-3 !py-1.5">
+            <span className="status-dot animate-pulse shrink-0" style={{ background: "var(--bad)" }} />
+            <VoiceWave mode="mic" height={30} />
+          </div>
+        ) : (
+          <input
+            ref={textInputRef}
+            className="input flex-1"
+            placeholder="صف مهمتك..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={busy}
+          />
+        )}
         <button className="btn btn-primary" disabled={busy || !input.trim()}>
           إرسال
         </button>

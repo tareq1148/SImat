@@ -187,7 +187,7 @@ export default function AutomationSummaryCard({
           allConnected &&
           data.n8n_integration.status === "READY_FOR_DEPLOYMENT" && (
             <button className="btn btn-primary text-xs" onClick={onBuild}>
-              إنشاء الحل في محرك التنفيذ
+              ابنِ المسار
             </button>
           )}
       </div>
