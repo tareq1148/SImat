@@ -351,6 +351,9 @@ html.light .bg-cyan-400\/10 { background-color: rgba(8, 145, 178, 0.08); }
 html:not(.light) .nn-node {
   filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.6));
 }
+html:not(.light) .arch-edge {
+  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.45));
+}
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 0.4; }
