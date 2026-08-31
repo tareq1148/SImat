@@ -99,7 +99,7 @@ function ToolIcon({ kind }: { kind: "clip" | "mic" | "stop" | "speaker" | "send"
 
 export default function ChatPage() {
   const router = useRouter();
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const [specId, setSpecId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -267,12 +267,48 @@ export default function ChatPage() {
       {messages.length === 0 && (
         <div className="flex-1 flex flex-col justify-center space-y-9 py-10">
           <div className="rise text-center">
+            <div className="flex items-center justify-center gap-2.5 mb-6">
+              <span
+                className="w-10 h-10 rounded-xl text-white text-lg font-bold flex items-center justify-center"
+                style={{ background: "var(--accent-bg)", boxShadow: "0 0 18px rgba(34,211,238,0.3)" }}
+              >
+                و
+              </span>
+              <span className="text-[1.5rem] font-bold">{t("brand")}</span>
+            </div>
             <h1 className="text-[2.1rem] md:text-[2.9rem] font-bold leading-snug mb-3 tracking-tight">
               {t("home.w1")}.{" "}
               {t("home.w2")}.{" "}
               <span className="text-[var(--accent)]">{t("home.w3")}.</span>
             </h1>
             <p className="text-[0.95rem] text-[var(--text-soft)]">{t("home.sub")}</p>
+
+            <div className="mt-7 flex items-center justify-center gap-2 flex-wrap">
+              <span className="text-[0.72rem] text-[var(--text-soft)]">{t("home.try")}</span>
+              {(lang === "ar"
+                ? [
+                    "سجّل طلبات العملاء من الإيميل في جدول ورد عليهم بتأكيد",
+                    "أرسل لي على بريدي ملخص رسائل تيليجرام كل مساء",
+                    "انشر صورة اليوم على إنستقرام بكابشن جاهز",
+                  ]
+                : [
+                    "Log email orders into a sheet and send confirmations",
+                    "Email me a summary of Telegram messages every evening",
+                    "Post today's photo to Instagram with a ready caption",
+                  ]
+              ).map((ex) => (
+                <button
+                  key={ex}
+                  onClick={() => {
+                    setInput(ex);
+                    textInputRef.current?.focus();
+                  }}
+                  className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-[0.76rem] text-[var(--text-soft)] hover:text-[var(--accent)] hover:border-[var(--accent-bg)] transition-colors"
+                >
+                  {ex}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="rise-1">
             <OverviewStats />

@@ -18,6 +18,7 @@ const DICT: Record<string, { ar: string; en: string }> = {
   "home.w2": { ar: "اربط", en: "Connect" },
   "home.w3": { ar: "أتمت", en: "Automate" },
   "home.sub": { ar: "صف مهمتك بجملة — أو اضغط المايك وتكلّم.", en: "Describe your task in one line — or tap the mic and talk." },
+  "home.try": { ar: "جرّب مثلًا:", en: "Try for example:" },
   "home.flows": { ar: "مساراتك", en: "Your flows" },
   "input.placeholder": { ar: "صف مهمتك...", en: "Describe your task..." },
   "input.send": { ar: "إرسال", en: "Send" },
