@@ -4,7 +4,7 @@ import { synthesizeSpeech } from "@/lib/voicestudio";
 
 export const maxDuration = 180;
 
-// نطق ردود «سِمَاط» عبر VoiceStudio المحلي
+// نطق ردود «وَتيرة» عبر VoiceStudio المحلي
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServer();
   const {

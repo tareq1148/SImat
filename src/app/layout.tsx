@@ -10,9 +10,9 @@ const arabic = Alexandria({
 });
 
 export const metadata: Metadata = {
-  title: "سِمَاط — من وصف المهمة إلى أتمتة تعمل",
+  title: "وَتيرة — من وصف المهمة إلى أتمتة تعمل",
   description:
-    "صف مهمتك بلغتك الطبيعية، وسيقيّمها سِمَاط ويبني لك أتمتة جاهزة للتشغيل — مع موافقتك على كل إجراء حساس.",
+    "صف مهمتك بلغتك الطبيعية، وسيقيّمها وَتيرة ويبني لك أتمتة جاهزة للتشغيل — مع موافقتك على كل إجراء حساس.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

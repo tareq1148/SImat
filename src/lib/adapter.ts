@@ -829,7 +829,7 @@ export function irToN8n(
   }
 
   return {
-    name: `[سِمَاط] ${ir.name}`,
+    name: `[وَتيرة] ${ir.name}`,
     nodes,
     connections: connections as Record<string, unknown>,
     settings,

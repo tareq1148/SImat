@@ -14,7 +14,7 @@ const LEVELS = [
   { at: 5, name: "مُنجِز" },
   { at: 15, name: "متمكّن" },
   { at: 30, name: "خبير أتمتة" },
-  { at: 60, name: "محترف سِمَاط" },
+  { at: 60, name: "محترف وَتيرة" },
 ];
 
 export async function GET() {

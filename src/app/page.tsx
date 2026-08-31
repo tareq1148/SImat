@@ -40,9 +40,9 @@ export default async function Landing() {
             className="w-8 h-8 rounded-[10px] text-white text-[0.95rem] font-bold flex items-center justify-center"
             style={{ background: "var(--accent-bg)" }}
           >
-            س
+            و
           </span>
-          <span className="text-[1.05rem] font-bold">سِمَاط</span>
+          <span className="text-[1.05rem] font-bold">وَتيرة</span>
         </div>
         <Link href="/login" className="btn btn-ghost text-[0.8rem] py-2">
           تسجيل الدخول

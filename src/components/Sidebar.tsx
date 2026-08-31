@@ -98,7 +98,7 @@ export default function Sidebar({ email }: { email: string | null }) {
           className="w-10 h-10 rounded-xl text-white text-base font-bold flex items-center justify-center mb-4"
           style={{ background: "var(--accent-bg)", boxShadow: "0 0 18px rgba(34,211,238,0.35)" }}
         >
-          س
+          و
         </Link>
 
         {NAV.map((item) => (
@@ -145,7 +145,7 @@ export default function Sidebar({ email }: { email: string | null }) {
               className="w-8 h-8 rounded-lg text-white text-sm font-bold flex items-center justify-center"
               style={{ background: "var(--accent-bg)" }}
             >
-              س
+              و
             </span>
             {t("brand")}
           </Link>

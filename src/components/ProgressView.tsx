@@ -1,6 +1,6 @@
 "use client";
 
-// شاشة الإنجاز — «وش صار» كمخطط معماري بلغة لوحة الرسم: مهامك ← سِمَاط ← النتائج
+// شاشة الإنجاز — «وش صار» كمخطط معماري بلغة لوحة الرسم: مهامك ← وَتيرة ← النتائج
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -14,7 +14,7 @@ const LEVEL_EN: Record<string, string> = {
   "مُنجِز": "Achiever",
   "متمكّن": "Proficient",
   "خبير أتمتة": "Automation Expert",
-  "محترف سِمَاط": "Simat Pro",
+  "محترف وَتيرة": "Wateera Pro",
 };
 
 interface ProgressData {
@@ -166,7 +166,7 @@ function ArchDiagram({
   providers: Provider[];
 }) {
   const { lang, t } = useLang();
-  // اليمين: حساباتك المربوطة فعليًا (بأسمائها الحقيقية) ← سِمَاط ← النتائج
+  // اليمين: حساباتك المربوطة فعليًا (بأسمائها الحقيقية) ← وَتيرة ← النتائج
   const provs = providers.slice(0, 6);
   const rows = Math.max(provs.length, 3);
   const H = Math.max(250, rows * 84);
@@ -180,7 +180,7 @@ function ArchDiagram({
 
   // حواف الأعمدة داخل حاوية 640 عرضًا (إحداثيات SVG من اليسار)
   const P_LEFT = 640 - 4 - 150; // حافة عقدة الموقع اليسرى
-  const E_RIGHT = 640 - 243; // حافة سِمَاط اليمنى
+  const E_RIGHT = 640 - 243; // حافة وَتيرة اليمنى
   const E_LEFT = 640 - 243 - 152;
   const R_RIGHT = 4 + 194;
 

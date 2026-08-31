@@ -1,7 +1,7 @@
 "use client";
 
 // طبقة الصوت الموحدة: VoiceStudio المحلي أولًا، وصوت المتصفح كبديل فوري
-// ASR: مايك → نص | TTS: نطق ردود «سِمَاط»
+// ASR: مايك → نص | TTS: نطق ردود «وَتيرة»
 
 import { useCallback, useEffect, useRef, useState } from "react";
 

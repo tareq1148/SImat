@@ -157,7 +157,7 @@ export function buildUiSummary(
     required_integrations,
     steps_breakdown,
     n8n_integration: {
-      workflow_name: `[سِمَاط] ${flow.name}`,
+      workflow_name: `[وَتيرة] ${flow.name}`,
       status: n8nStatus,
     },
   };
