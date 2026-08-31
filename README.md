@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<div dir="rtl">
 
-## Getting Started
+# سِمَاط — منصّة أتمتة العمل اليومي
 
-First, run the development server:
+**أتمت شغلك اليومي المتكرر.** موظفٌ يصف مهمته بالعربي (كتابةً أو صوتًا أو بملفات مرفقة)، وسِمَاط يقابله، يقيّم هل المهمة تستحق الأتمتة، يرسم له مسار العمل، يبنيه فعليًا على n8n، يجرّبه بأمان، ولا يرسل أي شيء حسّاس إلا بموافقته داخل المنصة.
+
+## الرحلة الكاملة
+
+1. **المقابلة** — محادثة ذكية (Claude Opus) تستخرج خطوات المهمة والتكاملات المطلوبة. تدعم الصوت (تحدّث واستمع) ورفع الملفات (صور/PDF/CSV).
+2. **التقييم** — محرّك قواعد حتمي (ليس LLM) يحسب درجة الجدوى ويقرر: مناسب للأتمتة أم لا.
+3. **المخطط** — عرض المسار على لوحة React Flow بالعربي من اليمين لليسار.
+4. **الربط** — بطاقات «+ اربط» للتكاملات الثمانية: Gmail، Google Sheets، Google Drive، OpenAI، Telegram، Slack، Instagram، TikTok.
+5. **البناء** — محوّل تنفيذ يترجم المسار إلى Workflow حقيقي على n8n.
+6. **التجربة الآمنة** — وضع الاختبار لا يرسل أي رسالة حقيقية أبدًا (معاينة فقط).
+7. **الموافقات** — كل إرسال حسّاس يتوقف وينتظر موافقة بشرية داخل المنصة.
+8. **إنجازاتي** — شاشة تقارير أسبوعية: مهام مقفلة، كفاءة أسبوع-بأسبوع، مستويات تقدّم، وخطة مدروسة للتميّز.
+
+كما يدعم: إصدارات المسار والرجوع لأي نسخة، التعديل بتعليمات نصية، والإصلاح الذاتي عند الفشل (محاولتان كحد أقصى).
+
+## التقنيات
+
+| الطبقة | التقنية |
+|---|---|
+| الواجهة | Next.js 16 (App Router) + Tailwind v4 + React Flow — عربي RTL بالكامل |
+| الهوية والبيانات | Supabase (مصادقة بريد + Google، Postgres مع RLS لكل مستخدم، تخزين ملفات) |
+| الذكاء | Anthropic Claude (المقابلة والتعديل النصي فقط — القرارات كلها قواعد حتمية) |
+| التنفيذ | n8n Cloud عبر الـAPI العام (بناء، تفعيل، تنفيذ، استئناف الموافقات) |
+| الصوت | Web Speech API (ar-SA) افتراضيًا + دعم VoiceStudio محلي اختياري |
+
+## التشغيل محليًا
 
 ```bash
+npm install
+cp .env.example .env.local   # واملأ المفاتيح
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+المتغيرات المطلوبة في `.env.local` (بدون قيم هنا — الأسرار لا تُرفع للريبو):
+`NEXT_PUBLIC_SUPABASE_URL`، `NEXT_PUBLIC_SUPABASE_ANON_KEY`، `SUPABASE_SERVICE_ROLE_KEY`، `ANTHROPIC_API_KEY`، `N8N_BASE_URL`، `N8N_API_KEY`، `N8N_CRED_*` لكل تكامل، `N8N_ERROR_WORKFLOW_ID`، `APP_BASE_URL` (رابط عام للاستدعاءات الراجعة من n8n)، `MUHAWWIL_WEBHOOK_SECRET`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+فحص سلامة البنية (يتأكد أن أي إرسال حسّاس خلف بوابة موافقة ولا يتسرب في وضع الاختبار):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+node --experimental-strip-types scripts/smoke.ts
+```
 
-## Learn More
+## بنية المشروع
 
-To learn more about Next.js, take a look at the following resources:
+- `src/lib/scoring.ts` — محرّك تقييم الجدوى (بوابات + عوامل موزونة)
+- `src/lib/ir.ts` + `src/lib/adapter.ts` — التمثيل الوسيط ومحوّل التنفيذ إلى n8n
+- `src/lib/interview.ts` — شخصية سِمَاط وأداة استخراج المواصفات
+- `src/app/api/` — المقابلة (SSE)، البناء، التجربة، التشغيل، الموافقات، التقارير
+- `docs/` — وثيقتا متطلبات المنتج (المنصة والواجهات)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+صُنع ضمن مشروع تخرّج — تِجربة كاملة موثّقة من المقابلة حتى إرسال بريد حقيقي بموافقة بشرية. 🏆
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+</div>
