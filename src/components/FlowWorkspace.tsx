@@ -253,10 +253,10 @@ export default function FlowWorkspace({
         instruction: modifyText.trim(),
       });
       setModifyText("");
-      setNotice({ kind: "ok", text: `✏️ إصدار ${data.version}: ${data.summary} — نعيد البناء...` });
+      setNotice({ kind: "ok", text: `إصدار ${data.version}: ${data.summary} — نعيد البناء...` });
       router.refresh();
       await post(`/api/flows/${flow.id}/build`);
-      setNotice({ kind: "ok", text: `✏️ ${data.summary} — أُعيد البناء، جرّب الاختبار الآن.` });
+      setNotice({ kind: "ok", text: `${data.summary} — أُعيد البناء، جرّب الاختبار الآن.` });
       router.refresh();
     } catch (err) {
       setNotice({ kind: "err", text: err instanceof Error ? err.message : "خطأ" });
@@ -302,7 +302,7 @@ export default function FlowWorkspace({
       const data = await post(`/api/flows/${flow.id}/versions`, { version });
       setNotice({
         kind: "ok",
-        text: `↩️ استُرجع الإصدار ${data.restoredFrom} كإصدار جديد ${data.newVersion} — أعد البناء والاختبار.`,
+        text: `استُرجع الإصدار ${data.restoredFrom} كإصدار جديد ${data.newVersion} — أعد البناء والاختبار.`,
       });
       loadHistory();
       router.refresh();
@@ -345,9 +345,9 @@ export default function FlowWorkspace({
   }
 
   const TABS = [
-    ["evaluation", "⚖️ التقييم"],
-    ["canvas", "🧩 الرسم والربط"],
-    ["run", "▶️ الاختبار والتشغيل"],
+    ["evaluation", "التقييم"],
+    ["canvas", "الرسم والربط"],
+    ["run", "الاختبار والتشغيل"],
     ["history", "🕘 الإصدارات والتقرير"],
   ] as const;
 
@@ -404,7 +404,7 @@ export default function FlowWorkspace({
                 ? "نبني في المحرك..."
                 : flow.n8n_workflow_id
                   ? "🔄 إعادة البناء والنشر"
-                  : "🚀 إنشاء الحل في محرك التنفيذ"}
+                  : "إنشاء الحل في محرك التنفيذ"}
             </button>
           </div>
 
@@ -500,7 +500,7 @@ export default function FlowWorkspace({
           )}
 
           <div className="card p-5">
-            <h3 className="font-bold mb-2 text-sm">📝 طلب تعديل — بكلامك</h3>
+            <h3 className="font-bold mb-2 text-sm">طلب تعديل — بكلامك</h3>
             <p className="text-xs text-slate-400 mb-3">
               اطلب تعديلًا محددًا وسيُطبَّق كإصدار جديد مع الحفاظ على بقية المسار كما هو
               (مثال: «غيّر مستلم الإيميل إلى manager@co.com» أو «أضف خطوة تنبيه تيليجرام بعد التسجيل»).
@@ -550,7 +550,7 @@ export default function FlowWorkspace({
                 <div className="flex items-center gap-2 mb-3">
                   {t.passed === null ? (
                     <span className="chip border-cyan-400/40 text-cyan-300 bg-cyan-400/10">
-                      ⏳ قيد التنفيذ...
+                      قيد التنفيذ...
                     </span>
                   ) : t.passed ? (
                     <span className="chip border-emerald-400/40 text-emerald-300 bg-emerald-400/10">
@@ -611,7 +611,7 @@ export default function FlowWorkspace({
                       ⏸ إيقاف مؤقت
                     </button>
                     <button className="btn btn-primary" onClick={runNow} disabled={busy === "run"}>
-                      {busy === "run" ? "نبدأ..." : "▶️ تشغيل الآن"}
+                      {busy === "run" ? "نبدأ..." : "تشغيل الآن"}
                     </button>
                   </>
                 ) : (
@@ -635,7 +635,7 @@ export default function FlowWorkspace({
             {approvals.filter((a) => a.status === "pending").map((a) => (
               <div key={a.id} className="border border-amber-400/40 bg-amber-400/5 rounded-xl p-4 mb-3">
                 <div className="font-bold text-amber-300 text-sm mb-1">
-                  🛡️ موافقة مطلوبة: {a.action_type}
+                  موافقة مطلوبة: {a.action_type}
                 </div>
                 <p className="text-xs text-slate-300 mb-2 leading-relaxed">{a.summary}</p>
                 {a.payload != null && (
@@ -722,7 +722,7 @@ export default function FlowWorkspace({
           </div>
 
           <div className="card p-5">
-            <h3 className="font-bold mb-2 text-sm">⏱️ كم دقيقة كانت تأخذ منك يدويًا في كل مرة؟</h3>
+            <h3 className="font-bold mb-2 text-sm">كم دقيقة كانت تأخذ منك يدويًا في كل مرة؟</h3>
             <p className="text-xs text-slate-400 mb-3">
               نستخدمها لحساب الوقت الموفَّر (الافتراضي 15 دقيقة).
             </p>
@@ -782,7 +782,7 @@ export default function FlowWorkspace({
                       onClick={() => rollback(v.version)}
                       disabled={busy === `rb-${v.version}`}
                     >
-                      ↩️ استرجاع
+                      استرجاع
                     </button>
                   )}
                 </div>

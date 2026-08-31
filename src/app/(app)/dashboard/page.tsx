@@ -26,49 +26,38 @@ export default async function Dashboard() {
   ]);
 
   return (
-    <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-10">
-      {/* البطاقة الرئيسية: رسالة واحدة واضحة + إجراء واحد */}
-      <div className="card relative overflow-hidden p-8 md:p-10 mb-8 border-cyan-400/25">
-        <div
-          className="pointer-events-none absolute -top-24 -start-24 w-72 h-72 rounded-full opacity-25"
-          style={{ background: "radial-gradient(circle, #22d3ee 0%, transparent 70%)" }}
-        />
-        <div
-          className="pointer-events-none absolute -bottom-28 -end-20 w-80 h-80 rounded-full opacity-20"
-          style={{ background: "radial-gradient(circle, #a78bfa 0%, transparent 70%)" }}
-        />
-        <div className="relative">
-          <h1 className="text-2xl md:text-[1.9rem] font-bold leading-snug mb-2">
-            وش المهمة اللي تاخذ من وقتك كل يوم؟
-          </h1>
-          <p className="text-sm md:text-base text-slate-400 mb-6 max-w-xl leading-relaxed">
-            صفها بجملة واحدة — سِمَاط يسألك سؤالًا أو سؤالين بالكثير، ثم يبنيها
-            أتمتة تعمل عنك. وكل إرسال حسّاس يبقى بموافقتك.
+    <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-9">
+      {/* ترويسة الصفحة: رسالة واحدة واضحة وإجراء واحد */}
+      <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
+        <div>
+          <h1 className="text-[1.55rem] font-bold mb-1.5">نظرة عامة</h1>
+          <p className="text-sm text-[var(--text-soft)] max-w-lg leading-relaxed">
+            صف مهمتك المتكررة بجملة واحدة — يسألك سِمَاط سؤالًا أو سؤالين، ثم
+            يبنيها أتمتة تعمل عنك بموافقتك على كل إجراء حساس.
           </p>
-          <div className="flex items-center gap-3 flex-wrap">
-            <Link href="/chat" className="btn btn-primary text-base px-6 py-3">
-              + ابدأ المحادثة
-            </Link>
-            <Link href="/flows" className="btn btn-ghost">
-              مساراتي
-            </Link>
-          </div>
         </div>
+        <Link href="/chat" className="btn btn-primary">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          محادثة جديدة
+        </Link>
       </div>
 
       <OverviewStats />
 
       {(approvals ?? []).length > 0 && (
-        <div className="card p-5 mb-8 border-amber-400/40">
-          <h2 className="font-bold text-amber-300 mb-3">
-            ⏳ بانتظار موافقتك ({approvals!.length})
+        <div className="card p-5 mb-8" style={{ borderColor: "color-mix(in srgb, var(--warn) 40%, transparent)" }}>
+          <h2 className="font-semibold text-sm mb-3 flex items-center gap-2">
+            <span className="status-dot" style={{ background: "var(--warn)" }} />
+            بانتظار موافقتك ({approvals!.length})
           </h2>
           <div className="space-y-2">
             {approvals!.map((a) => (
               <Link
                 key={a.id}
                 href={`/flow/${a.flow_id}?tab=run`}
-                className="block text-sm text-slate-300 hover:text-white"
+                className="block text-sm text-[var(--text-soft)] hover:text-[var(--text)] transition-colors"
               >
                 ← {a.action_type}: {a.summary?.slice(0, 90)}
               </Link>
@@ -78,20 +67,32 @@ export default async function Dashboard() {
       )}
 
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-bold">أحدث المسارات</h2>
-        <Link href="/flows" className="text-sm text-cyan-300 hover:underline">
+        <h2 className="font-semibold text-[0.95rem]">أحدث المسارات</h2>
+        <Link
+          href="/flows"
+          className="text-[0.8rem] font-medium text-[var(--accent)] hover:underline"
+        >
           عرض الكل ←
         </Link>
       </div>
 
       {(flows ?? []).length === 0 ? (
-        <div className="card p-12 text-center text-slate-400">
-          <div className="text-4xl mb-4">🪄</div>
-          <p className="text-lg text-slate-300 mb-1">لا توجد مسارات بعد</p>
-          <p className="text-sm">أول محادثة تاخذ دقيقتين — وبعدها الشغل المكرر علينا.</p>
+        <div className="card px-8 py-14 text-center">
+          <span className="mx-auto mb-5 w-12 h-12 rounded-[14px] bg-[var(--well)] text-[var(--accent)] flex items-center justify-center">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+            </svg>
+          </span>
+          <p className="font-semibold mb-1.5">لا توجد مسارات بعد</p>
+          <p className="text-sm text-[var(--text-soft)] mb-6">
+            أول محادثة تستغرق دقيقتين — وبعدها العمل المتكرر علينا.
+          </p>
+          <Link href="/chat" className="btn btn-primary">
+            ابدأ المحادثة الأولى
+          </Link>
         </div>
       ) : (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-3.5">
           {(flows as FlowRow[]).map((f) => (
             <FlowCard key={f.id} flow={f} />
           ))}

@@ -48,7 +48,7 @@ export default function ProgressView() {
   const wowChip =
     headline.wow > 0
       ? {
-          text: `📈 أكفأ من الأسبوع الماضي بنسبة ${headline.wow}%`,
+          text: `أكفأ من الأسبوع الماضي بنسبة ${headline.wow}%`,
           cls: "border-emerald-400/40 text-emerald-300 bg-emerald-400/10",
         }
       : headline.wow < 0
@@ -57,7 +57,7 @@ export default function ProgressView() {
             cls: "border-amber-400/40 text-amber-300 bg-amber-400/10",
           }
         : {
-            text: "⚖️ نفس وتيرة الأسبوع الماضي",
+            text: "نفس وتيرة الأسبوع الماضي",
             cls: "border-slate-400/40 text-slate-300 bg-slate-400/10",
           };
 
@@ -66,7 +66,7 @@ export default function ProgressView() {
       <div className="card p-6 text-center relative overflow-hidden">
         <div className="text-sm text-slate-400 mb-2">إنجازك هذا الأسبوع</div>
         <h1 className="text-3xl md:text-4xl font-bold leading-snug mb-3">
-          ✨ الأتمتة قفلت لك{" "}
+          الأتمتة قفلت لك{" "}
           <span className="bg-gradient-to-l from-cyan-300 to-violet-300 bg-clip-text text-transparent">
             {headline.closed_this_week} {headline.closed_this_week === 1 ? "مهمة" : "مهام"}
           </span>
@@ -75,7 +75,7 @@ export default function ProgressView() {
           <span className={`chip ${wowChip.cls}`}>{wowChip.text}</span>
           {headline.minutes_saved_this_week > 0 && (
             <span className="chip border-violet-400/40 text-violet-300 bg-violet-400/10">
-              ⏱️ وفّرت ~{Math.round((headline.minutes_saved_this_week / 60) * 10) / 10} ساعة
+              وفّرت ~{Math.round((headline.minutes_saved_this_week / 60) * 10) / 10} ساعة
             </span>
           )}
         </div>

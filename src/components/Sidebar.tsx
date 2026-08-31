@@ -19,7 +19,7 @@ type IconName =
   | "sun"
   | "power";
 
-function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
+function Icon({ name, size = 17 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, React.ReactNode> = {
     overview: (
       <>
@@ -91,6 +91,21 @@ const BOTTOM_NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/settings", label: "الإعدادات", icon: "settings" },
 ];
 
+function Brand({ size = "md" }: { size?: "sm" | "md" }) {
+  const box = size === "md" ? "w-8 h-8 rounded-[10px] text-[0.95rem]" : "w-7 h-7 rounded-lg text-xs";
+  return (
+    <>
+      <span
+        className={`${box} font-bold flex items-center justify-center text-white shrink-0`}
+        style={{ background: "var(--accent-bg)" }}
+      >
+        س
+      </span>
+      <span className={size === "md" ? "text-[1.05rem] font-bold" : "font-bold"}>سِمَاط</span>
+    </>
+  );
+}
+
 export default function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -115,56 +130,63 @@ export default function Sidebar({ email }: { email: string | null }) {
   }
 
   const itemCls = (active: boolean) =>
-    `flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors ${
+    `relative flex items-center gap-3 rounded-[10px] px-3 py-2 text-[0.85rem] transition-colors ${
       active
-        ? "bg-cyan-400/10 text-cyan-200 font-semibold"
-        : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+        ? "bg-[var(--well)] text-[var(--text)] font-semibold"
+        : "text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)]"
     }`;
+
+  const indicator = (
+    <span
+      className="absolute inline-start-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full"
+      style={{ background: "var(--accent-bg)", insetInlineStart: 0 }}
+    />
+  );
 
   return (
     <>
       {/* سطح المكتب: عمود ثابت على يمين الصفحة */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 border-l border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen px-4 py-6">
-        <Link href="/dashboard" className="flex items-center gap-2 px-2 mb-8">
-          <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-[#06121f] text-base font-bold flex items-center justify-center">
-            س
-          </span>
-          <span className="text-lg font-bold bg-gradient-to-l from-cyan-300 to-violet-300 bg-clip-text text-transparent">
-            سِمَاط
-          </span>
+      <aside className="hidden md:flex flex-col w-[232px] shrink-0 border-l border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen px-3.5 py-5">
+        <Link href="/dashboard" className="flex items-center gap-2.5 px-2 mb-7">
+          <Brand />
         </Link>
 
-        <nav className="space-y-1.5">
+        <nav className="space-y-1">
           {MAIN_NAV.map((item) => (
             <Link key={item.href} href={item.href} className={itemCls(isActive(item.href))}>
+              {isActive(item.href) && indicator}
               <Icon name={item.icon} />
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="mt-auto space-y-1.5">
-          <div className="h-px bg-[var(--line-soft)] mb-3" />
+        <div className="mt-auto space-y-1">
+          <div className="h-px bg-[var(--line-soft)] mb-2.5" />
           {BOTTOM_NAV.map((item) => (
             <Link key={item.href} href={item.href} className={itemCls(isActive(item.href))}>
+              {isActive(item.href) && indicator}
               <Icon name={item.icon} />
               {item.label}
             </Link>
           ))}
           <button
             onClick={() => setTheme(toggleTheme())}
-            className="w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-colors"
+            className={`w-full ${itemCls(false)}`}
           >
             <Icon name={theme === "dark" ? "moon" : "sun"} />
-            {theme === "dark" ? "وضع داكن" : "وضع فاتح"}
+            {theme === "dark" ? "الوضع الداكن" : "الوضع الفاتح"}
             <span className="theme-switch mr-auto" />
           </button>
-          <button onClick={signOut} className={`w-full ${itemCls(false)} hover:!text-red-300`}>
+          <button onClick={signOut} className={`w-full ${itemCls(false)}`}>
             <Icon name="power" />
             خروج
           </button>
           {email && (
-            <p dir="ltr" className="px-3.5 pt-2 text-[0.65rem] text-slate-600 truncate text-right">
+            <p
+              dir="ltr"
+              className="px-3 pt-2 text-[0.65rem] text-[var(--text-soft)] opacity-70 truncate text-right"
+            >
               {email}
             </p>
           )}
@@ -174,24 +196,19 @@ export default function Sidebar({ email }: { email: string | null }) {
       {/* الجوال: شريط علوي بالشعار وتنقّل أفقي */}
       <div className="md:hidden border-b border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 h-12">
-          <Link href="/dashboard" className="flex items-center gap-2 font-bold">
-            <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 text-[#06121f] text-xs font-bold flex items-center justify-center">
-              س
-            </span>
-            <span className="bg-gradient-to-l from-cyan-300 to-violet-300 bg-clip-text text-transparent">
-              سِمَاط
-            </span>
+          <Link href="/dashboard" className="flex items-center gap-2">
+            <Brand size="sm" />
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 text-[var(--text-soft)]">
             <button
               onClick={() => setTheme(toggleTheme())}
-              className="text-slate-400 hover:text-slate-200 p-1.5"
-              title={theme === "dark" ? "وضع فاتح" : "وضع داكن"}
+              className="p-1.5 hover:text-[var(--text)]"
+              title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
             >
-              <Icon name={theme === "dark" ? "moon" : "sun"} size={17} />
+              <Icon name={theme === "dark" ? "moon" : "sun"} size={16} />
             </button>
-            <button onClick={signOut} className="text-slate-400 hover:text-red-300 p-1.5" title="خروج">
-              <Icon name="power" size={17} />
+            <button onClick={signOut} className="p-1.5 hover:text-[var(--text)]" title="خروج">
+              <Icon name="power" size={16} />
             </button>
           </div>
         </div>
@@ -202,11 +219,11 @@ export default function Sidebar({ email }: { email: string | null }) {
               href={item.href}
               className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs transition-colors ${
                 isActive(item.href)
-                  ? "bg-cyan-400/10 text-cyan-200 font-semibold"
-                  : "text-slate-400"
+                  ? "bg-[var(--well)] text-[var(--text)] font-semibold"
+                  : "text-[var(--text-soft)]"
               }`}
             >
-              <Icon name={item.icon} size={14} />
+              <Icon name={item.icon} size={13} />
               {item.label}
             </Link>
           ))}

@@ -28,6 +28,21 @@ function cleanText(text: string): string {
   return text.replace(OPTIONS_RE, "").replace(/\[\[خيارات:[^\]]*$/, "").trimEnd();
 }
 
+function ToolIcon({ kind }: { kind: "clip" | "mic" | "stop" | "speaker" | "send" }) {
+  const paths = {
+    clip: <path d="M20 11.5 12.6 19a5 5 0 0 1-7.1-7.1l7.8-7.8a3.4 3.4 0 0 1 4.8 4.8l-7.8 7.8a1.8 1.8 0 0 1-2.5-2.5l7-7" />,
+    mic: <path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-5a3.5 3.5 0 1 0-7 0v5A3.5 3.5 0 0 0 12 15zM6 11.5a6 6 0 0 0 12 0M12 17.5V21" />,
+    stop: <rect x="7" y="7" width="10" height="10" rx="1.5" />,
+    speaker: <path d="M4 9.5v5h3.5L12 18V6L7.5 9.5H4zM15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a8 8 0 0 1 0 11" />,
+    send: <path d="M4 12h13M12 5l7 7-7 7" />,
+  };
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      {paths[kind]}
+    </svg>
+  );
+}
+
 export default function ChatPage() {
   const router = useRouter();
   const [specId, setSpecId] = useState<string | null>(null);
@@ -92,9 +107,9 @@ export default function ChatPage() {
     setError(null);
     setBusy(true);
     const displayText =
-      (text || "أرفقت ملفات 📎") +
+      (text || "أرفقت ملفات") +
       (sentAttachments.length
-        ? "\n" + sentAttachments.map((f) => `📎 ${f.name}`).join("\n")
+        ? "\n" + sentAttachments.map((f) => `مرفق: ${f.name}`).join("\n")
         : "");
     setMessages((m) => [
       ...m,
@@ -213,7 +228,8 @@ export default function ChatPage() {
                 : "الصوت عبر المتصفح (شغّل VoiceStudio لجودة أعلى)"
             }
           >
-            {voice.speakEnabled ? "🔊 الردود مسموعة" : "🔇 اسمع الردود"}
+            <ToolIcon kind="speaker" />
+            {voice.speakEnabled ? "الردود مسموعة" : "اسمع الردود"}
           </button>
         ) : (
           <span className="w-20" />
@@ -227,9 +243,9 @@ export default function ChatPage() {
             className={`flex ${m.role === "user" ? "justify-start" : "justify-end"}`}
           >
             <div
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-[0.93rem] leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[85%] rounded-2xl px-4 py-3 text-[0.9rem] leading-relaxed whitespace-pre-wrap ${
                 m.role === "user"
-                  ? "bg-gradient-to-l from-cyan-500/20 to-cyan-400/10 border border-cyan-400/20"
+                  ? "bg-[var(--accent-soft)] border border-[var(--line)]"
                   : "card"
               }`}
             >
@@ -258,7 +274,7 @@ export default function ChatPage() {
       {confirmed && !flowId && (
         <div className="mb-3 card border-emerald-400/40 px-4 py-3 flex items-center justify-between gap-4">
           <span className="text-sm text-emerald-300">
-            ✅ اكتملت المواصفة وتم تأكيدها — جاهزة للتقييم.
+            اكتملت المواصفة وتم تأكيدها — جاهزة للتقييم.
           </span>
           <button className="btn btn-primary" onClick={evaluate} disabled={evaluating}>
             {evaluating ? "نقيّم..." : "اعرض التقييم ←"}
@@ -291,7 +307,7 @@ export default function ChatPage() {
               key={f.id}
               className="chip border-cyan-400/40 text-cyan-200 bg-cyan-400/10 gap-2"
             >
-              📎 {f.name}
+              {f.name}
               <span className="text-slate-500 text-[0.6rem]" dir="ltr">
                 {Math.round(f.size / 1024)}KB
               </span>
@@ -324,7 +340,8 @@ export default function ChatPage() {
             <button
               key={opt}
               onClick={() => send(undefined, opt)}
-              className="rounded-full border border-cyan-400/40 bg-cyan-400/10 text-cyan-200 px-4 py-2 text-sm font-semibold hover:bg-cyan-400/20 hover:-translate-y-0.5 transition-all"
+              className="rounded-full border px-4 py-2 text-[0.83rem] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] transition-colors hover:border-[var(--accent-bg)]"
+              style={{ borderColor: "color-mix(in srgb, var(--accent-bg) 35%, transparent)" }}
             >
               {opt}
             </button>
@@ -334,9 +351,9 @@ export default function ChatPage() {
               setOptions([]);
               textInputRef.current?.focus();
             }}
-            className="rounded-full border border-[var(--line)] bg-[var(--well)] text-slate-400 px-4 py-2 text-sm hover:text-slate-200 transition-colors"
+            className="rounded-full border border-[var(--line)] text-[var(--text-soft)] px-4 py-2 text-[0.83rem] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
           >
-            ✏️ أخرى — أكتبها بنفسي
+            أخرى — أكتبها بنفسي
           </button>
         </div>
       )}
@@ -347,13 +364,9 @@ export default function ChatPage() {
           onClick={() => fileInputRef.current?.click()}
           disabled={busy || uploading || attachments.length >= 3}
           title="أرفق ملفات (صور، PDF، بيانات) — حتى 3 ملفات"
-          className={`shrink-0 w-11 h-11 rounded-full border flex items-center justify-center text-lg transition-all ${
-            uploading
-              ? "border-cyan-400/50 bg-cyan-400/10 animate-pulse"
-              : "border-[var(--line)] bg-[var(--well)] hover:border-cyan-400/60"
-          }`}
+          className={`tool-btn ${uploading ? "animate-pulse" : ""}`}
         >
-          {uploading ? "…" : "📎"}
+          <ToolIcon kind="clip" />
         </button>
         {voice.mode !== "none" && (
           <button
@@ -367,22 +380,22 @@ export default function ChatPage() {
                   ? "تكلّم — التفريغ محلي عبر VoiceStudio"
                   : "تكلّم — عبر مايك المتصفح"
             }
-            className={`shrink-0 w-11 h-11 rounded-full border flex items-center justify-center text-lg transition-all ${
+            className={`tool-btn ${
               voice.recording
-                ? "border-red-400 bg-red-500/20 animate-pulse"
+                ? "!border-[var(--bad)] !text-[var(--bad)] animate-pulse"
                 : voice.transcribing
-                  ? "border-cyan-400/50 bg-cyan-400/10"
-                  : "border-[var(--line)] bg-[var(--well)] hover:border-cyan-400/60"
+                  ? "animate-pulse"
+                  : ""
             }`}
           >
-            {voice.recording ? "⏹" : voice.transcribing ? "…" : "🎙️"}
+            <ToolIcon kind={voice.recording ? "stop" : "mic"} />
           </button>
         )}
         <input
           ref={textInputRef}
           className="input flex-1"
           placeholder={
-            voice.recording ? "🎙️ نسمعك... تكلّم عن مهمتك" : "اكتب هنا... أو اضغط المايك وتكلّم"
+            voice.recording ? "نسمعك... تكلّم عن مهمتك" : "اكتب هنا... أو اضغط المايك وتكلّم"
           }
           value={input}
           onChange={(e) => setInput(e.target.value)}

@@ -50,7 +50,7 @@ export default function SettingsPage() {
 
       <div className="space-y-4">
         <section className="card p-5">
-          <h2 className="font-bold text-sm mb-4">👤 الحساب</h2>
+          <h2 className="font-semibold text-sm mb-4">الحساب</h2>
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <p className="text-xs text-slate-400 mb-1">البريد الإلكتروني</p>
@@ -65,7 +65,7 @@ export default function SettingsPage() {
         </section>
 
         <section className="card p-5">
-          <h2 className="font-bold text-sm mb-4">🎙️ الصوت</h2>
+          <h2 className="font-semibold text-sm mb-4">الصوت</h2>
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm text-slate-200 mb-1">اسمع ردود سِمَاط صوتيًا</p>
@@ -81,13 +81,13 @@ export default function SettingsPage() {
                   : "border-slate-500/40 text-slate-400 bg-slate-500/5"
               }`}
             >
-              {speak ? "🔊 مفعّل" : "🔇 متوقف"}
+              {speak ? "مفعّل" : "متوقف"}
             </button>
           </div>
         </section>
 
         <section className="card p-5">
-          <h2 className="font-bold text-sm mb-4">{theme === "dark" ? "🌙" : "☀️"} المظهر</h2>
+          <h2 className="font-semibold text-sm mb-4">المظهر</h2>
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm text-slate-200 mb-1">
@@ -106,13 +106,13 @@ export default function SettingsPage() {
                   : "border-amber-400/50 text-amber-300 bg-amber-400/10"
               }`}
             >
-              {theme === "dark" ? "🌙 داكن — بدّل للفاتح" : "☀️ فاتح — بدّل للداكن"}
+              {theme === "dark" ? "داكن — بدّل للفاتح" : "فاتح — بدّل للداكن"}
             </button>
           </div>
         </section>
 
         <section className="card p-5">
-          <h2 className="font-bold text-sm mb-4">⚙️ محرك التنفيذ</h2>
+          <h2 className="font-semibold text-sm mb-4">محرك التنفيذ</h2>
           <p className="text-xs text-slate-400 leading-relaxed">
             مساراتك تعمل على محرك تنفيذ سحابي تديره المنصة بالكامل. مفاتيح
             حساباتك المرتبطة تُحفظ مشفّرة داخل خزنة المحرك — المنصة تحتفظ

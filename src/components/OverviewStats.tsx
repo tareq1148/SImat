@@ -1,10 +1,10 @@
 "use client";
 
-// إحصاءات النظرة العامة — بطاقات تفاعلية بأرقام متحركة وحلقة نجاح، كل بطاقة تنقلك لمكانها
+// إحصاءات النظرة العامة — أرقام متحركة بلون واحد منضبط؛ كل بطاقة تنقلك لمكانها
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
-function useCountUp(target: number, duration = 900) {
+function useCountUp(target: number, duration = 800) {
   const [value, setValue] = useState(0);
   const raf = useRef<number>(0);
   useEffect(() => {
@@ -22,29 +22,23 @@ function useCountUp(target: number, duration = 900) {
 }
 
 function Ring({ pct }: { pct: number }) {
-  const r = 20;
+  const r = 19;
   const c = 2 * Math.PI * r;
   const animated = useCountUp(pct);
   return (
-    <svg width="52" height="52" viewBox="0 0 52 52" className="-rotate-90">
-      <circle cx="26" cy="26" r={r} fill="none" stroke="var(--line-soft)" strokeWidth="5" />
+    <svg width="48" height="48" viewBox="0 0 48 48" className="-rotate-90">
+      <circle cx="24" cy="24" r={r} fill="none" stroke="var(--line-soft)" strokeWidth="4.5" />
       <circle
-        cx="26"
-        cy="26"
+        cx="24"
+        cy="24"
         r={r}
         fill="none"
-        stroke="url(#ringGrad)"
-        strokeWidth="5"
+        stroke="var(--accent-bg)"
+        strokeWidth="4.5"
         strokeLinecap="round"
         strokeDasharray={c}
         strokeDashoffset={c - (c * animated) / 100}
       />
-      <defs>
-        <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#22d3ee" />
-          <stop offset="100%" stopColor="#a78bfa" />
-        </linearGradient>
-      </defs>
     </svg>
   );
 }
@@ -66,7 +60,7 @@ function StatIcon({ kind }: { kind: "bolt" | "check" | "clock" }) {
     ),
   };
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       {paths[kind]}
     </svg>
   );
@@ -76,15 +70,20 @@ function Num({ value, suffix }: { value: number; suffix?: string }) {
   const v = useCountUp(value);
   const shown = Number.isInteger(value) ? Math.round(v) : Math.round(v * 10) / 10;
   return (
-    <span className="text-[1.7rem] font-bold leading-none tabular-nums">
+    <span className="text-[1.55rem] font-bold leading-none tabular-nums">
       {shown}
-      {suffix && <span className="text-sm font-semibold mr-1">{suffix}</span>}
+      {suffix && (
+        <span className="text-[0.78rem] font-semibold text-[var(--text-soft)] mr-1">{suffix}</span>
+      )}
     </span>
   );
 }
 
 const tileCls =
-  "card p-5 flex items-center gap-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(34,211,238,0.10)] hover:border-cyan-400/40 group";
+  "card p-4.5 flex items-center gap-3.5 transition-colors duration-150 hover:border-[var(--accent-bg)] group";
+
+const iconBox =
+  "w-10 h-10 rounded-[10px] bg-[var(--well)] text-[var(--accent)] flex items-center justify-center shrink-0";
 
 export default function OverviewStats() {
   const [totals, setTotals] = useState<{
@@ -105,7 +104,7 @@ export default function OverviewStats() {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         {[0, 1, 2, 3].map((i) => (
-          <div key={i} className="card p-5 h-[92px] animate-pulse" />
+          <div key={i} className="card p-4 h-[84px] animate-pulse" />
         ))}
       </div>
     );
@@ -119,47 +118,47 @@ export default function OverviewStats() {
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
       <Link href="/flows" className={tileCls}>
-        <span className="w-11 h-11 rounded-xl bg-emerald-400/10 text-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+        <span className={iconBox}>
           <StatIcon kind="bolt" />
         </span>
         <span>
           <Num value={totals.active} />
-          <span className="block text-[0.7rem] text-slate-400 mt-1.5">مسار مفعّل يعمل عنك</span>
+          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">مسار مفعّل يعمل عنك</span>
         </span>
       </Link>
 
       <Link href="/progress" className={tileCls}>
-        <span className="w-11 h-11 rounded-xl bg-cyan-400/10 text-cyan-300 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+        <span className={iconBox}>
           <StatIcon kind="check" />
         </span>
         <span>
           <Num value={totals.runs_success} />
-          <span className="block text-[0.7rem] text-slate-400 mt-1.5">مهمة أُنجزت تلقائيًا</span>
+          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">مهمة أُنجزت تلقائيًا</span>
         </span>
       </Link>
 
       <Link href="/progress" className={tileCls}>
-        <span className="relative shrink-0 group-hover:scale-110 transition-transform">
+        <span className="relative shrink-0">
           <Ring pct={rate} />
-          <span className="absolute inset-0 flex items-center justify-center text-[0.68rem] font-bold text-violet-300">
+          <span className="absolute inset-0 flex items-center justify-center text-[0.62rem] font-bold tabular-nums">
             {rate}%
           </span>
         </span>
         <span>
-          <span className="block text-sm font-bold">معدل النجاح</span>
-          <span className="block text-[0.7rem] text-slate-400 mt-1.5">
+          <span className="block text-[0.85rem] font-semibold">معدل النجاح</span>
+          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">
             {totals.runs_total ? `من ${totals.runs_total} تشغيلة` : "بانتظار أول تشغيلة"}
           </span>
         </span>
       </Link>
 
       <Link href="/progress" className={tileCls}>
-        <span className="w-11 h-11 rounded-xl bg-amber-400/10 text-amber-300 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+        <span className={iconBox}>
           <StatIcon kind="clock" />
         </span>
         <span>
           <Num value={hours} suffix="ساعة" />
-          <span className="block text-[0.7rem] text-slate-400 mt-1.5">رجعت لك من وقتك</span>
+          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">رجعت لك من وقتك</span>
         </span>
       </Link>
     </div>
