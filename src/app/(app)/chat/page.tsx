@@ -11,6 +11,23 @@ interface Msg {
   text: string;
 }
 
+// خيارات سريعة يقترحها سِمَاط بصيغة [[خيارات: أ | ب]] — تُعرض أزرارًا وتُخفى من النص
+const OPTIONS_RE = /\[\[خيارات:([^\]]*)\]\]/;
+
+function extractOptions(text: string): string[] {
+  const m = text.match(OPTIONS_RE);
+  if (!m) return [];
+  return m[1]
+    .split("|")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function cleanText(text: string): string {
+  // يزيل الصيغة كاملة أو ناقصة أثناء البث حتى لا تومض للمستخدم
+  return text.replace(OPTIONS_RE, "").replace(/\[\[خيارات:[^\]]*$/, "").trimEnd();
+}
+
 export default function ChatPage() {
   const router = useRouter();
   const [specId, setSpecId] = useState<string | null>(null);
@@ -30,7 +47,9 @@ export default function ChatPage() {
     { id: string; name: string; size: number }[]
   >([]);
   const [uploading, setUploading] = useState(false);
+  const [options, setOptions] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const voice = useVoice((text) => {
     send(undefined, text);
@@ -69,6 +88,7 @@ export default function ChatPage() {
     const sentAttachments = attachments;
     setAttachments([]);
     setInput("");
+    setOptions([]);
     setError(null);
     setBusy(true);
     const displayText =
@@ -130,7 +150,8 @@ export default function ChatPage() {
           }
         }
       }
-      if (assistantText.trim()) voice.speak(assistantText);
+      setOptions(extractOptions(assistantText));
+      if (assistantText.trim()) voice.speak(cleanText(assistantText));
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
       setMessages((m) => m.slice(0, -1));
@@ -212,7 +233,7 @@ export default function ChatPage() {
                   : "card"
               }`}
             >
-              {m.text ||
+              {cleanText(m.text) ||
                 (busy && i === messages.length - 1 ? (
                   <span className="inline-flex gap-1">
                     <span className="typing-dot">●</span>
@@ -297,6 +318,29 @@ export default function ChatPage() {
         onChange={(e) => uploadFiles(e.target.files)}
       />
 
+      {options.length > 0 && !busy && (
+        <div className="mb-3 flex gap-2 flex-wrap">
+          {options.map((opt) => (
+            <button
+              key={opt}
+              onClick={() => send(undefined, opt)}
+              className="rounded-full border border-cyan-400/40 bg-cyan-400/10 text-cyan-200 px-4 py-2 text-sm font-semibold hover:bg-cyan-400/20 hover:-translate-y-0.5 transition-all"
+            >
+              {opt}
+            </button>
+          ))}
+          <button
+            onClick={() => {
+              setOptions([]);
+              textInputRef.current?.focus();
+            }}
+            className="rounded-full border border-[var(--line)] bg-[var(--well)] text-slate-400 px-4 py-2 text-sm hover:text-slate-200 transition-colors"
+          >
+            ✏️ أخرى — أكتبها بنفسي
+          </button>
+        </div>
+      )}
+
       <form onSubmit={send} className="pb-6 flex gap-2 items-center">
         <button
           type="button"
@@ -335,6 +379,7 @@ export default function ChatPage() {
           </button>
         )}
         <input
+          ref={textInputRef}
           className="input flex-1"
           placeholder={
             voice.recording ? "🎙️ نسمعك... تكلّم عن مهمتك" : "اكتب هنا... أو اضغط المايك وتكلّم"

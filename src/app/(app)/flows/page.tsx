@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import StatusChip from "@/components/StatusChip";
+import FlowCard from "@/components/FlowCard";
 import type { FlowRow } from "@/lib/types";
 
 export default async function FlowsPage() {
@@ -44,37 +44,7 @@ export default async function FlowsPage() {
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {(flows as FlowRow[]).map((f) => (
-            <Link
-              key={f.id}
-              href={`/flow/${f.id}`}
-              className="card p-5 hover:border-cyan-400/40 transition-colors"
-            >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <h3 className="font-bold leading-snug">{f.name}</h3>
-                <StatusChip status={f.status} />
-              </div>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                {f.evaluation && (
-                  <span className="chip border-slate-500/40 text-slate-300 bg-slate-500/10">
-                    الجدوى {f.evaluation.score}/100
-                  </span>
-                )}
-                {(f.solution_types ?? []).map((t) => (
-                  <span
-                    key={t}
-                    className="chip border-violet-400/30 text-violet-300 bg-violet-400/5"
-                  >
-                    {t === "deterministic"
-                      ? "ثابت"
-                      : t === "ai_assisted"
-                        ? "ذكاء اصطناعي"
-                        : t === "agentic"
-                          ? "وكيلي"
-                          : "موافقة بشرية"}
-                  </span>
-                ))}
-              </div>
-            </Link>
+            <FlowCard key={f.id} flow={f} />
           ))}
         </div>
       )}
