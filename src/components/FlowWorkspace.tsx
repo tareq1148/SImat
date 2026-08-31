@@ -415,6 +415,32 @@ export default function FlowWorkspace({
 
       {tab === "canvas" && ir && (
         <div className="space-y-4">
+          {(flow.blocking?.length ?? 0) > 0 && (
+            <div
+              className="card p-5"
+              style={{ borderColor: "color-mix(in srgb, var(--warn) 45%, transparent)" }}
+            >
+              <h3 className="font-semibold text-sm mb-2 flex items-center gap-2">
+                <span className="status-dot" style={{ background: "var(--warn)" }} />
+                المعلومات الناقصة بالضبط
+              </h3>
+              <ul className="space-y-1.5 text-sm">
+                {flow.blocking!.map((b, i) => (
+                  <li key={i} className="text-[var(--text-soft)]">
+                    عقدة <span className="font-semibold text-[var(--text)]">«{b.node_label}»</span>{" "}
+                    تنقصها:{" "}
+                    <span className="text-amber-300 font-medium">
+                      {b.missing.map((m) => m.label).join("، ")}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-xs text-[var(--text-soft)] mt-3">
+                فعّل «وضع متقدم» ← اضغط العقدة ← أكمل الحقول ← «حفظ كإصدار جديد» ثم «إعادة
+                البناء».
+              </p>
+            </div>
+          )}
           <AutomationSummaryCard
             flowId={flow.id}
             variant="connections"

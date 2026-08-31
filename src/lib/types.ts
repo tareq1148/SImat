@@ -140,6 +140,9 @@ export interface FlowRow {
   evaluation: Evaluation | null;
   status: FlowStatus;
   n8n_workflow_id: string | null;
+  blocking?:
+    | { node_id: string | null; node_label: string; missing: { field: string; label: string }[] }[]
+    | null;
   current_version: number;
   created_at: string;
   updated_at: string;

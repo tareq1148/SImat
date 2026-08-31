@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { irToN8n, missingProviders, type CredentialMap } from "@/lib/adapter";
 import { activeConnections } from "@/lib/connections";
+import { validateIR } from "@/lib/validate-ir";
 import {
   activateWorkflow,
   createWorkflow,
@@ -68,6 +69,16 @@ export async function POST(
     }
   });
 
+  // فحص حتمي: أي عقدة تنقصها حقول؟ (بعد الحقن التلقائي لـchat_id)
+  const blocking = validateIR(ir);
+  if (blocking.length > 0) {
+    await supabase
+      .from("flows")
+      .update({ status: "NeedsInformation", blocking })
+      .eq("id", id);
+    return Response.json({ status: "NeedsInformation", blocking });
+  }
+
   const missing = missingProviders(ir, credMap);
   if (missing.length > 0) {
     await supabase
@@ -117,7 +128,19 @@ export async function POST(
     const paramMatch = raw.match(/parameters?: ([\w,\s]+)/);
     await supabase
       .from("flows")
-      .update({ status: "NeedsInformation" })
+      .update({
+        status: "NeedsInformation",
+        blocking: [
+          {
+            node_id: null,
+            node_label: nodeMatch?.[1] ?? "غير محددة",
+            missing: (paramMatch?.[1]?.trim().split(/[,\s]+/) ?? []).map((f) => ({
+              field: f,
+              label: f,
+            })),
+          },
+        ],
+      })
       .eq("id", id);
     return Response.json({
       status: "NeedsInformation",
@@ -129,7 +152,7 @@ export async function POST(
 
   await supabase
     .from("flows")
-    .update({ n8n_workflow_id: n8nId, status: "ReadyToTest" })
+    .update({ n8n_workflow_id: n8nId, status: "ReadyToTest", blocking: null })
     .eq("id", id);
 
   return Response.json({ status: "ReadyToTest", n8n_workflow_id: n8nId });
