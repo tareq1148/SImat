@@ -5,11 +5,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
 
 export default function SettingsPage() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
   const [speak, setSpeak] = useState(false);
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
     supabaseBrowser()
@@ -18,6 +20,10 @@ export default function SettingsPage() {
     try {
       setSpeak(localStorage.getItem("mv_speak") === "1");
     } catch {}
+    setThemeState(getTheme());
+    const onTheme = (e: Event) => setThemeState((e as CustomEvent<Theme>).detail);
+    window.addEventListener("simat-theme", onTheme);
+    return () => window.removeEventListener("simat-theme", onTheme);
   }, []);
 
   function toggleSpeak() {
@@ -81,15 +87,27 @@ export default function SettingsPage() {
         </section>
 
         <section className="card p-5">
-          <h2 className="font-bold text-sm mb-4">🌙 المظهر</h2>
+          <h2 className="font-bold text-sm mb-4">{theme === "dark" ? "🌙" : "☀️"} المظهر</h2>
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm text-slate-200 mb-1">الوضع الداكن</p>
+              <p className="text-sm text-slate-200 mb-1">
+                {theme === "dark" ? "الوضع الداكن" : "الوضع الفاتح"}
+              </p>
               <p className="text-xs text-slate-400">
-                هوية سِمَاط البصرية داكنة دائمًا — مريحة للعين في جلسات العمل الطويلة.
+                بدّل بين الداكن المريح لجلسات العمل الطويلة والفاتح الصافي لوضح النهار —
+                اختيارك محفوظ على هذا الجهاز.
               </p>
             </div>
-            <span className="chip border-cyan-400/30 text-cyan-300 bg-cyan-400/5">مفعّل</span>
+            <button
+              onClick={() => setThemeState(toggleTheme())}
+              className={`chip cursor-pointer transition-colors ${
+                theme === "dark"
+                  ? "border-cyan-400/50 text-cyan-300 bg-cyan-400/10"
+                  : "border-amber-400/50 text-amber-300 bg-amber-400/10"
+              }`}
+            >
+              {theme === "dark" ? "🌙 داكن — بدّل للفاتح" : "☀️ فاتح — بدّل للداكن"}
+            </button>
           </div>
         </section>
 

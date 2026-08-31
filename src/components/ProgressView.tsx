@@ -94,7 +94,7 @@ export default function ProgressView() {
             {level.total_closed} مهمة مقفلة إجمالًا
           </span>
         </div>
-        <div className="h-2.5 rounded-full bg-[#1c2740] overflow-hidden">
+        <div className="h-2.5 rounded-full bg-[var(--line-soft)] overflow-hidden">
           <div
             className="h-full rounded-full bg-gradient-to-l from-cyan-400 to-violet-400 transition-all duration-700"
             style={{ width: `${level.progress}%` }}
@@ -115,7 +115,7 @@ export default function ProgressView() {
         <div className="space-y-3">
           {plan.map((p, i) => (
             <div key={i} className="card p-4 flex items-start gap-4">
-              <div className="w-9 h-9 shrink-0 rounded-lg bg-[#0d1424] border border-[#23304a] flex items-center justify-center text-lg">
+              <div className="w-9 h-9 shrink-0 rounded-lg bg-[var(--well)] border border-[var(--line)] flex items-center justify-center text-lg">
                 {p.icon}
               </div>
               <div className="flex-1 min-w-0">

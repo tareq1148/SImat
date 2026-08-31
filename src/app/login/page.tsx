@@ -112,9 +112,9 @@ function LoginInner() {
         </button>
 
         <div className="flex items-center gap-3 my-5">
-          <div className="flex-1 h-px bg-[#23304a]" />
+          <div className="flex-1 h-px bg-[var(--line)]" />
           <span className="text-[0.7rem] text-slate-500">أو</span>
-          <div className="flex-1 h-px bg-[#23304a]" />
+          <div className="flex-1 h-px bg-[var(--line)]" />
         </div>
 
         <button

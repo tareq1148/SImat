@@ -173,7 +173,7 @@ export default function ChatPage() {
 
   return (
     <main className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4">
-      <div className="flex items-center justify-between py-4 border-b border-[#1c2740]">
+      <div className="flex items-center justify-between py-4 border-b border-[var(--line-soft)]">
         <Link href="/dashboard" className="text-sm text-slate-400 hover:text-white">
           → لوحة المسارات
         </Link>
@@ -306,7 +306,7 @@ export default function ChatPage() {
           className={`shrink-0 w-11 h-11 rounded-full border flex items-center justify-center text-lg transition-all ${
             uploading
               ? "border-cyan-400/50 bg-cyan-400/10 animate-pulse"
-              : "border-[#23304a] bg-[#131b2c] hover:border-cyan-400/60"
+              : "border-[var(--line)] bg-[var(--well)] hover:border-cyan-400/60"
           }`}
         >
           {uploading ? "…" : "📎"}
@@ -328,7 +328,7 @@ export default function ChatPage() {
                 ? "border-red-400 bg-red-500/20 animate-pulse"
                 : voice.transcribing
                   ? "border-cyan-400/50 bg-cyan-400/10"
-                  : "border-[#23304a] bg-[#131b2c] hover:border-cyan-400/60"
+                  : "border-[var(--line)] bg-[var(--well)] hover:border-cyan-400/60"
             }`}
           >
             {voice.recording ? "⏹" : voice.transcribing ? "…" : "🎙️"}

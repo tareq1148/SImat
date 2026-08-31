@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
 
 // الشريط الجانبي الأيمن — تقسيم الصفحة الرئيسي (سطح مكتب)، وشريط علوي قابل للتمرير (جوال)
 
@@ -14,6 +16,7 @@ type IconName =
   | "connections"
   | "settings"
   | "moon"
+  | "sun"
   | "power";
 
 function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
@@ -45,12 +48,18 @@ function Icon({ name, size = 18 }: { name: IconName; size?: number }) {
     settings: (
       <>
         <path d="M4 7h16M4 12h16M4 17h16" />
-        <circle cx="9" cy="7" r="2" fill="#0c1120" />
-        <circle cx="15" cy="12" r="2" fill="#0c1120" />
-        <circle cx="7" cy="17" r="2" fill="#0c1120" />
+        <circle cx="9" cy="7" r="2" fill="var(--panel-solid)" />
+        <circle cx="15" cy="12" r="2" fill="var(--panel-solid)" />
+        <circle cx="7" cy="17" r="2" fill="var(--panel-solid)" />
       </>
     ),
     moon: <path d="M21 13.5A8.5 8.5 0 1 1 10.5 3a7 7 0 0 0 10.5 10.5z" />,
+    sun: (
+      <>
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5 5l1.8 1.8M17.2 17.2 19 19M19 5l-1.8 1.8M6.8 17.2 5 19" />
+      </>
+    ),
     power: <path d="M12 3v8M6.3 6.5a8 8 0 1 0 11.4 0" />,
   };
   return (
@@ -85,6 +94,14 @@ const BOTTOM_NAV: { href: string; label: string; icon: IconName }[] = [
 export default function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [theme, setTheme] = useState<Theme>("dark");
+
+  useEffect(() => {
+    setTheme(getTheme());
+    const onTheme = (e: Event) => setTheme((e as CustomEvent<Theme>).detail);
+    window.addEventListener("simat-theme", onTheme);
+    return () => window.removeEventListener("simat-theme", onTheme);
+  }, []);
 
   function isActive(href: string) {
     if (href === "/flows") return pathname.startsWith("/flow"); // يشمل /flow/[id]
@@ -107,7 +124,7 @@ export default function Sidebar({ email }: { email: string | null }) {
   return (
     <>
       {/* سطح المكتب: عمود ثابت على يمين الصفحة */}
-      <aside className="hidden md:flex flex-col w-60 shrink-0 border-l border-[#1c2740] bg-[#0c1120]/70 backdrop-blur sticky top-0 h-screen px-4 py-6">
+      <aside className="hidden md:flex flex-col w-60 shrink-0 border-l border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen px-4 py-6">
         <Link href="/dashboard" className="flex items-center gap-2 px-2 mb-8">
           <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-[#06121f] text-base font-bold flex items-center justify-center">
             س
@@ -127,20 +144,21 @@ export default function Sidebar({ email }: { email: string | null }) {
         </nav>
 
         <div className="mt-auto space-y-1.5">
-          <div className="h-px bg-[#1c2740] mb-3" />
+          <div className="h-px bg-[var(--line-soft)] mb-3" />
           {BOTTOM_NAV.map((item) => (
             <Link key={item.href} href={item.href} className={itemCls(isActive(item.href))}>
               <Icon name={item.icon} />
               {item.label}
             </Link>
           ))}
-          <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-slate-400">
-            <Icon name="moon" />
-            وضع داكن
-            <span className="chip text-[0.6rem] px-2 py-0 mr-auto border-cyan-400/30 text-cyan-300 bg-cyan-400/5">
-              مفعّل
-            </span>
-          </div>
+          <button
+            onClick={() => setTheme(toggleTheme())}
+            className="w-full flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] transition-colors"
+          >
+            <Icon name={theme === "dark" ? "moon" : "sun"} />
+            {theme === "dark" ? "وضع داكن" : "وضع فاتح"}
+            <span className="theme-switch mr-auto" />
+          </button>
           <button onClick={signOut} className={`w-full ${itemCls(false)} hover:!text-red-300`}>
             <Icon name="power" />
             خروج
@@ -154,7 +172,7 @@ export default function Sidebar({ email }: { email: string | null }) {
       </aside>
 
       {/* الجوال: شريط علوي بالشعار وتنقّل أفقي */}
-      <div className="md:hidden border-b border-[#1c2740] bg-[#0c1120]/70 backdrop-blur sticky top-0 z-40">
+      <div className="md:hidden border-b border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 h-12">
           <Link href="/dashboard" className="flex items-center gap-2 font-bold">
             <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-indigo-500 text-[#06121f] text-xs font-bold flex items-center justify-center">
@@ -164,9 +182,18 @@ export default function Sidebar({ email }: { email: string | null }) {
               سِمَاط
             </span>
           </Link>
-          <button onClick={signOut} className="text-slate-400 hover:text-red-300 p-1.5" title="خروج">
-            <Icon name="power" size={17} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setTheme(toggleTheme())}
+              className="text-slate-400 hover:text-slate-200 p-1.5"
+              title={theme === "dark" ? "وضع فاتح" : "وضع داكن"}
+            >
+              <Icon name={theme === "dark" ? "moon" : "sun"} size={17} />
+            </button>
+            <button onClick={signOut} className="text-slate-400 hover:text-red-300 p-1.5" title="خروج">
+              <Icon name="power" size={17} />
+            </button>
+          </div>
         </div>
         <nav className="flex gap-1 px-3 pb-2 overflow-x-auto">
           {[...MAIN_NAV, ...BOTTOM_NAV].map((item) => (

@@ -31,7 +31,7 @@ function AppNode({ data }: NodeProps<Node<NodeData>>) {
         ? "border-amber-400/50"
         : ir.type === "trigger" || ir.type === "output"
           ? "border-cyan-400/40"
-          : "border-[#2b3a5c]";
+          : "border-[var(--edge)]";
 
   return (
     <div
@@ -39,9 +39,9 @@ function AppNode({ data }: NodeProps<Node<NodeData>>) {
       onClick={() => data.onSelect(ir)}
       className={`card ${border} px-4 py-3 w-56 cursor-pointer hover:border-cyan-300/70 transition-colors`}
     >
-      <Handle type="target" position={Position.Right} className="!bg-[#3b4a68] !w-2 !h-2" />
+      <Handle type="target" position={Position.Right} className="!bg-[var(--edge)] !w-2 !h-2" />
       <div className="flex items-center gap-2.5 mb-1.5">
-        <div className="shrink-0 w-9 h-9 rounded-lg bg-[#0d1424] border border-[#23304a] flex items-center justify-center">
+        <div className="shrink-0 w-9 h-9 rounded-lg bg-[var(--well)] border border-[var(--line)] flex items-center justify-center">
           {providerIcon(ir.provider ?? ir.type, 20)}
         </div>
         <div className="min-w-0">
@@ -72,7 +72,7 @@ function AppNode({ data }: NodeProps<Node<NodeData>>) {
           </span>
         )}
       </div>
-      <Handle type="source" position={Position.Left} className="!bg-[#3b4a68] !w-2 !h-2" />
+      <Handle type="source" position={Position.Left} className="!bg-[var(--edge)] !w-2 !h-2" />
     </div>
   );
 }
@@ -118,15 +118,15 @@ export default function FlowCanvas({
       target: e.target,
       label: e.label ?? undefined,
       animated: true,
-      labelStyle: { fill: "#8b9bb8", fontSize: 10 },
-      labelBgStyle: { fill: "#0d1424" },
+      labelStyle: { fill: "var(--text-soft)", fontSize: 10 },
+      labelBgStyle: { fill: "var(--well)" },
     }));
 
     return { nodes, edges };
   }, [ir, connectedProviders, onSelect]);
 
   return (
-    <div className="h-[440px] rounded-2xl overflow-hidden border border-[#23304a] bg-[#0b101d]">
+    <div className="h-[440px] rounded-2xl overflow-hidden border border-[var(--line)] bg-[var(--well)]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -138,7 +138,7 @@ export default function FlowCanvas({
         nodesConnectable={false}
         elementsSelectable
       >
-        <Background color="#1c2740" gap={22} />
+        <Background color="var(--line-soft)" gap={22} />
         <Controls position="bottom-left" showInteractive={false} />
       </ReactFlow>
     </div>

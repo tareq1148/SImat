@@ -1,6 +1,6 @@
 "use client";
 
-// مخطط أعمدة أسبوعي — سلسلة واحدة، لون معتمد بفحوصات إتاحة اللون (#0891b2 على #151d2e)
+// مخطط أعمدة أسبوعي — سلسلة واحدة، لون معتمد بفحوصات إتاحة اللون (#0891b2 على var(--well))
 
 import { useState } from "react";
 
@@ -50,7 +50,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
             x2={W - PAD_X}
             y1={PAD_TOP + plotH * (1 - f)}
             y2={PAD_TOP + plotH * (1 - f)}
-            stroke="#1c2740"
+            stroke="var(--line-soft)"
             strokeWidth="1"
           />
         ))}
@@ -59,7 +59,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
           x2={W - PAD_X}
           y1={PAD_TOP + plotH}
           y2={PAD_TOP + plotH}
-          stroke="#23304a"
+          stroke="var(--line)"
           strokeWidth="1.5"
         />
 
@@ -95,7 +95,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
                   textAnchor="middle"
                   fontSize="12"
                   fontWeight="700"
-                  fill="#e7ecf5"
+                  fill="var(--text)"
                 >
                   {w.closed}
                 </text>
@@ -105,7 +105,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
                 y={H - 12}
                 textAnchor="middle"
                 fontSize="10"
-                fill={i === weeks.length - 1 ? "#e7ecf5" : "#8b9bb8"}
+                fill={i === weeks.length - 1 ? "var(--text)" : "var(--text-soft)"}
                 fontWeight={i === weeks.length - 1 ? 700 : 400}
               >
                 {w.label}
@@ -139,7 +139,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
         </summary>
         <table className="w-full text-xs mt-2">
           <thead>
-            <tr className="text-slate-500 border-b border-[#1c2740]">
+            <tr className="text-slate-500 border-b border-[var(--line-soft)]">
               <th className="text-right py-1 font-medium">الأسبوع</th>
               <th className="text-right py-1 font-medium">مهام مقفلة</th>
               <th className="text-right py-1 font-medium">دقائق موفَّرة</th>
@@ -147,7 +147,7 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
           </thead>
           <tbody>
             {weeks.map((w) => (
-              <tr key={w.label} className="border-b border-[#141c30]">
+              <tr key={w.label} className="border-b border-[var(--well)]">
                 <td className="py-1">{w.label}</td>
                 <td className="py-1">{w.closed}</td>
                 <td className="py-1">{w.minutes_saved}</td>

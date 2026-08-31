@@ -113,10 +113,10 @@ export default function AutomationSummaryCard({
               className={`rounded-xl border p-3 flex flex-col items-center gap-2 text-center transition-colors ${
                 integ.status === "CONNECTED"
                   ? "border-emerald-400/40 bg-emerald-400/5"
-                  : "border-[#23304a] bg-[#0d1424]"
+                  : "border-[var(--line)] bg-[var(--well)]"
               }`}
             >
-              <div className="w-9 h-9 rounded-lg bg-[#0b101d] border border-[#23304a] flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-[var(--well)] border border-[var(--line)] flex items-center justify-center">
                 {providerIcon(integ.id, 20)}
               </div>
               <div className="text-xs font-semibold">{integ.display_name}</div>
@@ -144,7 +144,7 @@ export default function AutomationSummaryCard({
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-slate-500 border-b border-[#1c2740]">
+              <tr className="text-slate-500 border-b border-[var(--line-soft)]">
                 <th className="text-right py-1.5 pl-2 font-medium">#</th>
                 <th className="text-right py-1.5 pl-2 font-medium">الخطوة</th>
                 <th className="text-right py-1.5 pl-2 font-medium">النوع</th>
@@ -156,7 +156,7 @@ export default function AutomationSummaryCard({
               {data.steps_breakdown.map((s) => {
                 const badge = TYPE_BADGES[s.execution_type] ?? TYPE_BADGES.deterministic;
                 return (
-                  <tr key={s.step_number} className="border-b border-[#141c30]">
+                  <tr key={s.step_number} className="border-b border-[var(--well)]">
                     <td className="py-1.5 pl-2 text-slate-500">{s.step_number}</td>
                     <td className="py-1.5 pl-2 text-slate-200">{s.action}</td>
                     <td className="py-1.5 pl-2">
@@ -176,7 +176,7 @@ export default function AutomationSummaryCard({
         </div>
       )}
 
-      <div className="flex items-center justify-between gap-3 flex-wrap pt-1 border-t border-[#1c2740]">
+      <div className="flex items-center justify-between gap-3 flex-wrap pt-1 border-t border-[var(--line-soft)]">
         <div className="text-[0.7rem] text-slate-400">
           محرك التنفيذ:{" "}
           <span className="text-slate-200 font-semibold">

@@ -13,7 +13,7 @@ export default function EvaluationView({ ev }: { ev: Evaluation }) {
       <div className="card p-6 flex items-center gap-6">
         <div className="relative w-24 h-24 shrink-0">
           <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
-            <circle cx="50" cy="50" r="42" fill="none" stroke="#1c2740" strokeWidth="10" />
+            <circle cx="50" cy="50" r="42" fill="none" stroke="var(--line-soft)" strokeWidth="10" />
             <circle
               cx="50"
               cy="50"
@@ -80,7 +80,7 @@ export default function EvaluationView({ ev }: { ev: Evaluation }) {
                     {f.score}/{f.max}
                   </span>
                 </div>
-                <div className="h-1.5 rounded-full bg-[#1c2740] overflow-hidden">
+                <div className="h-1.5 rounded-full bg-[var(--line-soft)] overflow-hidden">
                   <div
                     className="h-full rounded-full bg-gradient-to-l from-cyan-400 to-violet-400"
                     style={{ width: `${(f.score / f.max) * 100}%` }}

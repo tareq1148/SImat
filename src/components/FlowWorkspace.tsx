@@ -353,7 +353,7 @@ export default function FlowWorkspace({
 
   return (
     <div>
-      <div className="flex gap-2 mb-6 border-b border-[#1c2740] pb-3">
+      <div className="flex gap-2 mb-6 border-b border-[var(--line-soft)] pb-3">
         {TABS.map(([key, label]) => (
           <button
             key={key}
@@ -418,7 +418,7 @@ export default function FlowWorkspace({
             <div className="card p-5">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-[#0d1424] border border-[#23304a] flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-[var(--well)] border border-[var(--line)] flex items-center justify-center">
                     {providerIcon(selected.provider ?? selected.type, 22)}
                   </div>
                   <div>
@@ -441,7 +441,7 @@ export default function FlowWorkspace({
                 </div>
               )}
               {selected.provider && (
-                <div className="mt-4 pt-4 border-t border-[#1c2740]">
+                <div className="mt-4 pt-4 border-t border-[var(--line-soft)]">
                   {connectedProviders.includes(selected.provider) ? (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-emerald-300">
@@ -546,7 +546,7 @@ export default function FlowWorkspace({
               <p className="text-sm text-amber-300">ابنِ الحل أولًا من تبويب «الرسم والربط».</p>
             )}
             {testRuns.map((t) => (
-              <div key={t.id} className="border border-[#1c2740] rounded-xl p-4 mb-3">
+              <div key={t.id} className="border border-[var(--line-soft)] rounded-xl p-4 mb-3">
                 <div className="flex items-center gap-2 mb-3">
                   {t.passed === null ? (
                     <span className="chip border-cyan-400/40 text-cyan-300 bg-cyan-400/10">
@@ -568,19 +568,19 @@ export default function FlowWorkspace({
                 <div className="grid md:grid-cols-3 gap-3 text-xs">
                   <div>
                     <div className="text-slate-500 mb-1">المدخل</div>
-                    <pre className="bg-[#0b101d] rounded-lg p-2 overflow-auto max-h-32 text-slate-300" dir="ltr">
+                    <pre className="bg-[var(--well)] rounded-lg p-2 overflow-auto max-h-32 text-slate-300" dir="ltr">
                       {JSON.stringify(t.input, null, 1)}
                     </pre>
                   </div>
                   <div>
                     <div className="text-slate-500 mb-1">المتوقع</div>
-                    <pre className="bg-[#0b101d] rounded-lg p-2 overflow-auto max-h-32 text-slate-300" dir="ltr">
+                    <pre className="bg-[var(--well)] rounded-lg p-2 overflow-auto max-h-32 text-slate-300" dir="ltr">
                       {JSON.stringify(t.expected, null, 1)}
                     </pre>
                   </div>
                   <div>
                     <div className="text-slate-500 mb-1">الفعلي</div>
-                    <pre className="bg-[#0b101d] rounded-lg p-2 overflow-auto max-h-32 text-slate-300" dir="ltr">
+                    <pre className="bg-[var(--well)] rounded-lg p-2 overflow-auto max-h-32 text-slate-300" dir="ltr">
                       {t.actual ? JSON.stringify(t.actual, null, 1) : "..."}
                     </pre>
                   </div>
@@ -639,7 +639,7 @@ export default function FlowWorkspace({
                 </div>
                 <p className="text-xs text-slate-300 mb-2 leading-relaxed">{a.summary}</p>
                 {a.payload != null && (
-                  <pre className="bg-[#0b101d] rounded-lg p-2 overflow-auto max-h-40 text-[0.68rem] text-slate-300 mb-3" dir="ltr">
+                  <pre className="bg-[var(--well)] rounded-lg p-2 overflow-auto max-h-40 text-[0.68rem] text-slate-300 mb-3" dir="ltr">
                     {JSON.stringify(a.payload, null, 1)}
                   </pre>
                 )}
@@ -666,7 +666,7 @@ export default function FlowWorkspace({
               <div className="mt-4">
                 <h4 className="text-xs text-slate-400 mb-2">آخر التشغيلات</h4>
                 {runs.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between border-b border-[#1c2740] py-2 text-sm">
+                  <div key={r.id} className="flex items-center justify-between border-b border-[var(--line-soft)] py-2 text-sm">
                     <span className="text-[0.7rem] text-slate-500" dir="ltr">
                       {new Date(r.started_at).toLocaleString("ar")}
                     </span>
@@ -757,7 +757,7 @@ export default function FlowWorkspace({
                   className={`flex items-start justify-between gap-3 rounded-xl border p-3 ${
                     v.version === flow.current_version
                       ? "border-cyan-400/40 bg-cyan-400/5"
-                      : "border-[#1c2740]"
+                      : "border-[var(--line-soft)]"
                   }`}
                 >
                   <div className="min-w-0">
