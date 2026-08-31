@@ -265,7 +265,7 @@ export default function ChatPage() {
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-6">
       {messages.length === 0 && (
-        <div className="flex-1 flex flex-col justify-center space-y-9 py-10">
+        <div className="flex-1 space-y-9 pt-10 pb-6">
           <div className="rise text-center">
             <div className="flex items-center justify-center gap-2.5 mb-6">
               <span
