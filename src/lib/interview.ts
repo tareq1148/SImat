@@ -2,7 +2,9 @@
 
 import type Anthropic from "@anthropic-ai/sdk";
 
-export const INTERVIEW_MODEL = "claude-opus-5";
+// Haiku 4.5: أرخص 5 أضعاف من Opus 5 وكافٍ للمقابلة القصيرة والاستخراج المنظم
+// (لو احتجت جودة أعلى لاحقًا: "claude-sonnet-5" وسط ممتاز)
+export const INTERVIEW_MODEL = "claude-haiku-4-5";
 
 export const INTERVIEW_SYSTEM = `أنت «وَتيرة» — مساعد منصة تحويل المهام إلى أتمتة تعمل فعليًا.
 تجري مقابلة قصيرة ودودة مع مستخدم يريد أتمتة مهمة رقمية.
