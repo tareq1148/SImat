@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import FlowCanvas from "./FlowCanvas";
+import GuidedConnect from "./GuidedConnect";
 import EvaluationView from "./EvaluationView";
 import StatusChip from "./StatusChip";
 import AutomationSummaryCard from "./AutomationSummaryCard";
@@ -562,38 +563,15 @@ export default function FlowWorkspace({
                         إلغاء الاتصال
                       </button>
                     </div>
-                  ) : selected.provider === "openai" ? (
-                    <div className="space-y-2">
-                      <p className="text-xs text-slate-400">
-                        أدخل مفتاح OpenAI الخاص بك — يُحفظ مشفّرًا في خزنة محرك التنفيذ فقط ولن
-                        يظهر مرة أخرى.
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          className="input flex-1 text-xs"
-                          dir="ltr"
-                          type="password"
-                          placeholder="sk-..."
-                          value={openaiKey}
-                          onChange={(e) => setOpenaiKey(e.target.value)}
-                        />
-                        <button
-                          className="btn btn-primary text-xs"
-                          disabled={busy === "connect-openai"}
-                          onClick={() => connect("openai", openaiKey || undefined)}
-                        >
-                          {openaiKey ? "حفظ وربط" : "استخدام مفتاح المنصة"}
-                        </button>
-                      </div>
-                    </div>
                   ) : (
-                    <button
-                      className="btn btn-primary text-xs"
-                      disabled={busy === `connect-${selected.provider}`}
-                      onClick={() => connect(selected.provider as Provider)}
-                    >
-                      ربط {PROVIDER_LABELS[selected.provider]} (OAuth)
-                    </button>
+                    <GuidedConnect
+                      provider={selected.provider as Provider}
+                      onConnected={async () => {
+                        const res = await fetch("/api/connections");
+                        setConnections((await res.json()).connections ?? []);
+                        router.refresh();
+                      }}
+                    />
                   )}
                 </div>
               )}

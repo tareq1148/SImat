@@ -9,6 +9,7 @@ import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
 import { toggleLang, useLang } from "@/lib/i18n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
 import { providerIcon } from "@/components/icons";
+import GuidedConnect, { GUIDED_PROVIDERS } from "@/components/GuidedConnect";
 
 interface ConnRow {
   id: string;
@@ -17,52 +18,7 @@ interface ConnRow {
   status: string;
 }
 
-// دليل ربط موجَّه لكل تكامل يقبل توكن المستخدم — خطوات قصيرة ثم لصق
-const GUIDES: Partial<
-  Record<
-    Provider,
-    { steps: string[]; steps_en: string[]; placeholder: string; platformOption?: boolean }
-  >
-> = {
-  telegram: {
-    steps: [
-      "افتح @BotFather داخل تيليجرام",
-      "أرسل /newbot وسمِّ البوت",
-      "انسخ الـToken والصقه هنا",
-    ],
-    steps_en: [
-      "Open @BotFather inside Telegram",
-      "Send /newbot and name your bot",
-      "Copy the token and paste it here",
-    ],
-    placeholder: "123456789:AAH...",
-    platformOption: true,
-  },
-  openai: {
-    steps: ["افتح platform.openai.com/api-keys", "أنشئ Secret key جديدًا", "الصقه هنا"],
-    steps_en: ["Open platform.openai.com/api-keys", "Create a new secret key", "Paste it here"],
-    placeholder: "sk-...",
-    platformOption: true,
-  },
-  slack: {
-    steps: [
-      "api.slack.com/apps ← Create New App",
-      "OAuth & Permissions ← أضف chat:write ثم Install",
-      "انسخ Bot User OAuth Token",
-    ],
-    steps_en: [
-      "api.slack.com/apps → Create New App",
-      "OAuth & Permissions → add chat:write, then Install",
-      "Copy the Bot User OAuth Token",
-    ],
-    placeholder: "xoxb-...",
-  },
-  tiktok: {
-    steps: ["افتح developers.tiktok.com", "فعّل صلاحيات نشر الفيديو لتطبيقك", "انسخ Access Token"],
-    steps_en: ["Open developers.tiktok.com", "Enable video publish scopes", "Copy the access token"],
-    placeholder: "act....",
-  },
-};
+// الربط الموجَّه انتقل إلى مكوّن GuidedConnect المشترك
 
 export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const router = useRouter();
@@ -74,7 +30,6 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState<Provider | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [guideFor, setGuideFor] = useState<Provider | null>(null);
-  const [token, setToken] = useState("");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/connections");
@@ -110,7 +65,6 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
       const d = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(d.error ?? "تعذر الربط");
       setGuideFor(null);
-      setToken("");
       await load();
     } catch (e) {
       setErr(e instanceof Error ? e.message : "خطأ");
@@ -121,9 +75,8 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
 
   function onConnectClick(p: Provider) {
     if (connected.has(p)) return connect(p, { revoke: true });
-    if (GUIDES[p]) {
+    if (GUIDED_PROVIDERS.has(p)) {
       setErr(null);
-      setToken("");
       setGuideFor(guideFor === p ? null : p);
       return;
     }
@@ -153,7 +106,7 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
         onClick={onClose}
       />
-      <aside className="absolute inset-y-0 inline-end-0 w-[400px] max-w-[92vw] bg-[var(--panel-solid)] border-s border-[var(--line)] shadow-2xl overflow-y-auto rise" style={{ insetInlineEnd: 0 }}>
+      <aside className="absolute inset-y-0 w-[400px] max-w-[92vw] bg-[var(--panel-solid)] border-e border-[var(--line)] shadow-2xl overflow-y-auto rise" style={{ insetInlineStart: 0 }}>
         <div className="sticky top-0 bg-[var(--panel-solid)] border-b border-[var(--line-soft)] px-5 py-4 flex items-center justify-between z-10">
           <h2 className="font-bold text-[0.95rem]">{t("drawer.title")}</h2>
           <button
@@ -175,7 +128,6 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
             <div className="space-y-1.5">
               {providers.map((p) => {
                 const isOn = connected.has(p);
-                const guide = GUIDES[p];
                 const open = guideFor === p;
                 return (
                   <div key={p} className="rounded-xl border border-[var(--line-soft)]">
@@ -204,47 +156,14 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                       </button>
                     </div>
 
-                    {open && guide && !isOn && (
-                      <div className="border-t border-[var(--line-soft)] px-3.5 py-3 space-y-2.5 rise">
-                        <ol className="space-y-1.5">
-                          {(lang === "en" ? guide.steps_en : guide.steps).map((s, i) => (
-                            <li key={i} className="flex items-start gap-2 text-[0.75rem] text-[var(--text-soft)]">
-                              <span
-                                className="shrink-0 w-4.5 h-4.5 rounded-full text-[0.62rem] font-bold text-white flex items-center justify-center mt-px"
-                                style={{ background: "var(--accent-bg)" }}
-                              >
-                                {i + 1}
-                              </span>
-                              <span dir="auto">{s}</span>
-                            </li>
-                          ))}
-                        </ol>
-                        <input
-                          className="input text-xs"
-                          dir="ltr"
-                          type="password"
-                          placeholder={guide.placeholder}
-                          value={token}
-                          onChange={(e) => setToken(e.target.value)}
+                    {open && !isOn && (
+                      <div className="border-t border-[var(--line-soft)] px-3.5 py-3 rise">
+                        <GuidedConnect
+                          provider={p}
+                          onConnected={() => {
+                            load();
+                          }}
                         />
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => connect(p, { token })}
-                            disabled={busy === p || !token.trim()}
-                            className="btn btn-primary text-[0.72rem] py-1.5 flex-1"
-                          >
-                            {busy === p ? t("drawer.connecting") : t("drawer.connectMine")}
-                          </button>
-                          {guide.platformOption && (
-                            <button
-                              onClick={() => connect(p)}
-                              disabled={busy === p}
-                              className="btn btn-ghost text-[0.72rem] py-1.5"
-                            >
-                              {t("drawer.platformCred")}
-                            </button>
-                          )}
-                        </div>
                       </div>
                     )}
                   </div>

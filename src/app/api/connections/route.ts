@@ -70,6 +70,8 @@ export async function POST(req: NextRequest) {
 
   const token = (body.token ?? body.openai_api_key)?.trim();
   const maker = TOKEN_CREDS[body.provider];
+  let metadata: Record<string, string> = {};
+  let botInfo: { username: string; chat_id: string | null } | null = null;
 
   if (token && maker) {
     if (!hasN8nKey()) {
@@ -78,6 +80,33 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // تيليجرام: تحقق حقيقي من التوكن + التقاط chat_id تلقائيًا من رسالة /start
+    if (body.provider === "telegram") {
+      const me = await fetch(`https://api.telegram.org/bot${token}/getMe`)
+        .then((r) => r.json())
+        .catch(() => null);
+      if (!me?.ok) {
+        return Response.json(
+          { error: "توكن تيليجرام غير صحيح — انسخه من @BotFather كما هو (بالنقطتين والشرطة)" },
+          { status: 400 }
+        );
+      }
+      const updates = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=10`)
+        .then((r) => r.json())
+        .catch(() => null);
+      const lastChat = (updates?.result ?? [])
+        .map((u: { message?: { chat?: { id?: number } } }) => u.message?.chat?.id)
+        .filter(Boolean)
+        .pop();
+      botInfo = {
+        username: me.result.username as string,
+        chat_id: lastChat ? String(lastChat) : null,
+      };
+      label = `Telegram (@${botInfo.username})`;
+      if (botInfo.chat_id) metadata.chat_id = botInfo.chat_id;
+    }
+
     const { type, data } = maker(token);
     const cred = await createN8nCredential(
       `muhawwil-${body.provider}-${user.id.slice(0, 8)}`,
@@ -85,7 +114,8 @@ export async function POST(req: NextRequest) {
       data
     );
     credentialId = cred.id;
-    label = `${PROVIDER_LABELS[body.provider]} (حسابك)`;
+    if (body.provider !== "telegram")
+      label = `${PROVIDER_LABELS[body.provider]} (حسابك)`;
   } else {
     credentialId = PLATFORM_CREDS[body.provider];
     if (!credentialId) {
@@ -107,10 +137,11 @@ export async function POST(req: NextRequest) {
       label,
       n8n_credential_id: credentialId,
       status: "connected",
+      metadata,
     },
     { onConflict: "user_id,provider" }
   );
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  return Response.json({ ok: true, provider: body.provider, label });
+  return Response.json({ ok: true, provider: body.provider, label, bot: botInfo });
 }

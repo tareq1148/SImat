@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { UiSummary } from "@/lib/summary";
 import type { Provider } from "@/lib/types";
 import { providerIcon } from "./icons";
+import GuidedConnect, { GUIDED_PROVIDERS } from "./GuidedConnect";
 
 const TYPE_BADGES: Record<string, { label: string; cls: string }> = {
   deterministic: { label: "ثابت", cls: "border-slate-400/40 text-slate-300 bg-slate-400/10" },
@@ -41,6 +42,7 @@ export default function AutomationSummaryCard({
   const [data, setData] = useState<UiSummary | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<Provider | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch(`/api/flows/${flowId}/summary`);
@@ -128,13 +130,29 @@ export default function AutomationSummaryCard({
                 <button
                   className="btn btn-primary text-[0.68rem] px-2.5 py-1 w-full justify-center"
                   disabled={busy === integ.id}
-                  onClick={() => connect(integ.id)}
+                  onClick={() =>
+                    GUIDED_PROVIDERS.has(integ.id)
+                      ? setExpanded(expanded === integ.id ? null : integ.id)
+                      : connect(integ.id)
+                  }
                 >
                   {busy === integ.id ? "..." : integ.action_label}
                 </button>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {expanded && (
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--well)] p-4">
+          <GuidedConnect
+            provider={expanded}
+            onConnected={() => {
+              load();
+              onConnectionsChanged?.();
+            }}
+          />
         </div>
       )}
 

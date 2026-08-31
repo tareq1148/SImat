@@ -41,8 +41,19 @@ export async function POST(
   // الاتصالات المطلوبة
   const { data: conns } = await supabase
     .from("connections")
-    .select("provider, label, n8n_credential_id")
+    .select("provider, label, n8n_credential_id, metadata")
     .eq("status", "connected");
+
+  // بوت تيليجرام المتصل: نكمّل chat_id تلقائيًا لأي عقدة تنقصه — حتى تصل الرسالة فعليًا
+  const tgMeta = (conns ?? []).find((c) => c.provider === "telegram")?.metadata as
+    | { chat_id?: string }
+    | undefined;
+  if (tgMeta?.chat_id) {
+    ir.nodes.forEach((n) => {
+      if (n.provider === "telegram" && !n.params.chat_id)
+        n.params.chat_id = String(tgMeta.chat_id);
+    });
+  }
 
   const credMap: CredentialMap = {};
   (conns ?? []).forEach((c) => {
