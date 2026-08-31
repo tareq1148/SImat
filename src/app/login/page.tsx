@@ -75,7 +75,7 @@ function LoginInner() {
           {mode === "signin" ? "تسجيل الدخول" : "إنشاء حساب"}
         </h1>
         <p className="text-sm text-slate-400 mb-6">
-          محادثاتك ومساراتك واتصالاتك مرتبطة بحسابك وحدك.
+          كل شيء مرتبط بحسابك وحدك.
         </p>
         <form onSubmit={submit} className="space-y-4">
           <input

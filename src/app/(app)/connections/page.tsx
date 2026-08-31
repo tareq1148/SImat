@@ -84,8 +84,7 @@ export default function ConnectionsPage() {
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-1">الاتصالات</h1>
         <p className="text-sm text-slate-400">
-          اربط حساباتك مرة واحدة — وتستخدمها كل مساراتك. المفاتيح تُحفظ في خزنة
-          محرك التنفيذ، لا في المنصة.
+          اربط مرة واحدة — تستخدمه كل مساراتك.
         </p>
       </div>
 

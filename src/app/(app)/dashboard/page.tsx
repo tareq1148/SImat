@@ -31,9 +31,8 @@ export default async function Dashboard() {
       <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
         <div>
           <h1 className="text-[1.55rem] font-bold mb-1.5">نظرة عامة</h1>
-          <p className="text-sm text-[var(--text-soft)] max-w-lg leading-relaxed">
-            صف مهمتك المتكررة بجملة واحدة — يسألك سِمَاط سؤالًا أو سؤالين، ثم
-            يبنيها أتمتة تعمل عنك بموافقتك على كل إجراء حساس.
+          <p className="text-sm text-[var(--text-soft)]">
+            صف المهمة بجملة — والباقي على سِمَاط.
           </p>
         </div>
         <Link href="/chat" className="btn btn-primary">
@@ -85,7 +84,7 @@ export default async function Dashboard() {
           </span>
           <p className="font-semibold mb-1.5">لا توجد مسارات بعد</p>
           <p className="text-sm text-[var(--text-soft)] mb-6">
-            أول محادثة تستغرق دقيقتين — وبعدها العمل المتكرر علينا.
+            دقيقتان — وبعدها الشغل المتكرر علينا.
           </p>
           <Link href="/chat" className="btn btn-primary">
             ابدأ المحادثة الأولى

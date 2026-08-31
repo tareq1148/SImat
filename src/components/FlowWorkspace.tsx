@@ -348,7 +348,7 @@ export default function FlowWorkspace({
     ["evaluation", "التقييم"],
     ["canvas", "الرسم والربط"],
     ["run", "الاختبار والتشغيل"],
-    ["history", "🕘 الإصدارات والتقرير"],
+    ["history", "الإصدارات والتقرير"],
   ] as const;
 
   return (

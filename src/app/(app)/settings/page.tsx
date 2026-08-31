@@ -69,9 +69,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm text-slate-200 mb-1">اسمع ردود سِمَاط صوتيًا</p>
-              <p className="text-xs text-slate-400">
-                في شاشة المحادثة تُنطق الردود تلقائيًا عند التفعيل.
-              </p>
+              <p className="text-xs text-slate-400">تُنطق ردود المحادثة تلقائيًا.</p>
             </div>
             <button
               onClick={toggleSpeak}
@@ -93,10 +91,7 @@ export default function SettingsPage() {
               <p className="text-sm text-slate-200 mb-1">
                 {theme === "dark" ? "الوضع الداكن" : "الوضع الفاتح"}
               </p>
-              <p className="text-xs text-slate-400">
-                بدّل بين الداكن المريح لجلسات العمل الطويلة والفاتح الصافي لوضح النهار —
-                اختيارك محفوظ على هذا الجهاز.
-              </p>
+              <p className="text-xs text-slate-400">اختيارك محفوظ على هذا الجهاز.</p>
             </div>
             <button
               onClick={() => setThemeState(toggleTheme())}
@@ -114,10 +109,8 @@ export default function SettingsPage() {
         <section className="card p-5">
           <h2 className="font-semibold text-sm mb-4">محرك التنفيذ</h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            مساراتك تعمل على محرك تنفيذ سحابي تديره المنصة بالكامل. مفاتيح
-            حساباتك المرتبطة تُحفظ مشفّرة داخل خزنة المحرك — المنصة تحتفظ
-            بمراجع الاتصال فقط، ولا يُنفَّذ أي إرسال حسّاس دون موافقتك داخل
-            المنصة.
+            محرك سحابي تديره المنصة. مفاتيحك مشفّرة في خزنته، ولا إرسال حساس
+            دون موافقتك.
           </p>
         </section>
       </div>

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import {
   Background,
+  BackgroundVariant,
   Controls,
   Handle,
   Position,
@@ -13,7 +14,6 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { IRNode, Provider, WorkflowIR } from "@/lib/types";
-import { providerIcon } from "./icons";
 
 interface NodeData extends Record<string, unknown> {
   ir: IRNode;
@@ -21,58 +21,99 @@ interface NodeData extends Record<string, unknown> {
   onSelect: (n: IRNode) => void;
 }
 
+// تصنيف لاتيني صغير فوق العنوان — أسلوب لوحات الأتمتة العالمية
+function category(ir: IRNode): string {
+  if (ir.provider) {
+    const map: Record<Provider, string> = {
+      gmail: "GMAIL",
+      google_sheets: "SHEETS",
+      google_drive: "DRIVE",
+      openai: "AI",
+      telegram: "TELEGRAM",
+      slack: "SLACK",
+      instagram: "INSTAGRAM",
+      tiktok: "TIKTOK",
+    };
+    return map[ir.provider];
+  }
+  if (ir.type === "trigger") return "TRIGGER";
+  if (ir.type === "approval") return "APPROVAL";
+  if (ir.type === "output") return "OUTPUT";
+  return "LOGIC";
+}
+
+// رمز أبيض داخل المربع الملون
+function Glyph({ ir }: { ir: IRNode }) {
+  const key = ir.provider ?? ir.type;
+  const paths: Record<string, React.ReactNode> = {
+    trigger: <path d="M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2z" />,
+    approval: <path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6l-7-3zM9.5 12l2 2 3.5-4" />,
+    output: <path d="m5 12 5 5L20 7" />,
+    logic: <path d="M12 4v5m0 0-4 4m4-4 4 4M8 13v3m8-3v3M8 19h.01M16 19h.01" />,
+    gmail: <path d="M3 6h18v12H3zM3 7l9 6 9-6" />,
+    google_sheets: <path d="M5 4h14v16H5zM5 10h14M5 15h14M12 10v10" />,
+    google_drive: <path d="M9 4h6l6 10-3 6H6l-3-6L9 4zM9 4l6 10M15 4 9 14M3.5 14h11" />,
+    openai: <path d="M12 4v3M12 17v3M4 12h3M17 12h3M6.5 6.5 8.6 8.6M15.4 15.4l2.1 2.1M17.5 6.5l-2.1 2.1M8.6 15.4l-2.1 2.1M12 10.5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z" />,
+    telegram: <path d="m21 4-4 16-6.5-4.5L7 19l-.5-5L21 4zM21 4 6.5 14" />,
+    slack: <path d="M9 4v7M15 13v7M4 15h7M13 9h7M9 4a1.8 1.8 0 1 0-1.8 1.8M15 20a1.8 1.8 0 1 0 1.8-1.8M4 15a1.8 1.8 0 1 0 1.8 1.8M20 9a1.8 1.8 0 1 0-1.8-1.8" />,
+    instagram: (
+      <>
+        <rect x="4" y="4" width="16" height="16" rx="4.5" />
+        <circle cx="12" cy="12" r="3.5" />
+        <circle cx="17" cy="7" r="0.5" fill="white" />
+      </>
+    ),
+    tiktok: <path d="M14 4v9.5a3.8 3.8 0 1 1-3.8-3.8M14 4c.4 2.6 2 4.2 4.5 4.5" />,
+  };
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      {paths[key] ?? paths.logic}
+    </svg>
+  );
+}
+
 function AppNode({ data }: NodeProps<Node<NodeData>>) {
   const { ir, connected } = data;
   const needsConn = ir.provider !== null && !connected;
-  const border =
-    ir.type === "approval"
-      ? "border-amber-400/60"
-      : needsConn
-        ? "border-amber-400/50"
-        : ir.type === "trigger" || ir.type === "output"
-          ? "border-cyan-400/40"
-          : "border-[var(--edge)]";
+  const isApproval = ir.type === "approval";
+  const iconBg = isApproval ? "#d97706" : "var(--accent-bg)";
 
   return (
     <div
       dir="rtl"
       onClick={() => data.onSelect(ir)}
-      className={`card ${border} px-4 py-3 w-56 cursor-pointer hover:border-cyan-300/70 transition-colors`}
+      title={needsConn ? "يحتاج ربط الحساب" : ir.operation}
+      className="relative bg-[var(--surface)] border border-[var(--line)] rounded-xl px-3.5 py-3 min-w-[150px] max-w-[190px] cursor-pointer transition-colors duration-150 hover:border-[var(--accent-bg)]"
+      style={{ boxShadow: "var(--card-shadow)" }}
     >
-      <Handle type="target" position={Position.Right} className="!bg-[var(--edge)] !w-2 !h-2" />
-      <div className="flex items-center gap-2.5 mb-1.5">
-        <div className="shrink-0 w-9 h-9 rounded-lg bg-[var(--well)] border border-[var(--line)] flex items-center justify-center">
-          {providerIcon(ir.provider ?? ir.type, 20)}
-        </div>
-        <div className="min-w-0">
-          <div className="text-[0.8rem] font-bold leading-tight truncate">{ir.label}</div>
-          <div className="text-[0.65rem] text-slate-400 truncate">{ir.operation}</div>
-        </div>
-      </div>
-      <div className="flex items-center gap-1.5 flex-wrap">
-        {ir.provider && (
+      <Handle type="target" position={Position.Right} className="!bg-[var(--edge)] !w-1.5 !h-1.5 !border-0" />
+      {(needsConn || ir.sensitive !== "none") && (
+        <span
+          className="absolute top-2 end-2 status-dot"
+          style={{ background: needsConn ? "var(--warn)" : "var(--bad)" }}
+          title={needsConn ? "يحتاج ربط الحساب" : "إجراء حساس — بموافقتك"}
+        />
+      )}
+      <div className="flex items-center gap-2.5">
+        <span
+          className="shrink-0 w-[30px] h-[30px] rounded-[9px] flex items-center justify-center"
+          style={{ background: iconBg }}
+        >
+          <Glyph ir={ir} />
+        </span>
+        <span className="min-w-0">
           <span
-            className={`chip text-[0.6rem] px-2 py-0 ${
-              connected
-                ? "border-emerald-400/40 text-emerald-300 bg-emerald-400/10"
-                : "border-amber-400/50 text-amber-300 bg-amber-400/10"
-            }`}
+            dir="ltr"
+            className="block text-[0.55rem] font-semibold tracking-[0.08em] text-[var(--text-soft)] leading-none mb-1 text-right"
           >
-            {connected ? "متصل" : "يحتاج اتصالًا"}
+            {category(ir)}
           </span>
-        )}
-        {ir.sensitive !== "none" && (
-          <span className="chip text-[0.6rem] px-2 py-0 border-red-400/40 text-red-300 bg-red-400/10">
-            {ir.sensitive === "send" ? "إرسال" : "حذف"} — بموافقتك
+          <span className="block text-[0.8rem] font-semibold leading-tight truncate">
+            {ir.label}
           </span>
-        )}
-        {ir.type === "approval" && (
-          <span className="chip text-[0.6rem] px-2 py-0 border-amber-400/50 text-amber-300 bg-amber-400/10">
-            بوابة موافقة
-          </span>
-        )}
+        </span>
       </div>
-      <Handle type="source" position={Position.Left} className="!bg-[var(--edge)] !w-2 !h-2" />
+      <Handle type="source" position={Position.Left} className="!bg-[var(--edge)] !w-1.5 !h-1.5 !border-0" />
     </div>
   );
 }
@@ -89,22 +130,34 @@ export default function FlowCanvas({
   onSelect: (n: IRNode) => void;
 }) {
   const { nodes, edges } = useMemo(() => {
-    // ترتيب طولي من اليمين إلى اليسار (اتجاه القراءة العربية)
+    // ترتيب طولي من اليمين إلى اليسار (اتجاه القراءة العربية)، وتفريع رأسي عند تعدد الأهداف
     const order = new Map<string, number>();
+    const lane = new Map<string, number>();
     let idx = 0;
-    const walk = (id: string) => {
+    const walk = (id: string, depth: number) => {
       if (order.has(id)) return;
       order.set(id, idx++);
-      ir.edges.filter((e) => e.source === id).forEach((e) => walk(e.target));
+      const targets = ir.edges.filter((e) => e.source === id);
+      targets.forEach((e, i) => {
+        if (!lane.has(e.target))
+          lane.set(e.target, targets.length > 1 ? i * 2 - (targets.length - 1) : (lane.get(id) ?? 0));
+        walk(e.target, depth + 1);
+      });
     };
     const start = ir.nodes.find((n) => n.type === "trigger");
-    if (start) walk(start.id);
-    ir.nodes.forEach((n) => walk(n.id));
+    if (start) {
+      lane.set(start.id, 0);
+      walk(start.id, 0);
+    }
+    ir.nodes.forEach((n) => walk(n.id, 0));
 
     const nodes: Node<NodeData>[] = ir.nodes.map((n) => ({
       id: n.id,
       type: "app",
-      position: { x: -(order.get(n.id) ?? 0) * 280, y: (order.get(n.id) ?? 0) % 2 === 0 ? 0 : 46 },
+      position: {
+        x: -(order.get(n.id) ?? 0) * 235,
+        y: (lane.get(n.id) ?? 0) * 55 + ((order.get(n.id) ?? 0) % 2) * 14,
+      },
       data: {
         ir: n,
         connected: n.provider ? connectedProviders.includes(n.provider) : true,
@@ -117,28 +170,34 @@ export default function FlowCanvas({
       source: e.source,
       target: e.target,
       label: e.label ?? undefined,
-      animated: true,
+      type: "default",
+      style: { stroke: "var(--edge)", strokeWidth: 1.5 },
       labelStyle: { fill: "var(--text-soft)", fontSize: 10 },
-      labelBgStyle: { fill: "var(--well)" },
+      labelBgStyle: { fill: "var(--surface)" },
     }));
 
     return { nodes, edges };
   }, [ir, connectedProviders, onSelect]);
 
   return (
-    <div className="h-[440px] rounded-2xl overflow-hidden border border-[var(--line)] bg-[var(--well)]">
+    <div className="h-[440px] rounded-2xl overflow-hidden border border-[var(--line)] bg-[var(--panel-solid)]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.25 }}
+        fitViewOptions={{ padding: 0.3 }}
         proOptions={{ hideAttribution: true }}
         nodesDraggable
         nodesConnectable={false}
         elementsSelectable
       >
-        <Background color="var(--line-soft)" gap={22} />
+        <Background
+          variant={BackgroundVariant.Dots}
+          color="var(--edge)"
+          gap={18}
+          size={1.4}
+        />
         <Controls position="bottom-left" showInteractive={false} />
       </ReactFlow>
     </div>

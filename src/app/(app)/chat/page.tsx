@@ -49,7 +49,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      text: "أهلًا بك في «سِمَاط» 👋\nصف لي المهمة التي تريد أتمتتها — ماذا تفعل فيها خطوة بخطوة؟ وسأسألك عن التفاصيل الناقصة.",
+      text: "أهلًا 👋 وش المهمة اللي تاخذ وقتك؟\nصفها بجملة واحدة.",
     },
   ]);
   const [input, setInput] = useState("");
