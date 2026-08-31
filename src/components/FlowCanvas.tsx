@@ -171,6 +171,7 @@ export default function FlowCanvas({
       target: e.target,
       label: e.label ?? undefined,
       type: "default",
+      animated: true,
       style: { stroke: "var(--edge)", strokeWidth: 1.5 },
       labelStyle: { fill: "var(--text-soft)", fontSize: 10 },
       labelBgStyle: { fill: "var(--surface)" },

@@ -102,7 +102,7 @@ export default function OverviewStats() {
 
   if (!totals) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="card p-4 h-[84px] animate-pulse" />
         ))}
@@ -116,7 +116,7 @@ export default function OverviewStats() {
     : 0;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <Link href="/flows" className={tileCls}>
         <span className={iconBox}>
           <StatIcon kind="bolt" />

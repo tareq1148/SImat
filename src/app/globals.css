@@ -19,31 +19,31 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0b0e14;
-  --glow1: rgba(34, 211, 238, 0.05);
-  --glow2: rgba(34, 211, 238, 0.03);
-  --text: #e9ecf2;
-  --text-soft: #98a1b3;
-  --panel: rgba(13, 17, 24, 0.85);
-  --panel-solid: #0d1118;
-  --surface: #11151d;
-  --line: #222836;
-  --line-soft: #1a1f2b;
-  --well: #171c26;
-  --edge: #3a4356;
-  --accent: #38cde8;
+  --bg: #070a12;
+  --glow1: rgba(34, 211, 238, 0.13);
+  --glow2: rgba(139, 92, 246, 0.11);
+  --text: #eaedf4;
+  --text-soft: #97a1b5;
+  --panel: rgba(10, 14, 22, 0.72);
+  --panel-solid: #0a0e16;
+  --surface: rgba(17, 22, 32, 0.72);
+  --line: #232b3d;
+  --line-soft: #1a2130;
+  --well: rgba(28, 35, 50, 0.6);
+  --edge: #3d4761;
+  --accent: #3fd2ec;
   --accent-bg: #0891b2;
   --accent-bg-hover: #0aa5c9;
-  --accent-soft: rgba(34, 211, 238, 0.09);
+  --accent-soft: rgba(34, 211, 238, 0.1);
   --ok: #34d399;
   --warn: #fbbf24;
   --bad: #f87171;
-  --card-shadow: none;
-  --ghost-bg: transparent;
-  --ghost-bg-hover: #171c26;
+  --card-shadow: 0 0 0 1px rgba(34, 211, 238, 0.02), 0 8px 32px rgba(0, 0, 0, 0.35);
+  --ghost-bg: rgba(255, 255, 255, 0.03);
+  --ghost-bg-hover: rgba(255, 255, 255, 0.07);
   --ghost-text: #b6bdc9;
-  --input-bg: #0e121a;
-  --scrollbar: #262d3c;
+  --input-bg: rgba(13, 18, 27, 0.8);
+  --scrollbar: #283149;
 }
 
 html.light {
@@ -76,13 +76,51 @@ html.light {
 }
 
 body {
-  background:
-    radial-gradient(1000px 480px at 85% -10%, var(--glow1), transparent 60%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   font-size: 0.925rem;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* طبقة التوهج الحية — تتنفس ببطء خلف كل شيء */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(46% 38% at 82% 8%, var(--glow1), transparent 70%),
+    radial-gradient(42% 36% at 12% 92%, var(--glow2), transparent 70%);
+  animation: glowdrift 16s ease-in-out infinite alternate;
+}
+@keyframes glowdrift {
+  0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.9; }
+  100% { transform: translate3d(-2.5%, 2%, 0) scale(1.06); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
+/* دخول انسيابي للأقسام */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise { animation: rise 0.5s ease both; }
+.rise-1 { animation: rise 0.5s ease 0.08s both; }
+.rise-2 { animation: rise 0.5s ease 0.16s both; }
+.rise-3 { animation: rise 0.5s ease 0.24s both; }
+
+/* توهج خطوط المسار في الداكن */
+html:not(.light) .react-flow__edge-path {
+  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.45));
+  stroke: #22d3ee !important;
+}
+html:not(.light) .card {
+  backdrop-filter: blur(14px);
 }
 
 h1 { letter-spacing: -0.015em; }

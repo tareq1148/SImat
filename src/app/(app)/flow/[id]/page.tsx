@@ -50,8 +50,8 @@ export default async function FlowPage({
     <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
       <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
         <div>
-          <Link href="/flows" className="text-xs text-slate-400 hover:text-white">
-            → مسارات العمل
+          <Link href="/chat" className="text-xs text-slate-400 hover:text-white">
+            → الرئيسية
           </Link>
           <h1 className="text-2xl font-bold mt-1">{flow.name}</h1>
         </div>

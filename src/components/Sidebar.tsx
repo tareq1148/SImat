@@ -5,46 +5,16 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
+import SettingsDrawer from "./SettingsDrawer";
 
-// الشريط الجانبي الأيمن — تقسيم الصفحة الرئيسي (سطح مكتب)، وشريط علوي قابل للتمرير (جوال)
+// شريط أيقونات نحيف — 3 شاشات فقط، والإعدادات لوحة منزلقة
 
-type IconName =
-  | "overview"
-  | "chats"
-  | "flows"
-  | "progress"
-  | "connections"
-  | "settings"
-  | "moon"
-  | "sun"
-  | "power";
+type IconName = "chats" | "progress" | "settings" | "moon" | "sun" | "power";
 
-function Icon({ name, size = 17 }: { name: IconName; size?: number }) {
+function Icon({ name, size = 19 }: { name: IconName; size?: number }) {
   const paths: Record<IconName, React.ReactNode> = {
-    overview: (
-      <>
-        <rect x="3" y="3" width="7" height="7" rx="1.5" />
-        <rect x="14" y="3" width="7" height="7" rx="1.5" />
-        <rect x="3" y="14" width="7" height="7" rx="1.5" />
-        <rect x="14" y="14" width="7" height="7" rx="1.5" />
-      </>
-    ),
     chats: <path d="M4 4h16v12H9l-5 4V4z" />,
-    flows: (
-      <>
-        <circle cx="5" cy="6" r="2.2" />
-        <circle cx="19" cy="6" r="2.2" />
-        <circle cx="12" cy="18" r="2.2" />
-        <path d="M6.5 7.8 10.6 16M17.5 7.8 13.4 16" />
-      </>
-    ),
     progress: <path d="M4 20v-6M10 20V6M16 20v-9M21 20H3" />,
-    connections: (
-      <>
-        <path d="M10.5 13.5a4 4 0 0 0 5.7 0l2.6-2.6a4 4 0 1 0-5.7-5.7l-1.3 1.3" />
-        <path d="M13.5 10.5a4 4 0 0 0-5.7 0l-2.6 2.6a4 4 0 1 0 5.7 5.7l1.3-1.3" />
-      </>
-    ),
     settings: (
       <>
         <path d="M4 7h16M4 12h16M4 17h16" />
@@ -79,37 +49,16 @@ function Icon({ name, size = 17 }: { name: IconName; size?: number }) {
   );
 }
 
-const MAIN_NAV: { href: string; label: string; icon: IconName }[] = [
-  { href: "/dashboard", label: "نظرة عامة", icon: "overview" },
-  { href: "/chat", label: "المحادثات", icon: "chats" },
-  { href: "/flows", label: "مسارات العمل", icon: "flows" },
+const NAV: { href: string; label: string; icon: IconName }[] = [
+  { href: "/chat", label: "المحادثة", icon: "chats" },
   { href: "/progress", label: "إنجازاتي", icon: "progress" },
 ];
-
-const BOTTOM_NAV: { href: string; label: string; icon: IconName }[] = [
-  { href: "/connections", label: "الاتصالات", icon: "connections" },
-  { href: "/settings", label: "الإعدادات", icon: "settings" },
-];
-
-function Brand({ size = "md" }: { size?: "sm" | "md" }) {
-  const box = size === "md" ? "w-8 h-8 rounded-[10px] text-[0.95rem]" : "w-7 h-7 rounded-lg text-xs";
-  return (
-    <>
-      <span
-        className={`${box} font-bold flex items-center justify-center text-white shrink-0`}
-        style={{ background: "var(--accent-bg)" }}
-      >
-        س
-      </span>
-      <span className={size === "md" ? "text-[1.05rem] font-bold" : "font-bold"}>سِمَاط</span>
-    </>
-  );
-}
 
 export default function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [theme, setTheme] = useState<Theme>("dark");
+  const [drawer, setDrawer] = useState(false);
 
   useEffect(() => {
     setTheme(getTheme());
@@ -119,7 +68,8 @@ export default function Sidebar({ email }: { email: string | null }) {
   }, []);
 
   function isActive(href: string) {
-    if (href === "/flows") return pathname.startsWith("/flow"); // يشمل /flow/[id]
+    if (href === "/chat")
+      return pathname.startsWith("/chat") || pathname.startsWith("/flow") || pathname.startsWith("/dashboard");
     return pathname === href || pathname.startsWith(href + "/");
   }
 
@@ -129,106 +79,92 @@ export default function Sidebar({ email }: { email: string | null }) {
     router.refresh();
   }
 
-  const itemCls = (active: boolean) =>
-    `relative flex items-center gap-3 rounded-[10px] px-3 py-2 text-[0.85rem] transition-colors ${
+  const railBtn = (active: boolean) =>
+    `relative w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${
       active
-        ? "bg-[var(--well)] text-[var(--text)] font-semibold"
+        ? "text-[var(--accent)] bg-[var(--accent-soft)]"
         : "text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)]"
     }`;
 
-  const indicator = (
-    <span
-      className="absolute inline-start-0 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full"
-      style={{ background: "var(--accent-bg)", insetInlineStart: 0 }}
-    />
-  );
-
   return (
     <>
-      {/* سطح المكتب: عمود ثابت على يمين الصفحة */}
-      <aside className="hidden md:flex flex-col w-[232px] shrink-0 border-l border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen px-3.5 py-5">
-        <Link href="/dashboard" className="flex items-center gap-2.5 px-2 mb-7">
-          <Brand />
+      {/* سطح المكتب: شريط أيقونات نحيف على اليمين */}
+      <aside className="hidden md:flex flex-col items-center w-16 shrink-0 border-l border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen py-5 gap-2">
+        <Link
+          href="/chat"
+          title="سِمَاط"
+          className="w-10 h-10 rounded-xl text-white text-base font-bold flex items-center justify-center mb-4"
+          style={{ background: "var(--accent-bg)", boxShadow: "0 0 18px rgba(34,211,238,0.35)" }}
+        >
+          س
         </Link>
 
-        <nav className="space-y-1">
-          {MAIN_NAV.map((item) => (
-            <Link key={item.href} href={item.href} className={itemCls(isActive(item.href))}>
-              {isActive(item.href) && indicator}
-              <Icon name={item.icon} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        {NAV.map((item) => (
+          <Link key={item.href} href={item.href} title={item.label} className={railBtn(isActive(item.href))}>
+            {isActive(item.href) && (
+              <span
+                className="absolute w-[3px] h-5 rounded-full"
+                style={{ background: "var(--accent-bg)", insetInlineStart: -10 }}
+              />
+            )}
+            <Icon name={item.icon} />
+          </Link>
+        ))}
 
-        <div className="mt-auto space-y-1">
-          <div className="h-px bg-[var(--line-soft)] mb-2.5" />
-          {BOTTOM_NAV.map((item) => (
-            <Link key={item.href} href={item.href} className={itemCls(isActive(item.href))}>
-              {isActive(item.href) && indicator}
-              <Icon name={item.icon} />
-              {item.label}
-            </Link>
-          ))}
+        <div className="mt-auto flex flex-col items-center gap-2">
+          <button onClick={() => setDrawer(true)} title="الإعدادات والاتصالات" className={railBtn(false)}>
+            <Icon name="settings" />
+          </button>
           <button
             onClick={() => setTheme(toggleTheme())}
-            className={`w-full ${itemCls(false)}`}
+            title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
+            className={railBtn(false)}
           >
             <Icon name={theme === "dark" ? "moon" : "sun"} />
-            {theme === "dark" ? "الوضع الداكن" : "الوضع الفاتح"}
-            <span className="theme-switch mr-auto" />
           </button>
-          <button onClick={signOut} className={`w-full ${itemCls(false)}`}>
+          <button onClick={signOut} title={`خروج${email ? ` — ${email}` : ""}`} className={railBtn(false)}>
             <Icon name="power" />
-            خروج
           </button>
-          {email && (
-            <p
-              dir="ltr"
-              className="px-3 pt-2 text-[0.65rem] text-[var(--text-soft)] opacity-70 truncate text-right"
-            >
-              {email}
-            </p>
-          )}
         </div>
       </aside>
 
-      {/* الجوال: شريط علوي بالشعار وتنقّل أفقي */}
+      {/* الجوال: شريط علوي مضغوط */}
       <div className="md:hidden border-b border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 z-40">
-        <div className="flex items-center justify-between px-4 h-12">
-          <Link href="/dashboard" className="flex items-center gap-2">
-            <Brand size="sm" />
+        <div className="flex items-center justify-between px-4 h-13 py-2">
+          <Link href="/chat" className="flex items-center gap-2 font-bold">
+            <span
+              className="w-8 h-8 rounded-lg text-white text-sm font-bold flex items-center justify-center"
+              style={{ background: "var(--accent-bg)" }}
+            >
+              س
+            </span>
+            سِمَاط
           </Link>
           <div className="flex items-center gap-1 text-[var(--text-soft)]">
-            <button
-              onClick={() => setTheme(toggleTheme())}
-              className="p-1.5 hover:text-[var(--text)]"
-              title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
-            >
-              <Icon name={theme === "dark" ? "moon" : "sun"} size={16} />
+            {NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={item.label}
+                className={`p-2 rounded-lg ${isActive(item.href) ? "text-[var(--accent)] bg-[var(--accent-soft)]" : ""}`}
+              >
+                <Icon name={item.icon} size={17} />
+              </Link>
+            ))}
+            <button onClick={() => setDrawer(true)} title="الإعدادات" className="p-2">
+              <Icon name="settings" size={17} />
             </button>
-            <button onClick={signOut} className="p-1.5 hover:text-[var(--text)]" title="خروج">
-              <Icon name="power" size={16} />
+            <button onClick={() => setTheme(toggleTheme())} className="p-2" title="الثيم">
+              <Icon name={theme === "dark" ? "moon" : "sun"} size={17} />
+            </button>
+            <button onClick={signOut} className="p-2" title="خروج">
+              <Icon name="power" size={17} />
             </button>
           </div>
         </div>
-        <nav className="flex gap-1 px-3 pb-2 overflow-x-auto">
-          {[...MAIN_NAV, ...BOTTOM_NAV].map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs transition-colors ${
-                isActive(item.href)
-                  ? "bg-[var(--well)] text-[var(--text)] font-semibold"
-                  : "text-[var(--text-soft)]"
-              }`}
-            >
-              <Icon name={item.icon} size={13} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
       </div>
+
+      {drawer && <SettingsDrawer onClose={() => setDrawer(false)} />}
     </>
   );
 }

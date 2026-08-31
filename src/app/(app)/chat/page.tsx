@@ -4,8 +4,58 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AutomationSummaryCard from "@/components/AutomationSummaryCard";
+import OverviewStats from "@/components/OverviewStats";
 import VoiceWave from "@/components/VoiceWave";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { useVoice } from "@/lib/useVoice";
+import type { FlowStatus } from "@/lib/types";
+
+const FLOW_DOTS: Partial<Record<FlowStatus, string>> = {
+  Ready: "var(--ok)",
+  Active: "var(--ok)",
+  NeedsRepair: "var(--bad)",
+  NotSuitable: "var(--bad)",
+  NeedsInformation: "var(--warn)",
+  NeedsConnections: "var(--warn)",
+};
+
+// مساراتك كشرائح أفقية داخل الرئيسية — بدل شاشة كاملة
+function FlowsStrip() {
+  const [flows, setFlows] = useState<
+    { id: string; name: string; status: FlowStatus }[] | null
+  >(null);
+
+  useEffect(() => {
+    supabaseBrowser()
+      .from("flows")
+      .select("id, name, status")
+      .order("updated_at", { ascending: false })
+      .limit(8)
+      .then(({ data }) => setFlows((data as never) ?? []));
+  }, []);
+
+  if (!flows || flows.length === 0) return null;
+  return (
+    <div className="rise-2">
+      <p className="text-[0.72rem] font-semibold text-[var(--text-soft)] mb-2">مساراتك</p>
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {flows.map((f) => (
+          <Link
+            key={f.id}
+            href={`/flow/${f.id}`}
+            className="shrink-0 flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2 text-[0.78rem] font-medium hover:border-[var(--accent-bg)] transition-colors"
+          >
+            <span
+              className="status-dot"
+              style={{ background: FLOW_DOTS[f.status] ?? "var(--edge)" }}
+            />
+            {f.name.length > 34 ? f.name.slice(0, 34) + "…" : f.name}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface Msg {
   role: "user" | "assistant";
@@ -47,12 +97,7 @@ function ToolIcon({ kind }: { kind: "clip" | "mic" | "stop" | "speaker" | "send"
 export default function ChatPage() {
   const router = useRouter();
   const [specId, setSpecId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      text: "أهلًا 👋 وش المهمة اللي تاخذ وقتك؟\nصفها بجملة واحدة.",
-    },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -210,33 +255,22 @@ export default function ChatPage() {
 
   return (
     <main className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4">
-      <div className="flex items-center justify-between py-3.5 border-b border-[var(--line-soft)]">
-        <Link
-          href="/dashboard"
-          title="رجوع"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m9 6 6 6-6 6" />
-          </svg>
-        </Link>
-        <span className="text-sm font-semibold">المحادثة</span>
-        {voice.mode !== "none" ? (
-          <button
-            onClick={voice.toggleSpeak}
-            title={voice.speakEnabled ? "أوقف نطق الردود" : "اسمع الردود"}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-              voice.speakEnabled
-                ? "text-[var(--accent)] bg-[var(--accent-soft)]"
-                : "text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)]"
-            }`}
-          >
-            <ToolIcon kind="speaker" />
-          </button>
-        ) : (
-          <span className="w-8" />
-        )}
-      </div>
+      {messages.length === 0 && (
+        <div className="pt-14 pb-8 space-y-8">
+          <div className="rise text-center">
+            <h1 className="text-[1.9rem] md:text-[2.3rem] font-bold leading-snug mb-2.5">
+              وش المهمة اللي تاخذ وقتك؟
+            </h1>
+            <p className="text-[0.95rem] text-[var(--text-soft)]">
+              صفها بجملة — أو اضغط المايك وتكلّم.
+            </p>
+          </div>
+          <div className="rise-1">
+            <OverviewStats />
+          </div>
+          <FlowsStrip />
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto py-6 space-y-4">
         {messages.map((m, i) => (
@@ -405,6 +439,18 @@ export default function ChatPage() {
             }`}
           >
             <ToolIcon kind={voice.recording ? "stop" : "mic"} />
+          </button>
+        )}
+        {voice.mode !== "none" && (
+          <button
+            type="button"
+            onClick={voice.toggleSpeak}
+            title={voice.speakEnabled ? "أوقف نطق الردود" : "اسمع الردود صوتيًا"}
+            className={`tool-btn ${
+              voice.speakEnabled ? "!border-[var(--accent-bg)] !text-[var(--accent)]" : ""
+            }`}
+          >
+            <ToolIcon kind="speaker" />
           </button>
         )}
         {voice.recording ? (
