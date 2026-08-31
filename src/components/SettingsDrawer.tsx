@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
+import { toggleLang, useLang } from "@/lib/i18n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
 import { providerIcon } from "@/components/icons";
 
@@ -18,7 +19,10 @@ interface ConnRow {
 
 // دليل ربط موجَّه لكل تكامل يقبل توكن المستخدم — خطوات قصيرة ثم لصق
 const GUIDES: Partial<
-  Record<Provider, { steps: string[]; placeholder: string; platformOption?: boolean }>
+  Record<
+    Provider,
+    { steps: string[]; steps_en: string[]; placeholder: string; platformOption?: boolean }
+  >
 > = {
   telegram: {
     steps: [
@@ -26,11 +30,17 @@ const GUIDES: Partial<
       "أرسل /newbot وسمِّ البوت",
       "انسخ الـToken والصقه هنا",
     ],
+    steps_en: [
+      "Open @BotFather inside Telegram",
+      "Send /newbot and name your bot",
+      "Copy the token and paste it here",
+    ],
     placeholder: "123456789:AAH...",
     platformOption: true,
   },
   openai: {
     steps: ["افتح platform.openai.com/api-keys", "أنشئ Secret key جديدًا", "الصقه هنا"],
+    steps_en: ["Open platform.openai.com/api-keys", "Create a new secret key", "Paste it here"],
     placeholder: "sk-...",
     platformOption: true,
   },
@@ -40,16 +50,23 @@ const GUIDES: Partial<
       "OAuth & Permissions ← أضف chat:write ثم Install",
       "انسخ Bot User OAuth Token",
     ],
+    steps_en: [
+      "api.slack.com/apps → Create New App",
+      "OAuth & Permissions → add chat:write, then Install",
+      "Copy the Bot User OAuth Token",
+    ],
     placeholder: "xoxb-...",
   },
   tiktok: {
     steps: ["افتح developers.tiktok.com", "فعّل صلاحيات نشر الفيديو لتطبيقك", "انسخ Access Token"],
+    steps_en: ["Open developers.tiktok.com", "Enable video publish scopes", "Copy the access token"],
     placeholder: "act....",
   },
 };
 
 export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
   const router = useRouter();
+  const { lang, t } = useLang();
   const [email, setEmail] = useState<string | null>(null);
   const [theme, setThemeState] = useState<Theme>("dark");
   const [speak, setSpeak] = useState(false);
@@ -136,9 +153,9 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
         className="absolute inset-0 bg-black/55 backdrop-blur-sm"
         onClick={onClose}
       />
-      <aside className="absolute inset-y-0 right-0 w-[400px] max-w-[92vw] bg-[var(--panel-solid)] border-l border-[var(--line)] shadow-2xl overflow-y-auto rise">
+      <aside className="absolute inset-y-0 inline-end-0 w-[400px] max-w-[92vw] bg-[var(--panel-solid)] border-s border-[var(--line)] shadow-2xl overflow-y-auto rise" style={{ insetInlineEnd: 0 }}>
         <div className="sticky top-0 bg-[var(--panel-solid)] border-b border-[var(--line-soft)] px-5 py-4 flex items-center justify-between z-10">
-          <h2 className="font-bold text-[0.95rem]">الإعدادات</h2>
+          <h2 className="font-bold text-[0.95rem]">{t("drawer.title")}</h2>
           <button
             onClick={onClose}
             className="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)]"
@@ -153,7 +170,7 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
         <div className="p-5 space-y-7">
           <section>
             <h3 className="text-[0.75rem] font-semibold text-[var(--text-soft)] mb-3">
-              الاتصالات
+              {t("drawer.connections")}
             </h3>
             <div className="space-y-1.5">
               {providers.map((p) => {
@@ -183,14 +200,14 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                         }`}
                         style={isOn ? undefined : { background: "var(--accent-bg)" }}
                       >
-                        {busy === p ? "..." : isOn ? "فصل" : "+ اربط"}
+                        {busy === p ? "..." : isOn ? t("drawer.disconnect") : t("drawer.connect")}
                       </button>
                     </div>
 
                     {open && guide && !isOn && (
                       <div className="border-t border-[var(--line-soft)] px-3.5 py-3 space-y-2.5 rise">
                         <ol className="space-y-1.5">
-                          {guide.steps.map((s, i) => (
+                          {(lang === "en" ? guide.steps_en : guide.steps).map((s, i) => (
                             <li key={i} className="flex items-start gap-2 text-[0.75rem] text-[var(--text-soft)]">
                               <span
                                 className="shrink-0 w-4.5 h-4.5 rounded-full text-[0.62rem] font-bold text-white flex items-center justify-center mt-px"
@@ -216,7 +233,7 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                             disabled={busy === p || !token.trim()}
                             className="btn btn-primary text-[0.72rem] py-1.5 flex-1"
                           >
-                            {busy === p ? "نربط..." : "ربط بحسابي"}
+                            {busy === p ? t("drawer.connecting") : t("drawer.connectMine")}
                           </button>
                           {guide.platformOption && (
                             <button
@@ -224,7 +241,7 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                               disabled={busy === p}
                               className="btn btn-ghost text-[0.72rem] py-1.5"
                             >
-                              اعتماد المنصة
+                              {t("drawer.platformCred")}
                             </button>
                           )}
                         </div>
@@ -235,34 +252,42 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
               })}
             </div>
             <p className="mt-2.5 text-[0.68rem] text-[var(--text-soft)] opacity-80">
-              حسابات Google ترتبط عبر حساب المنصة الموثّق بضغطة واحدة. التوكنات
-              تُحفظ مشفّرة في خزنة المحرك — لا تمر على المنصة.
+              {t("drawer.googleNote")}
             </p>
             {err && <p className="mt-2 text-xs text-amber-300">{err}</p>}
           </section>
 
           <section>
             <h3 className="text-[0.75rem] font-semibold text-[var(--text-soft)] mb-3">
-              التفضيلات
+              {t("drawer.prefs")}
             </h3>
             <div className="space-y-1.5">
+              <button
+                onClick={() => toggleLang()}
+                className="w-full flex items-center justify-between rounded-xl border border-[var(--line-soft)] px-3.5 py-3 text-[0.83rem] hover:bg-[var(--well)] transition-colors"
+              >
+                {t("drawer.lang")}
+                <span className="chip chip-neutral text-[0.65rem]">
+                  {lang === "ar" ? "العربية ← English" : "English ← العربية"}
+                </span>
+              </button>
               <button
                 onClick={() => setThemeState(toggleTheme())}
                 className="w-full flex items-center justify-between rounded-xl border border-[var(--line-soft)] px-3.5 py-3 text-[0.83rem] hover:bg-[var(--well)] transition-colors"
               >
-                {theme === "dark" ? "الوضع الداكن" : "الوضع الفاتح"}
+                {theme === "dark" ? t("nav.theme.dark") : t("nav.theme.light")}
                 <span className="theme-switch" />
               </button>
               <button
                 onClick={toggleSpeakPref}
                 className="w-full flex items-center justify-between rounded-xl border border-[var(--line-soft)] px-3.5 py-3 text-[0.83rem] hover:bg-[var(--well)] transition-colors"
               >
-                نطق الردود صوتيًا
+                {t("drawer.speak")}
                 <span
                   className="chip chip-neutral text-[0.65rem]"
                   style={speak ? { color: "var(--accent)", borderColor: "var(--accent-bg)" } : undefined}
                 >
-                  {speak ? "مفعّل" : "متوقف"}
+                  {speak ? t("drawer.on") : t("drawer.off")}
                 </span>
               </button>
             </div>
@@ -277,7 +302,7 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                 onClick={signOut}
                 className="text-[0.78rem] font-semibold text-[var(--text-soft)] hover:text-[var(--bad)] shrink-0"
               >
-                تسجيل الخروج
+                {t("drawer.signout")}
               </button>
             </div>
           </section>

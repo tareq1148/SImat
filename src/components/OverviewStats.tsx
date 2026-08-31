@@ -3,6 +3,7 @@
 // إحصاءات النظرة العامة — أرقام متحركة بلون واحد منضبط؛ كل بطاقة تنقلك لمكانها
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useLang } from "@/lib/i18n";
 
 function useCountUp(target: number, duration = 800) {
   const [value, setValue] = useState(0);
@@ -86,6 +87,7 @@ const iconBox =
   "w-10 h-10 rounded-[10px] bg-[var(--well)] text-[var(--accent)] flex items-center justify-center shrink-0";
 
 export default function OverviewStats() {
+  const { lang, t } = useLang();
   const [totals, setTotals] = useState<{
     active: number;
     runs_success: number;
@@ -123,7 +125,7 @@ export default function OverviewStats() {
         </span>
         <span>
           <Num value={totals.active} />
-          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">مسار مفعّل يعمل عنك</span>
+          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">{t("stats.active")}</span>
         </span>
       </Link>
 
@@ -133,7 +135,7 @@ export default function OverviewStats() {
         </span>
         <span>
           <Num value={totals.runs_success} />
-          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">مهمة أُنجزت تلقائيًا</span>
+          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">{t("stats.done")}</span>
         </span>
       </Link>
 
@@ -145,9 +147,13 @@ export default function OverviewStats() {
           </span>
         </span>
         <span>
-          <span className="block text-[0.85rem] font-semibold">معدل النجاح</span>
+          <span className="block text-[0.85rem] font-semibold">{t("stats.rate")}</span>
           <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">
-            {totals.runs_total ? `من ${totals.runs_total} تشغيلة` : "بانتظار أول تشغيلة"}
+            {totals.runs_total
+              ? lang === "ar"
+                ? `من ${totals.runs_total} تشغيلة`
+                : `of ${totals.runs_total} runs`
+              : t("stats.rateWait")}
           </span>
         </span>
       </Link>
@@ -157,8 +163,8 @@ export default function OverviewStats() {
           <StatIcon kind="clock" />
         </span>
         <span>
-          <Num value={hours} suffix="ساعة" />
-          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">رجعت لك من وقتك</span>
+          <Num value={hours} suffix={t("stats.hoursUnit")} />
+          <span className="block text-[0.7rem] text-[var(--text-soft)] mt-1">{t("stats.hours")}</span>
         </span>
       </Link>
     </div>

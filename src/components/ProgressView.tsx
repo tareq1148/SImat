@@ -4,7 +4,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLang } from "@/lib/i18n";
 import WeeklyBars, { type WeekDatum } from "./WeeklyBars";
+
+const LEVEL_EN: Record<string, string> = {
+  "مبتدئ الأتمتة": "Automation Rookie",
+  "مُنجِز": "Achiever",
+  "متمكّن": "Proficient",
+  "خبير أتمتة": "Automation Expert",
+  "محترف سِمَاط": "Simat Pro",
+};
 
 interface ProgressData {
   headline: {
@@ -13,7 +22,7 @@ interface ProgressData {
     wow: number;
     last_week_closed: number;
   };
-  weeks: (WeekDatum & { failed: number })[];
+  weeks: (WeekDatum & { failed: number; date?: string; is_today?: boolean })[];
   level: {
     name: string;
     total_closed: number;
@@ -85,7 +94,6 @@ function DiagramNode({
 }) {
   return (
     <div
-      dir="rtl"
       className="absolute bg-[var(--surface)] border border-[var(--line)] rounded-xl px-3.5 py-3 flex items-center gap-2.5"
       style={{
         ...style,
@@ -112,7 +120,7 @@ function DiagramNode({
         >
           {category}
         </span>
-        <span className="block text-[0.78rem] font-semibold leading-tight whitespace-nowrap">
+        <span className="block text-[0.78rem] font-semibold leading-tight whitespace-nowrap truncate">
           {label}
         </span>
       </span>
@@ -134,6 +142,7 @@ function ArchDiagram({
   hours: number;
   active: number;
 }) {
+  const { t } = useLang();
   // إحداثيات ثابتة داخل حاوية 640×250 قابلة للتمرير على الجوال
   const edges = [
     { d: "M 482 125 C 452 125, 425 125, 397 125" },
@@ -177,34 +186,34 @@ function ArchDiagram({
         <DiagramNode
           kind="tasks"
           category="TASKS"
-          label="مهامك المتكررة"
+          label={t("diagram.tasks")}
           style={{ right: 4, top: 96, width: 152 }}
         />
         <DiagramNode
           kind="engine"
           category="ENGINE"
-          label="سِمَاط"
+          label={t("brand")}
           engine
           style={{ right: 243, top: 94, width: 152 }}
         />
         <DiagramNode
           kind="done"
           category="DONE"
-          label="أُنجزت تلقائيًا"
+          label={t("diagram.done")}
           value={String(closed)}
           style={{ left: 4, top: 10, width: 194 }}
         />
         <DiagramNode
           kind="time"
           category="TIME"
-          label="ساعة موفَّرة"
+          label={t("diagram.time")}
           value={String(hours)}
           style={{ left: 4, top: 97, width: 194 }}
         />
         <DiagramNode
           kind="active"
           category="ACTIVE"
-          label="مسار يعمل عنك"
+          label={t("diagram.active")}
           value={String(active)}
           style={{ left: 4, top: 184, width: 194 }}
         />
@@ -216,6 +225,7 @@ function ArchDiagram({
 /* ===== الصفحة ===== */
 
 export default function ProgressView() {
+  const { lang, t } = useLang();
   const [data, setData] = useState<ProgressData | null>(null);
   const [active, setActive] = useState(0);
   const [err, setErr] = useState<string | null>(null);
@@ -243,18 +253,29 @@ export default function ProgressView() {
 
   const { headline, weeks, level, plan } = data;
   const hours = Math.round((headline.minutes_saved_this_week / 60) * 10) / 10;
+  const chartWeeks = weeks.map((w) => ({
+    ...w,
+    label: w.is_today ? t("prog.today") : (w.date ?? w.label),
+  }));
+  const levelName = lang === "en" ? (LEVEL_EN[level.name] ?? level.name) : level.name;
   const wowChip =
     headline.wow > 0
       ? {
-          text: `أنشط من أمس بنسبة ${headline.wow}%`,
+          text:
+            lang === "ar"
+              ? `أنشط من أمس بنسبة ${headline.wow}%`
+              : `${headline.wow}% busier than yesterday`,
           cls: "border-emerald-400/40 text-emerald-300 bg-emerald-400/10",
         }
       : headline.wow < 0
         ? {
-            text: `أهدأ من أمس بنسبة ${Math.abs(headline.wow)}%`,
+            text:
+              lang === "ar"
+                ? `أهدأ من أمس بنسبة ${Math.abs(headline.wow)}%`
+                : `${Math.abs(headline.wow)}% quieter than yesterday`,
             cls: "border-amber-400/40 text-amber-300 bg-amber-400/10",
           }
-        : { text: "نفس وتيرة أمس", cls: "chip-neutral" };
+        : { text: lang === "ar" ? "نفس وتيرة أمس" : "Same pace as yesterday", cls: "chip-neutral" };
 
   return (
     <div className="space-y-5">
@@ -262,9 +283,9 @@ export default function ProgressView() {
       <div className="card p-6 rise">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-5">
           <h1 className="text-[1.35rem] font-bold">
-            اليوم: الأتمتة قفلت لك{" "}
+            {t("prog.headline")}{" "}
             <span className="text-[var(--accent)]">{headline.closed_this_week}</span>{" "}
-            {headline.closed_this_week === 1 ? "مهمة" : "مهام"}
+            {headline.closed_this_week === 1 ? t("prog.task1") : t("prog.taskN")}
           </h1>
           <span className={`chip ${wowChip.cls}`}>{wowChip.text}</span>
         </div>
@@ -272,17 +293,17 @@ export default function ProgressView() {
       </div>
 
       <div className="card p-6 rise-1">
-        <h2 className="font-semibold text-[0.95rem] mb-4">
-          مهام أقفلتها الأتمتة — آخر ٧ أيام
-        </h2>
-        <WeeklyBars weeks={weeks} />
+        <h2 className="font-semibold text-[0.95rem] mb-4">{t("prog.chart")}</h2>
+        <WeeklyBars weeks={chartWeeks} />
       </div>
 
       <div className="card p-5 rise-2">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h2 className="font-semibold text-[0.9rem]">مستواك: {level.name}</h2>
+          <h2 className="font-semibold text-[0.9rem]">
+            {t("prog.level")} {levelName}
+          </h2>
           <span className="text-xs text-[var(--text-soft)]">
-            {level.total_closed} مهمة مقفلة إجمالًا
+            {level.total_closed} {t("prog.totalClosed")}
           </span>
         </div>
         <div className="h-2 rounded-full bg-[var(--line-soft)] overflow-hidden">
@@ -293,13 +314,17 @@ export default function ProgressView() {
         </div>
         <p className="text-xs text-[var(--text-soft)] mt-2">
           {level.next
-            ? `باقي ${level.next.remaining} ${level.next.remaining === 1 ? "مهمة" : "مهام"} لمستوى «${level.next.name}»`
-            : "وصلت أعلى مستوى."}
+            ? lang === "ar"
+              ? `باقي ${level.next.remaining} ${level.next.remaining === 1 ? "مهمة" : "مهام"} لمستوى «${level.next.name}»`
+              : `${level.next.remaining} ${level.next.remaining === 1 ? "task" : "tasks"} to reach “${LEVEL_EN[level.next.name] ?? level.next.name}”`
+            : lang === "ar"
+              ? "وصلت أعلى مستوى."
+              : "You reached the top level."}
         </p>
       </div>
 
       <div className="rise-3">
-        <h2 className="font-semibold text-[0.95rem] mb-3">خطتك القادمة</h2>
+        <h2 className="font-semibold text-[0.95rem] mb-3">{t("prog.plan")}</h2>
         <div className="space-y-2.5">
           {plan.map((p, i) => (
             <div key={i} className="card p-4 flex items-center gap-3.5">

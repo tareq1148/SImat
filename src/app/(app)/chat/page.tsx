@@ -8,6 +8,7 @@ import NeuralThinking from "@/components/NeuralThinking";
 import OverviewStats from "@/components/OverviewStats";
 import VoiceWave from "@/components/VoiceWave";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import { useLang } from "@/lib/i18n";
 import { useVoice } from "@/lib/useVoice";
 import type { FlowStatus } from "@/lib/types";
 
@@ -22,6 +23,7 @@ const FLOW_DOTS: Partial<Record<FlowStatus, string>> = {
 
 // مساراتك كشرائح أفقية داخل الرئيسية — بدل شاشة كاملة
 function FlowsStrip() {
+  const { t } = useLang();
   const [flows, setFlows] = useState<
     { id: string; name: string; status: FlowStatus }[] | null
   >(null);
@@ -38,7 +40,7 @@ function FlowsStrip() {
   if (!flows || flows.length === 0) return null;
   return (
     <div className="rise-2">
-      <p className="text-[0.72rem] font-semibold text-[var(--text-soft)] mb-2">مساراتك</p>
+      <p className="text-[0.72rem] font-semibold text-[var(--text-soft)] mb-2">{t("home.flows")}</p>
       <div className="flex gap-2 overflow-x-auto pb-1">
         {flows.map((f) => (
           <Link
@@ -97,6 +99,7 @@ function ToolIcon({ kind }: { kind: "clip" | "mic" | "stop" | "speaker" | "send"
 
 export default function ChatPage() {
   const router = useRouter();
+  const { t } = useLang();
   const [specId, setSpecId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -263,11 +266,9 @@ export default function ChatPage() {
         <div className="pt-14 pb-8 space-y-8">
           <div className="rise text-center">
             <h1 className="text-[1.9rem] md:text-[2.3rem] font-bold leading-snug mb-2.5">
-              وش المهمة اللي تاخذ وقتك؟
+              {t("home.title")}
             </h1>
-            <p className="text-[0.95rem] text-[var(--text-soft)]">
-              صفها بجملة — أو اضغط المايك وتكلّم.
-            </p>
+            <p className="text-[0.95rem] text-[var(--text-soft)]">{t("home.sub")}</p>
           </div>
           <div className="rise-1">
             <OverviewStats />
@@ -313,9 +314,9 @@ export default function ChatPage() {
             <NeuralThinking phase="evaluating" />
           ) : (
             <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-emerald-300">المواصفة جاهزة للتقييم.</span>
+              <span className="text-sm text-emerald-300">{t("spec.ready")}</span>
               <button className="btn btn-primary" onClick={evaluate}>
-                اعرض التقييم ←
+                {t("spec.showEval")}
               </button>
             </div>
           )}
@@ -399,14 +400,14 @@ export default function ChatPage() {
             }}
             className="rounded-full border border-[var(--line)] text-[var(--text-soft)] px-4 py-2 text-[0.83rem] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
           >
-            أخرى — أكتبها بنفسي
+            {t("opts.other")}
           </button>
         </div>
       )}
 
       {voice.speaking && !voice.recording && (
         <div className="mb-2 card px-4 py-2 flex items-center gap-3">
-          <span className="text-[0.72rem] text-[var(--text-soft)] shrink-0">سِمَاط يتحدث</span>
+          <span className="text-[0.72rem] text-[var(--text-soft)] shrink-0">{t("voice.speaking")}</span>
           <VoiceWave mode="ambient" height={20} />
           <button
             onClick={voice.stopSpeaking}
@@ -472,14 +473,14 @@ export default function ChatPage() {
           <input
             ref={textInputRef}
             className="input flex-1"
-            placeholder="صف مهمتك..."
+            placeholder={t("input.placeholder")}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             disabled={busy}
           />
         )}
         <button className="btn btn-primary" disabled={busy || !input.trim()}>
-          إرسال
+          {t("input.send")}
         </button>
       </form>
     </main>

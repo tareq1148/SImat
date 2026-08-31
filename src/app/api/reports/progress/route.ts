@@ -54,6 +54,8 @@ export async function GET() {
     const age = 6 - idx; // 0 = اليوم
     const start = todayStart - age * DAY;
     const end = start + DAY;
+    const d = new Date(start + KSA);
+    const date = `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
     const inDay = (runs ?? []).filter((r) => {
       const t = new Date(r.started_at).getTime();
       return t >= start && t < end;
@@ -61,6 +63,8 @@ export async function GET() {
     const closed = inDay.filter((r) => r.status === "success");
     return {
       label,
+      date,
+      is_today: age === 0,
       closed: closed.length,
       failed: inDay.filter((r) => r.status === "error").length,
       minutes_saved: closed.reduce((s, r) => s + minutesOf(r.flow_id), 0),

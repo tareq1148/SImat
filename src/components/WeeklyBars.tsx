@@ -133,9 +133,11 @@ export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
         </div>
       )}
 
-      <details className="mt-3" dir="rtl">
+      <details className="mt-3">
         <summary className="text-[0.68rem] text-slate-500 cursor-pointer hover:text-slate-300">
-          عرض البيانات كجدول
+          {typeof document !== "undefined" && document.documentElement.lang === "en"
+            ? "View data as table"
+            : "عرض البيانات كجدول"}
         </summary>
         <table className="w-full text-xs mt-2">
           <thead>

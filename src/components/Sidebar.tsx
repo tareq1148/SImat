@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
+import { toggleLang, useLang } from "@/lib/i18n";
 import SettingsDrawer from "./SettingsDrawer";
 
 // شريط أيقونات نحيف — 3 شاشات فقط، والإعدادات لوحة منزلقة
@@ -49,14 +50,15 @@ function Icon({ name, size = 19 }: { name: IconName; size?: number }) {
   );
 }
 
-const NAV: { href: string; label: string; icon: IconName }[] = [
-  { href: "/chat", label: "المحادثة", icon: "chats" },
-  { href: "/progress", label: "إنجازاتي", icon: "progress" },
+const NAV: { href: string; key: string; icon: IconName }[] = [
+  { href: "/chat", key: "nav.chat", icon: "chats" },
+  { href: "/progress", key: "nav.progress", icon: "progress" },
 ];
 
 export default function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { lang, t } = useLang();
   const [theme, setTheme] = useState<Theme>("dark");
   const [drawer, setDrawer] = useState(false);
 
@@ -89,10 +91,10 @@ export default function Sidebar({ email }: { email: string | null }) {
   return (
     <>
       {/* سطح المكتب: شريط أيقونات نحيف على اليمين */}
-      <aside className="hidden md:flex flex-col items-center w-16 shrink-0 border-l border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen py-5 gap-2">
+      <aside className="hidden md:flex flex-col items-center w-16 shrink-0 border-e border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen py-5 gap-2">
         <Link
           href="/chat"
-          title="سِمَاط"
+          title={t("brand")}
           className="w-10 h-10 rounded-xl text-white text-base font-bold flex items-center justify-center mb-4"
           style={{ background: "var(--accent-bg)", boxShadow: "0 0 18px rgba(34,211,238,0.35)" }}
         >
@@ -100,7 +102,7 @@ export default function Sidebar({ email }: { email: string | null }) {
         </Link>
 
         {NAV.map((item) => (
-          <Link key={item.href} href={item.href} title={item.label} className={railBtn(isActive(item.href))}>
+          <Link key={item.href} href={item.href} title={t(item.key)} className={railBtn(isActive(item.href))}>
             {isActive(item.href) && (
               <span
                 className="absolute w-[3px] h-5 rounded-full"
@@ -112,17 +114,24 @@ export default function Sidebar({ email }: { email: string | null }) {
         ))}
 
         <div className="mt-auto flex flex-col items-center gap-2">
-          <button onClick={() => setDrawer(true)} title="الإعدادات والاتصالات" className={railBtn(false)}>
+          <button
+            onClick={() => toggleLang()}
+            title={lang === "ar" ? "English" : "العربية"}
+            className={`${railBtn(false)} text-[0.72rem] font-bold`}
+          >
+            {lang === "ar" ? "EN" : "ع"}
+          </button>
+          <button onClick={() => setDrawer(true)} title={t("nav.settings")} className={railBtn(false)}>
             <Icon name="settings" />
           </button>
           <button
             onClick={() => setTheme(toggleTheme())}
-            title={theme === "dark" ? "الوضع الفاتح" : "الوضع الداكن"}
+            title={theme === "dark" ? t("nav.theme.light") : t("nav.theme.dark")}
             className={railBtn(false)}
           >
             <Icon name={theme === "dark" ? "moon" : "sun"} />
           </button>
-          <button onClick={signOut} title={`خروج${email ? ` — ${email}` : ""}`} className={railBtn(false)}>
+          <button onClick={signOut} title={`${t("nav.signout")}${email ? ` — ${email}` : ""}`} className={railBtn(false)}>
             <Icon name="power" />
           </button>
         </div>
@@ -138,26 +147,33 @@ export default function Sidebar({ email }: { email: string | null }) {
             >
               س
             </span>
-            سِمَاط
+            {t("brand")}
           </Link>
           <div className="flex items-center gap-1 text-[var(--text-soft)]">
             {NAV.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                title={item.label}
+                title={t(item.key)}
                 className={`p-2 rounded-lg ${isActive(item.href) ? "text-[var(--accent)] bg-[var(--accent-soft)]" : ""}`}
               >
                 <Icon name={item.icon} size={17} />
               </Link>
             ))}
-            <button onClick={() => setDrawer(true)} title="الإعدادات" className="p-2">
+            <button
+              onClick={() => toggleLang()}
+              className="p-2 text-[0.7rem] font-bold"
+              title={lang === "ar" ? "English" : "العربية"}
+            >
+              {lang === "ar" ? "EN" : "ع"}
+            </button>
+            <button onClick={() => setDrawer(true)} title={t("drawer.title")} className="p-2">
               <Icon name="settings" size={17} />
             </button>
-            <button onClick={() => setTheme(toggleTheme())} className="p-2" title="الثيم">
+            <button onClick={() => setTheme(toggleTheme())} className="p-2" title="theme">
               <Icon name={theme === "dark" ? "moon" : "sun"} size={17} />
             </button>
-            <button onClick={signOut} className="p-2" title="خروج">
+            <button onClick={signOut} className="p-2" title={t("nav.signout")}>
               <Icon name="power" size={17} />
             </button>
           </div>

@@ -4,28 +4,21 @@
 // الهدف: طمأنة ومتعة بدل نقاط انتظار صمّاء
 
 import { useEffect, useMemo, useState } from "react";
+import { useLang, type Lang } from "@/lib/i18n";
 
 type Phase = "thinking" | "evaluating" | "building";
 
-const PHASE_LABELS: Record<Phase, string[]> = {
-  thinking: [
-    "نقرأ رسالتك…",
-    "نحلل المهمة…",
-    "نرسم الخطوات…",
-    "نلتقط التفاصيل المهمة…",
-  ],
-  evaluating: [
-    "نفحص بوابات الجدوى…",
-    "نحسب عوامل الأتمتة…",
-    "نحدد نوع الحل الأنسب…",
-    "نصيغ التفسير…",
-  ],
-  building: [
-    "نحوّل الرسم إلى عقد تنفيذ…",
-    "نربط التكاملات بحساباتك…",
-    "نضيف بوابات الموافقة…",
-    "ننشر في محرك التنفيذ…",
-  ],
+const PHASE_LABELS: Record<Lang, Record<Phase, string[]>> = {
+  ar: {
+    thinking: ["نقرأ رسالتك…", "نحلل المهمة…", "نرسم الخطوات…", "نلتقط التفاصيل المهمة…"],
+    evaluating: ["نفحص بوابات الجدوى…", "نحسب عوامل الأتمتة…", "نحدد نوع الحل الأنسب…", "نصيغ التفسير…"],
+    building: ["نحوّل الرسم إلى عقد تنفيذ…", "نربط التكاملات بحساباتك…", "نضيف بوابات الموافقة…", "ننشر في محرك التنفيذ…"],
+  },
+  en: {
+    thinking: ["Reading your message…", "Analyzing the task…", "Mapping the steps…", "Capturing key details…"],
+    evaluating: ["Checking feasibility gates…", "Scoring automation factors…", "Picking the best solution…", "Writing the explanation…"],
+    building: ["Turning the map into nodes…", "Wiring your integrations…", "Adding approval gates…", "Deploying to the engine…"],
+  },
 };
 
 const LAYERS = [3, 4, 4, 2];
@@ -33,8 +26,9 @@ const W = 210;
 const H = 84;
 
 export default function NeuralThinking({ phase }: { phase: Phase }) {
+  const { lang } = useLang();
   const [idx, setIdx] = useState(0);
-  const labels = PHASE_LABELS[phase];
+  const labels = PHASE_LABELS[lang][phase];
 
   useEffect(() => {
     setIdx(0);
@@ -64,7 +58,7 @@ export default function NeuralThinking({ phase }: { phase: Phase }) {
   }, []);
 
   return (
-    <div className="flex items-center gap-4" dir="rtl">
+    <div className="flex items-center gap-4">
       <svg
         width={W}
         height={H}
