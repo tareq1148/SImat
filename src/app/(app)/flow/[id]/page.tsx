@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import Header from "@/components/Header";
 import StatusChip from "@/components/StatusChip";
 import FlowWorkspace from "@/components/FlowWorkspace";
 import type {
@@ -48,27 +47,24 @@ export default async function FlowPage({
   ]);
 
   return (
-    <>
-      <Header email={user.email ?? null} />
-      <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-          <div>
-            <Link href="/dashboard" className="text-xs text-slate-400 hover:text-white">
-              → لوحة المسارات
-            </Link>
-            <h1 className="text-2xl font-bold mt-1">{flow.name}</h1>
-          </div>
-          <StatusChip status={flow.status} />
+    <main className="flex-1 max-w-6xl mx-auto w-full px-6 py-8">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
+        <div>
+          <Link href="/flows" className="text-xs text-slate-400 hover:text-white">
+            → مسارات العمل
+          </Link>
+          <h1 className="text-2xl font-bold mt-1">{flow.name}</h1>
         </div>
+        <StatusChip status={flow.status} />
+      </div>
 
-        <FlowWorkspace
-          flow={flow as FlowRow}
-          ir={(versionRow?.ir as WorkflowIR) ?? null}
-          evaluation={(flow.evaluation as Evaluation) ?? null}
-          initialConnections={(conns as ConnectionRow[]) ?? []}
-          initialTab={tab ?? "evaluation"}
-        />
-      </main>
-    </>
+      <FlowWorkspace
+        flow={flow as FlowRow}
+        ir={(versionRow?.ir as WorkflowIR) ?? null}
+        evaluation={(flow.evaluation as Evaluation) ?? null}
+        initialConnections={(conns as ConnectionRow[]) ?? []}
+        initialTab={tab ?? "evaluation"}
+      />
+    </main>
   );
 }
