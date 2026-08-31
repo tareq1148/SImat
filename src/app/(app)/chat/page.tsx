@@ -263,11 +263,11 @@ export default function ChatPage() {
   }
 
   return (
-    <main className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-4">
+    <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-6">
       {messages.length === 0 && (
-        <div className="pt-14 pb-8 space-y-8">
+        <div className="flex-1 flex flex-col justify-center space-y-9 py-10">
           <div className="rise text-center">
-            <h1 className="text-[2.1rem] md:text-[2.7rem] font-bold leading-snug mb-2.5 tracking-tight">
+            <h1 className="text-[2.1rem] md:text-[2.9rem] font-bold leading-snug mb-3 tracking-tight">
               {t("home.w1")}.{" "}
               {t("home.w2")}.{" "}
               <span className="text-[var(--accent)]">{t("home.w3")}.</span>
@@ -281,7 +281,13 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto py-6 space-y-4">
+      <div
+        className={
+          messages.length === 0
+            ? "hidden"
+            : "flex-1 overflow-y-auto py-6 space-y-4 w-full max-w-3xl mx-auto"
+        }
+      >
         {messages.map((m, i) => (
           <div
             key={i}
@@ -307,13 +313,13 @@ export default function ChatPage() {
       </div>
 
       {error && (
-        <div className="mb-3 text-sm text-red-300 bg-red-400/10 border border-red-400/30 rounded-xl px-4 py-3">
+        <div className="w-full max-w-3xl mx-auto mb-3 text-sm text-red-300 bg-red-400/10 border border-red-400/30 rounded-xl px-4 py-3">
           {error}
         </div>
       )}
 
       {confirmed && !flowId && (
-        <div className="mb-3 card px-5 py-3.5">
+        <div className="w-full max-w-3xl mx-auto mb-3 card px-5 py-3.5">
           {evaluating ? (
             <NeuralThinking phase="evaluating" />
           ) : (
@@ -328,7 +334,7 @@ export default function ChatPage() {
       )}
 
       {flowId && (
-        <div className="mb-3">
+        <div className="w-full max-w-3xl mx-auto mb-3">
           {building ? (
             <div className="card px-5 py-4">
               <NeuralThinking phase="building" />
@@ -345,14 +351,14 @@ export default function ChatPage() {
       )}
 
       {voice.error && (
-        <div className="mb-2 text-xs text-amber-300 bg-amber-400/10 border border-amber-400/30 rounded-lg px-3 py-2 flex justify-between items-center">
+        <div className="w-full max-w-3xl mx-auto mb-2 text-xs text-amber-300 bg-amber-400/10 border border-amber-400/30 rounded-lg px-3 py-2 flex justify-between items-center">
           <span>{voice.error}</span>
           <button onClick={voice.clearError} className="text-amber-400">✕</button>
         </div>
       )}
 
       {attachments.length > 0 && (
-        <div className="mb-2 flex gap-2 flex-wrap">
+        <div className="w-full max-w-3xl mx-auto mb-2 flex gap-2 flex-wrap">
           {attachments.map((f) => (
             <span
               key={f.id}
@@ -386,7 +392,7 @@ export default function ChatPage() {
       />
 
       {options.length > 0 && !busy && (
-        <div className="mb-3 flex gap-2 flex-wrap">
+        <div className="w-full max-w-3xl mx-auto mb-3 flex gap-2 flex-wrap">
           {options.map((opt) => (
             <button
               key={opt}
@@ -410,7 +416,7 @@ export default function ChatPage() {
       )}
 
       {voice.speaking && !voice.recording && (
-        <div className="mb-2 card px-4 py-2 flex items-center gap-3">
+        <div className="w-full max-w-3xl mx-auto mb-2 card px-4 py-2 flex items-center gap-3">
           <span className="text-[0.72rem] text-[var(--text-soft)] shrink-0">{t("voice.speaking")}</span>
           <VoiceWave mode="ambient" height={20} />
           <button
@@ -423,7 +429,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      <form onSubmit={send} className="pb-6 flex gap-2 items-center">
+      <form onSubmit={send} className="w-full max-w-3xl mx-auto pb-6 flex gap-2 items-center">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
