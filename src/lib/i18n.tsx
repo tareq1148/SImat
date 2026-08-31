@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export type Lang = "ar" | "en";
 
 const DICT: Record<string, { ar: string; en: string }> = {
-  brand: { ar: "وَتيرة", en: "Wateera" },
+  brand: { ar: "وَتيرة", en: "وَتيرة" },
   "nav.chat": { ar: "المحادثة", en: "Chat" },
   "nav.progress": { ar: "إنجازاتي", en: "Progress" },
   "nav.settings": { ar: "الإعدادات والاتصالات", en: "Settings & connections" },
@@ -23,7 +23,7 @@ const DICT: Record<string, { ar: string; en: string }> = {
   "input.send": { ar: "إرسال", en: "Send" },
   "input.listening": { ar: "نسمعك…", en: "Listening…" },
   "opts.other": { ar: "أخرى — أكتبها بنفسي", en: "Other — I'll type it" },
-  "voice.speaking": { ar: "وَتيرة يتحدث", en: "Wateera is speaking" },
+  "voice.speaking": { ar: "وَتيرة يتحدث", en: "وَتيرة is speaking" },
   "spec.ready": { ar: "المواصفة جاهزة للتقييم.", en: "Spec is ready for evaluation." },
   "spec.showEval": { ar: "اعرض التقييم ←", en: "Show evaluation →" },
   "stats.active": { ar: "مسار مفعّل يعمل عنك", en: "Active flows working for you" },
