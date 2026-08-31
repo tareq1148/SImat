@@ -66,6 +66,8 @@ export default function FlowWorkspace({
   );
   const [connections, setConnections] = useState(initialConnections);
   const [selected, setSelected] = useState<IRNode | null>(null);
+  const [advanced, setAdvanced] = useState(false);
+  const [editRows, setEditRows] = useState<{ k: string; v: string }[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
   const [openaiKey, setOpenaiKey] = useState("");
@@ -150,6 +152,32 @@ export default function FlowWorkspace({
       setConnections(data.connections ?? []);
       setOpenaiKey("");
       setNotice({ kind: "ok", text: `تم ربط ${PROVIDER_LABELS[provider]} ✓` });
+    } catch (err) {
+      setNotice({ kind: "err", text: err instanceof Error ? err.message : "خطأ" });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function saveNodeParams() {
+    if (!selected) return;
+    setBusy("node-save");
+    setNotice(null);
+    try {
+      const params: Record<string, string> = {};
+      editRows.forEach((r) => {
+        if (r.k.trim()) params[r.k.trim()] = r.v;
+      });
+      const data = await post(`/api/flows/${flow.id}/node`, {
+        nodeId: selected.id,
+        params,
+      });
+      setNotice({
+        kind: "ok",
+        text: `حُفظ التعديل اليدوي كإصدار ${data.version} — اضغط «إعادة البناء» لتطبيقه في المحرك.`,
+      });
+      setSelected(null);
+      router.refresh();
     } catch (err) {
       setNotice({ kind: "err", text: err instanceof Error ? err.message : "خطأ" });
     } finally {
@@ -399,19 +427,35 @@ export default function FlowWorkspace({
             <p className="text-sm text-slate-400">
               اضغط أي عقدة لمراجعتها وربطها.
             </p>
-            <button className="btn btn-primary" onClick={build} disabled={busy === "build"}>
-              {busy === "build"
-                ? "نبني في المحرك..."
-                : flow.n8n_workflow_id
-                  ? "إعادة البناء"
-                  : "ابنِ المسار"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAdvanced((a) => !a)}
+                title="تحرير حقول العقد يدويًا — للمستخدم المتمكن"
+                className={`chip cursor-pointer transition-colors ${
+                  advanced
+                    ? "border-[var(--accent-bg)] text-[var(--accent)] bg-[var(--accent-soft)]"
+                    : "chip-neutral"
+                }`}
+              >
+                وضع متقدم {advanced ? "· مفعّل" : ""}
+              </button>
+              <button className="btn btn-primary" onClick={build} disabled={busy === "build"}>
+                {busy === "build"
+                  ? "نبني في المحرك..."
+                  : flow.n8n_workflow_id
+                    ? "إعادة البناء"
+                    : "ابنِ المسار"}
+              </button>
+            </div>
           </div>
 
           <FlowCanvas
             ir={ir}
             connectedProviders={connectedProviders}
-            onSelect={setSelected}
+            onSelect={(n) => {
+              setSelected(n);
+              setEditRows(Object.entries(n.params).map(([k, v]) => ({ k, v })));
+            }}
           />
 
           {selected && (
@@ -431,14 +475,71 @@ export default function FlowWorkspace({
                 </button>
               </div>
               <p className="text-sm text-slate-300 mt-3 leading-relaxed">{selected.description}</p>
-              {Object.keys(selected.params).length > 0 && (
-                <div className="mt-3 text-xs text-slate-400 space-y-1">
-                  {Object.entries(selected.params).map(([k, v]) => (
-                    <div key={k}>
-                      <span className="text-slate-500">{k}:</span> {v}
+              {advanced && /^step-\d+$/.test(selected.id) ? (
+                <div className="mt-4 pt-4 border-t border-[var(--line-soft)] space-y-2">
+                  <p className="text-xs text-[var(--text-soft)]">
+                    تحرير يدوي — عدّل الحقول أو أضف ما ينقص (مثل spreadsheet_url أو chat_id)
+                    ثم احفظ.
+                  </p>
+                  {editRows.map((row, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <input
+                        className="input w-40 text-xs"
+                        dir="ltr"
+                        placeholder="اسم الحقل"
+                        value={row.k}
+                        onChange={(e) =>
+                          setEditRows((rs) =>
+                            rs.map((r, j) => (j === i ? { ...r, k: e.target.value } : r))
+                          )
+                        }
+                      />
+                      <input
+                        className="input flex-1 text-xs"
+                        dir="auto"
+                        placeholder="القيمة"
+                        value={row.v}
+                        onChange={(e) =>
+                          setEditRows((rs) =>
+                            rs.map((r, j) => (j === i ? { ...r, v: e.target.value } : r))
+                          )
+                        }
+                      />
+                      <button
+                        className="text-[var(--text-soft)] hover:text-[var(--bad)] px-1"
+                        title="حذف الحقل"
+                        onClick={() => setEditRows((rs) => rs.filter((_, j) => j !== i))}
+                      >
+                        ✕
+                      </button>
                     </div>
                   ))}
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      className="btn btn-ghost text-xs py-1.5"
+                      onClick={() => setEditRows((rs) => [...rs, { k: "", v: "" }])}
+                    >
+                      + أضف حقلًا
+                    </button>
+                    <button
+                      className="btn btn-primary text-xs py-1.5"
+                      disabled={busy === "node-save"}
+                      onClick={saveNodeParams}
+                    >
+                      {busy === "node-save" ? "نحفظ..." : "حفظ كإصدار جديد"}
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                Object.keys(selected.params).length > 0 && (
+                  <div className="mt-3 text-xs text-slate-400 space-y-1">
+                    {Object.entries(selected.params).map(([k, v]) => (
+                      <div key={k}>
+                        <span className="text-slate-500">{k}:</span> {v}
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
               {selected.provider && (
                 <div className="mt-4 pt-4 border-t border-[var(--line-soft)]">

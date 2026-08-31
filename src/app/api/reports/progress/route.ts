@@ -153,13 +153,6 @@ export async function GET() {
       cta: { label: "افتح مساراتك", href: "/chat" },
     });
   }
-  plan.push({
-    icon: "✨",
-    title: "أضف أتمتة جديدة اليوم",
-    why: "خذ أكثر مهمة تكررت عليك هالأيام وابدأ فيها مقابلة — 5 دقائق وصفًا توفر ساعات.",
-    cta: { label: "ابدأ المقابلة", href: "/chat" },
-  });
-
   return Response.json({
     headline: {
       closed_this_week: thisWeek.closed,

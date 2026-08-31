@@ -390,6 +390,7 @@ export default function ProgressView() {
         </p>
       </div>
 
+      {plan.length > 0 && (
       <div className="rise-3">
         <h2 className="font-semibold text-[0.95rem] mb-3">{t("prog.plan")}</h2>
         <div className="space-y-2.5">
@@ -412,6 +413,7 @@ export default function ProgressView() {
           ))}
         </div>
       </div>
+      )}
     </div>
   );
 }
