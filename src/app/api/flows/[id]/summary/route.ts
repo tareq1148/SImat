@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { buildUiSummary } from "@/lib/summary";
+import { activeConnections } from "@/lib/connections";
 import type { ConnectionRow, FlowRow, TaskSpec, WorkflowIR } from "@/lib/types";
 
 export async function GET(
@@ -30,7 +31,7 @@ export async function GET(
       .maybeSingle(),
     supabase
       .from("connections")
-      .select("id, provider, label, status, n8n_credential_id")
+      .select("id, provider, label, status, n8n_credential_id, metadata")
       .eq("status", "connected"),
   ]);
 
@@ -42,7 +43,7 @@ export async function GET(
       flow as FlowRow,
       (versionRow?.ir as WorkflowIR) ?? null,
       spec,
-      (conns as ConnectionRow[]) ?? []
+      activeConnections(conns) as ConnectionRow[]
     )
   );
 }

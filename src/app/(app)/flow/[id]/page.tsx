@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
+import { activeConnections } from "@/lib/connections";
 import StatusChip from "@/components/StatusChip";
 import FlowWorkspace from "@/components/FlowWorkspace";
 import type {
@@ -42,7 +43,7 @@ export default async function FlowPage({
       .maybeSingle(),
     supabase
       .from("connections")
-      .select("id, provider, label, status, n8n_credential_id")
+      .select("id, provider, label, status, n8n_credential_id, metadata")
       .eq("status", "connected"),
   ]);
 
@@ -62,7 +63,7 @@ export default async function FlowPage({
         flow={flow as FlowRow}
         ir={(versionRow?.ir as WorkflowIR) ?? null}
         evaluation={(flow.evaluation as Evaluation) ?? null}
-        initialConnections={(conns as ConnectionRow[]) ?? []}
+        initialConnections={activeConnections(conns) as ConnectionRow[]}
         initialTab={tab ?? "evaluation"}
       />
     </main>

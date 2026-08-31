@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { createN8nCredential, hasN8nKey } from "@/lib/n8n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
+import { activeConnections } from "@/lib/connections";
 
 // خريطة اتصالات المنصة: حسابات Google مربوطة مسبقًا في المحرك لحساب هذا المستخدم الأول
 // (OAuth لكل مستخدم على حدة يأتي في مرحلة لاحقة — PRD يسمح بمستخدم واحد في MVP)
@@ -25,9 +26,9 @@ export async function GET() {
 
   const { data } = await supabase
     .from("connections")
-    .select("id, provider, label, status, n8n_credential_id")
+    .select("id, provider, label, status, n8n_credential_id, metadata")
     .eq("status", "connected");
-  return Response.json({ connections: data ?? [] });
+  return Response.json({ connections: activeConnections(data) });
 }
 
 export async function POST(req: NextRequest) {
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
 
   const token = (body.token ?? body.openai_api_key)?.trim();
   const maker = TOKEN_CREDS[body.provider];
-  let metadata: Record<string, string> = {};
+  const metadata: Record<string, string> = { source: token && maker ? "user" : "platform" };
   let botInfo: { username: string; chat_id: string | null } | null = null;
 
   if (token && maker) {

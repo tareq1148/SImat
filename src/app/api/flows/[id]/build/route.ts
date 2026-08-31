@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import { irToN8n, missingProviders, type CredentialMap } from "@/lib/adapter";
+import { activeConnections } from "@/lib/connections";
 import {
   activateWorkflow,
   createWorkflow,
@@ -39,10 +40,12 @@ export async function POST(
   const ir = versionRow.ir as WorkflowIR;
 
   // الاتصالات المطلوبة
-  const { data: conns } = await supabase
+  const { data: rawConns } = await supabase
     .from("connections")
     .select("provider, label, n8n_credential_id, metadata")
     .eq("status", "connected");
+  // اتصالات المواقع ذات الـAPI لا تُحتسب إلا إذا سجّل المستخدم بياناتها بنفسه
+  const conns = activeConnections(rawConns);
 
   // بوت تيليجرام المتصل: نكمّل chat_id تلقائيًا لأي عقدة تنقصه — حتى تصل الرسالة فعليًا
   const tgMeta = (conns ?? []).find((c) => c.provider === "telegram")?.metadata as

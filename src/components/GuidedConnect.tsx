@@ -6,8 +6,9 @@
 import { useState } from "react";
 import { useLang } from "@/lib/i18n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
+import { TOKEN_PROVIDERS } from "@/lib/connections";
 
-export const GUIDED_PROVIDERS = new Set<Provider>(["telegram", "slack", "tiktok", "openai"]);
+export const GUIDED_PROVIDERS = TOKEN_PROVIDERS;
 
 const GUIDES: Partial<
   Record<

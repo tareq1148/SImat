@@ -114,7 +114,7 @@ export function buildUiSummary(
     status: connected.has(p) ? "CONNECTED" : "DISCONNECTED",
     action_label: connected.has(p)
       ? `✓ ${PROVIDER_LABELS[p]} متصل`
-      : `+ Connect ${PROVIDER_LABELS[p]}`,
+      : `اتصل بـ ${PROVIDER_LABELS[p]}`,
   }));
 
   const missingCount = required_integrations.filter(
