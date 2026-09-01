@@ -42,6 +42,10 @@ const DICT: Record<string, { ar: string; en: string }> = {
   "gmail.done": { ar: "تم ربط Gmail بنجاح.", en: "Gmail connected successfully." },
   "gmail.removed": { ar: "فُصل ربط Gmail.", en: "Gmail disconnected." },
   "gmail.reconnect": { ar: "أعد ربط Gmail", en: "Reconnect Gmail" },
+  "drawer.gmailOwn": {
+    ar: "أو اربط حساب Gmail الخاص بك مباشرة (قراءة وإرسال):",
+    en: "Or connect your own Gmail account directly (read & send):",
+  },
   "gmail.expired": {
     ar: "انتهت صلاحية ربط Gmail — أعد الربط.",
     en: "Gmail authorization expired — reconnect.",

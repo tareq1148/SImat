@@ -1,7 +1,7 @@
 "use client";
 
-// زر ربط Gmail — بجوار كرة الصوت في شريط الكتابة.
-// غير متصل: زر زجاجي «اربط Gmail». متصل: شارة خضراء، وبنقرة تفصل الربط.
+// ربط Gmail عبر OAuth — يظهر داخل «طلب الربط» (GuidedConnect).
+// ثلاث حالات: غير متصل / متصل (بنقرة يُفصل) / منتهي الصلاحية (يحتاج إعادة ربط).
 
 import { useEffect, useState } from "react";
 import { useLang } from "@/lib/i18n";
@@ -89,38 +89,40 @@ export default function GmailConnect() {
   if (state === "loading") return null;
 
   return (
-    <>
-      {/* انتهت صلاحية الربط: رابط إعادة ربط لا زر فصل */}
-      {state === "reauth" && (
-        <a
-          href="/api/auth/google"
-          title={t("gmail.expired")}
-          className="gmail-chip is-stale shrink-0"
-        >
+    <div className="space-y-2">
+      {state === "on" ? (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="gmail-chip is-on">
+            <GmailIcon />
+            {t("gmail.connected")}
+            <span className="gmail-dot" aria-hidden />
+          </span>
+          <button
+            type="button"
+            onClick={disconnect}
+            disabled={busy}
+            className="btn btn-ghost text-[0.72rem] py-1.5"
+          >
+            {t("gmail.disconnect")}
+          </button>
+        </div>
+      ) : state === "reauth" ? (
+        <div className="space-y-1.5">
+          <p className="text-[0.72rem] text-amber-300 leading-relaxed">
+            {t("gmail.expired")}
+          </p>
+          <a href="/api/auth/google" className="gmail-chip is-stale">
+            <GmailIcon muted />
+            {t("gmail.reconnect")}
+            <span className="gmail-dot is-stale" aria-hidden />
+          </a>
+        </div>
+      ) : (
+        <a href="/api/auth/google" className="gmail-chip">
           <GmailIcon muted />
-          <span className="hidden sm:inline">{t("gmail.reconnect")}</span>
-          <span className="gmail-dot is-stale" aria-hidden />
+          {t("gmail.connect")}
         </a>
       )}
-
-      {state === "on" ? (
-        <button
-          type="button"
-          onClick={disconnect}
-          disabled={busy}
-          title={t("gmail.disconnect")}
-          className="gmail-chip is-on shrink-0"
-        >
-          <GmailIcon />
-          <span className="hidden sm:inline">{t("gmail.connected")}</span>
-          <span className="gmail-dot" aria-hidden />
-        </button>
-      ) : state === "off" ? (
-        <a href="/api/auth/google" title={t("gmail.connect")} className="gmail-chip shrink-0">
-          <GmailIcon muted />
-          <span className="hidden sm:inline">{t("gmail.connect")}</span>
-        </a>
-      ) : null}
 
       {note && (
         <span
@@ -131,6 +133,6 @@ export default function GmailConnect() {
           {note}
         </span>
       )}
-    </>
+    </div>
   );
 }

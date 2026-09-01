@@ -10,6 +10,7 @@ import { toggleLang, useLang } from "@/lib/i18n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
 import { providerIcon } from "@/components/icons";
 import GuidedConnect, { GUIDED_PROVIDERS } from "@/components/GuidedConnect";
+import GmailConnect from "@/components/GmailConnect";
 
 interface ConnRow {
   id: string;
@@ -164,6 +165,17 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                             load();
                           }}
                         />
+                      </div>
+                    )}
+
+                    {/* Gmail: ربط حسابك الشخصي عبر OAuth — مستقل عن اعتماد المنصة
+                        (هذا لا يُستخدم في بناء المسار على المحرك) */}
+                    {p === "gmail" && (
+                      <div className="border-t border-[var(--line-soft)] px-3.5 py-3">
+                        <p className="text-[0.68rem] text-[var(--text-soft)] mb-2">
+                          {t("drawer.gmailOwn")}
+                        </p>
+                        <GmailConnect />
                       </div>
                     )}
                   </div>

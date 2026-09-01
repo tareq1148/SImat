@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AutomationSummaryCard from "@/components/AutomationSummaryCard";
-import GmailConnect from "@/components/GmailConnect";
 import NeuralField from "@/components/NeuralField";
 import NeuralThinking from "@/components/NeuralThinking";
 import VoiceExperience from "@/components/VoiceExperience";
@@ -497,9 +496,6 @@ export default function ChatPage() {
             />
           </button>
         )}
-
-        {/* تكاملات الحساب — بجوار الكرة */}
-        <GmailConnect />
       </div>
 
       {voiceMode && (
