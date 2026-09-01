@@ -143,6 +143,50 @@ export function FlagIcon({ size = 22 }: { size?: number }) {
   );
 }
 
+export function DocsIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#4285F4" />
+      <path d="M13 2l5 5h-5V2z" fill="#A1C2FA" />
+      <rect x="7.5" y="11" width="9" height="1.4" rx="0.7" fill="#fff" />
+      <rect x="7.5" y="14" width="9" height="1.4" rx="0.7" fill="#fff" />
+      <rect x="7.5" y="17" width="6" height="1.4" rx="0.7" fill="#fff" />
+    </svg>
+  );
+}
+
+export function SlidesIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#F4B400" />
+      <path d="M13 2l5 5h-5V2z" fill="#FADA80" />
+      <rect x="7.5" y="11" width="9" height="6" rx="1" fill="#fff" />
+    </svg>
+  );
+}
+
+export function CalendarIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="4.5" width="18" height="16" rx="2.5" fill="#fff" stroke="#DADCE0" />
+      <path d="M3 7a2.5 2.5 0 0 1 2.5-2.5h13A2.5 2.5 0 0 1 21 7v1.5H3V7z" fill="#4285F4" />
+      <rect x="7" y="2.5" width="1.8" height="4" rx="0.9" fill="#4285F4" />
+      <rect x="15.2" y="2.5" width="1.8" height="4" rx="0.9" fill="#4285F4" />
+      <text
+        x="12"
+        y="17.6"
+        textAnchor="middle"
+        fontSize="8"
+        fontWeight="700"
+        fill="#4285F4"
+        fontFamily="Arial, sans-serif"
+      >
+        31
+      </text>
+    </svg>
+  );
+}
+
 export function providerIcon(type: string, size = 22) {
   switch (type) {
     case "gmail":
@@ -151,6 +195,12 @@ export function providerIcon(type: string, size = 22) {
       return <SheetsIcon size={size} />;
     case "google_drive":
       return <DriveIcon size={size} />;
+    case "google_docs":
+      return <DocsIcon size={size} />;
+    case "google_slides":
+      return <SlidesIcon size={size} />;
+    case "google_calendar":
+      return <CalendarIcon size={size} />;
     case "openai":
       return <OpenAIIcon size={size} />;
     case "telegram":

@@ -52,6 +52,9 @@ export function buildIR(spec: TaskSpec, flowId: string): WorkflowIR {
       step.app === "gmail" ||
       step.app === "google_sheets" ||
       step.app === "google_drive" ||
+      step.app === "google_docs" ||
+      step.app === "google_slides" ||
+      step.app === "google_calendar" ||
       step.app === "telegram" ||
       step.app === "slack" ||
       step.app === "instagram" ||

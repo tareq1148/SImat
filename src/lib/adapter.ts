@@ -789,6 +789,140 @@ export function irToN8n(
       continue;
     }
 
+    // مستند جوجل: يُنشأ بعنوانه ثم يُحقن فيه النص المولّد — عمليتان لأن
+    // عقدة الإنشاء في n8n لا تقبل محتوًى، والإدراج عملية update مستقلّة.
+    if (irNode.provider === "google_docs") {
+      const composeName = `تجهيز نص المستند: ${nodeName}`;
+      nodes.push({
+        id: `${irNode.id}-compose`,
+        name: composeName,
+        type: "@n8n/n8n-nodes-langchain.chainLlm",
+        typeVersion: 1.9,
+        position: [xPos, Y],
+        parameters: {
+          promptType: "define",
+          text: composePromptFor(
+            irNode,
+            "أخرج نصّ المستند كاملًا كنصّ عادي بلا عناوين markdown ولا أسوار."
+          ),
+          messages: { messageValues: [{ message: "أنت تحرّر مستندات عربية واضحة." }] },
+          batching: {},
+        },
+      });
+      connectPrev(composeName);
+      addOpenAiModel(composeName, xPos);
+
+      const createName = `إنشاء المستند: ${nodeName}`;
+      const createNode: N8nNode = {
+        id: `${irNode.id}-create`,
+        name: createName,
+        type: "n8n-nodes-base.googleDocs",
+        typeVersion: 2,
+        position: [step(), Y],
+        parameters: {
+          operation: "create",
+          title:
+            irNode.params.title ??
+            "={{ 'وَتيرة - ' + $now.toFormat('yyyy-MM-dd HH:mm') }}",
+          folderId: "default",
+        },
+      };
+      if (creds.google_docs)
+        createNode.credentials = { googleDocsOAuth2Api: creds.google_docs };
+      nodes.push(createNode);
+      link(composeName, createName);
+
+      const insertNode: N8nNode = {
+        id: irNode.id,
+        name: nodeName,
+        type: "n8n-nodes-base.googleDocs",
+        typeVersion: 2,
+        position: [step(), Y],
+        parameters: {
+          operation: "update",
+          documentURL: "={{ $json.documentId }}",
+          actionsUi: {
+            actionFields: [
+              {
+                action: "insert",
+                text: `={{ $('${composeName}').item.json.text }}`,
+              },
+            ],
+          },
+        },
+      };
+      if (creds.google_docs)
+        insertNode.credentials = { googleDocsOAuth2Api: creds.google_docs };
+      nodes.push(insertNode);
+      link(createName, nodeName);
+      prev = nodeName;
+      continue;
+    }
+
+    // عرض تقديمي: عقدة n8n تنشئ العرض بعنوانه فقط — لا تبني شرائح بمحتوى
+    if (irNode.provider === "google_slides") {
+      const slidesNode: N8nNode = {
+        id: irNode.id,
+        name: nodeName,
+        type: "n8n-nodes-base.googleSlides",
+        typeVersion: 2,
+        position: [xPos, Y],
+        parameters: {
+          resource: "presentation",
+          operation: "create",
+          title:
+            irNode.params.title ??
+            "={{ 'وَتيرة - ' + $now.toFormat('yyyy-MM-dd HH:mm') }}",
+        },
+      };
+      if (creds.google_slides)
+        slidesNode.credentials = { googleSlidesOAuth2Api: creds.google_slides };
+      nodes.push(slidesNode);
+      connectPrev(nodeName);
+      prev = nodeName;
+      continue;
+    }
+
+    // موعد في التقويم: الأوقات من المواصفة، وإن غابت فمن وقت التشغيل
+    if (irNode.provider === "google_calendar") {
+      const calendarNode: N8nNode = {
+        id: irNode.id,
+        name: nodeName,
+        type: "n8n-nodes-base.googleCalendar",
+        typeVersion: 1.3,
+        position: [xPos, Y],
+        parameters: {
+          resource: "event",
+          operation: "create",
+          calendar: {
+            __rl: true,
+            mode: "list",
+            value: irNode.params.calendar_id ?? "primary",
+            cachedResultName: irNode.params.calendar_id ?? "primary",
+          },
+          start: irNode.params.start ?? "={{ $now.toISO() }}",
+          end: irNode.params.end ?? "={{ $now.plus(60 * 60 * 1000).toISO() }}",
+          additionalFields: {
+            summary: irNode.params.summary ?? irNode.label,
+            ...(irNode.params.description
+              ? { description: irNode.params.description }
+              : {}),
+            ...(irNode.params.attendees
+              ? { attendees: irNode.params.attendees }
+              : {}),
+          },
+        },
+      };
+      if (creds.google_calendar)
+        calendarNode.credentials = {
+          googleCalendarOAuth2Api: creds.google_calendar,
+        };
+      nodes.push(calendarNode);
+      connectPrev(nodeName);
+      prev = nodeName;
+      continue;
+    }
+
     // احتياط: خطوة غير مصنفة → Set توثيقي
     nodes.push({
       id: irNode.id,
@@ -855,6 +989,7 @@ export function missingProviders(
         n.type === "condition" ||
         n.provider === "gmail" ||
         n.provider === "google_sheets" ||
+        n.provider === "google_docs" ||
         n.provider === "telegram" ||
         n.provider === "slack" ||
         n.provider === "instagram" ||
