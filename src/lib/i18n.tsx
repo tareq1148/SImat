@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 export type Lang = "ar" | "en";
 
 const DICT: Record<string, { ar: string; en: string }> = {
-  brand: { ar: "وَتيرة", en: "وَتيرة" },
+  brand: { ar: "وَتيرة", en: "Wateera" },
   "nav.chat": { ar: "المحادثة", en: "Chat" },
   "tab.create": { ar: "إنشاء", en: "Create" },
   "tab.flows": { ar: "سير العمل", en: "Workflow" },
@@ -73,7 +73,7 @@ const DICT: Record<string, { ar: string; en: string }> = {
   "input.listening": { ar: "نسمعك…", en: "Listening…" },
   "opts.other": { ar: "أخرى — أكتبها بنفسي", en: "Other — I'll type it" },
   "opts.otherPlaceholder": { ar: "اكتب إجابتك هنا…", en: "Type your answer here…" },
-  "voice.speaking": { ar: "وَتيرة يتحدث", en: "وَتيرة is speaking" },
+  "voice.speaking": { ar: "وَتيرة يتحدث", en: "Wateera is speaking" },
   "voice.back": { ar: "العودة للمحادثة", en: "Back to chat" },
   "voice.title": { ar: "محادثة الأتمتة", en: "Automation chat" },
   "voice.intro": {
@@ -146,9 +146,15 @@ export function getLang(): Lang {
   return document.documentElement.lang === "en" ? "en" : "ar";
 }
 
+export const DOC_TITLE = {
+  ar: "وَتيرة — من وصف المهمة إلى أتمتة تعمل",
+  en: "Wateera — from a described task to a working automation",
+} as const;
+
 export function applyLang(lang: Lang) {
   document.documentElement.lang = lang;
   document.documentElement.dir = lang === "en" ? "ltr" : "rtl";
+  document.title = DOC_TITLE[lang];
   try {
     localStorage.setItem("simat_lang", lang);
   } catch {}
@@ -164,8 +170,15 @@ export function toggleLang(): Lang {
 export function useLang() {
   const [lang, setLang] = useState<Lang>("ar");
   useEffect(() => {
-    setLang(getLang());
-    const on = (e: Event) => setLang((e as CustomEvent<Lang>).detail);
+    // بعد الترطيب: نعيد ضبط العنوان لأن بيانات Next الثابتة تدهس ما ضبطه سكربت الإقلاع
+    const boot = getLang();
+    setLang(boot);
+    document.title = DOC_TITLE[boot];
+    const on = (e: Event) => {
+      const next = (e as CustomEvent<Lang>).detail;
+      setLang(next);
+      document.title = DOC_TITLE[next];
+    };
     window.addEventListener("simat-lang", on);
     return () => window.removeEventListener("simat-lang", on);
   }, []);

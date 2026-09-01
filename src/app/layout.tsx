@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-full flex flex-col font-sans">
         {/* تثبيت الثيم المحفوظ قبل أول رسم — بلا وميض */}
         <Script id="simat-theme-boot" strategy="beforeInteractive">
-          {`try{if(localStorage.getItem("simat_theme")==="light")document.documentElement.classList.add("light");if(localStorage.getItem("simat_lang")==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr"}}catch(e){}`}
+          {`try{if(localStorage.getItem("simat_theme")==="light")document.documentElement.classList.add("light");if(localStorage.getItem("simat_lang")==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";document.title="Wateera — from a described task to a working automation"}}catch(e){}`}
         </Script>
         {children}
       </body>

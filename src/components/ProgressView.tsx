@@ -14,7 +14,7 @@ const LEVEL_EN: Record<string, string> = {
   "مُنجِز": "Achiever",
   "متمكّن": "Proficient",
   "خبير أتمتة": "Automation Expert",
-  "محترف وَتيرة": "وَتيرة Pro",
+  "محترف وَتيرة": "Wateera Pro",
 };
 
 interface ProgressData {
