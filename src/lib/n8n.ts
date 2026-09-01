@@ -165,6 +165,22 @@ export interface N8nExecutionInfo {
   errorMessage: string | null;
 }
 
+// تنفيذات سير عمل بعينه، الأحدث أولًا.
+// تُستخدم حين يضيع تبليغ «البدء» فلا نعرف معرّف التنفيذ — نطابقه بالوقت.
+export async function listExecutions(
+  workflowId: string,
+  limit = 10
+): Promise<{ id: string; status: string; startedAt: string | null }[]> {
+  const res = await api<{
+    data?: { id: string | number; status: string; startedAt?: string }[];
+  }>("GET", `/executions?workflowId=${encodeURIComponent(workflowId)}&limit=${limit}`);
+  return (res.data ?? []).map((e) => ({
+    id: String(e.id),
+    status: e.status,
+    startedAt: e.startedAt ?? null,
+  }));
+}
+
 export async function getExecution(id: string): Promise<N8nExecutionInfo> {
   const e = await api<{
     status: string;
