@@ -999,3 +999,43 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 .seg-tab.is-on:focus-visible {
   box-shadow: 0 1px 2px rgba(16, 24, 16, 0.09), inset 0 0 0 2px var(--accent-bg);
 }
+
+/* شريحة ربط Gmail — زجاجية بجوار كرة الصوت في شريط الكتابة */
+.gmail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel-solid) 72%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.12s;
+}
+.gmail-chip:hover:not(:disabled) {
+  color: var(--text);
+  border-color: var(--accent-bg);
+  background: color-mix(in srgb, var(--accent-soft) 60%, var(--panel-solid));
+}
+.gmail-chip:active:not(:disabled) { transform: scale(0.97); }
+.gmail-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.gmail-chip.is-on {
+  color: var(--ok);
+  border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+  background: color-mix(in srgb, var(--ok) 12%, var(--panel-solid));
+}
+/* نقطة الحالة النشطة */
+.gmail-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent);
+}

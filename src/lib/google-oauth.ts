@@ -1,0 +1,101 @@
+// تكامل Gmail عبر OAuth 2.0 — المنطق المشترك بين مسار البدء ومسار العودة.
+
+export const GMAIL_SCOPES = [
+  "https://www.googleapis.com/auth/gmail.readonly",
+  "https://www.googleapis.com/auth/gmail.send",
+];
+
+const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
+const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
+
+/** اسم كوكي حالة CSRF — يُقارَن بما يعيده جوجل في state */
+export const OAUTH_STATE_COOKIE = "g_oauth_state";
+
+export interface GoogleConfig {
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+}
+
+/** يرجع الإعداد، أو رسالة عربية دقيقة تسمّي المتغير الناقص */
+export function googleConfig(): { config: GoogleConfig } | { error: string } {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+
+  const missing = [
+    !clientId && "GOOGLE_CLIENT_ID",
+    !clientSecret && "GOOGLE_CLIENT_SECRET",
+    !redirectUri && "GOOGLE_REDIRECT_URI",
+  ].filter(Boolean);
+  if (missing.length)
+    return { error: `متغيرات غير مضبوطة في .env.local: ${missing.join("، ")}` };
+
+  // العبارة النائبة تمر كقيمة غير فارغة لكنها تُفشل تبادل التوكن برسالة غامضة من جوجل
+  if (/^ضع_هنا|^your[_-]|^changeme/i.test(clientSecret!))
+    return {
+      error:
+        "GOOGLE_CLIENT_SECRET ما زال عبارة نائبة — انسخ السر الحقيقي من Google Cloud Console.",
+    };
+
+  return { config: { clientId: clientId!, clientSecret: clientSecret!, redirectUri: redirectUri! } };
+}
+
+/** رابط شاشة موافقة جوجل */
+export function buildConsentUrl(config: GoogleConfig, state: string): string {
+  const params = new URLSearchParams({
+    client_id: config.clientId,
+    redirect_uri: config.redirectUri,
+    response_type: "code",
+    scope: GMAIL_SCOPES.join(" "),
+    // offline + consent ضروريان معًا للحصول على refresh_token في كل مرة
+    access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: "true",
+    state,
+  });
+  return `${AUTH_ENDPOINT}?${params.toString()}`;
+}
+
+export interface GoogleTokens {
+  access_token: string;
+  refresh_token?: string;
+  expires_in?: number;
+  scope?: string;
+  token_type?: string;
+}
+
+/** تبادل رمز التفويض بالتوكنات */
+export async function exchangeCodeForTokens(
+  config: GoogleConfig,
+  code: string
+): Promise<{ tokens: GoogleTokens } | { error: string }> {
+  const res = await fetch(TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      redirect_uri: config.redirectUri,
+      grant_type: "authorization_code",
+    }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    // خطأ جوجل يأتي JSON فيه error و error_description — نترجمه لرسالة مفيدة
+    let detail = text.slice(0, 200);
+    try {
+      const j = JSON.parse(text) as { error?: string; error_description?: string };
+      if (j.error === "redirect_uri_mismatch")
+        detail = "رابط العودة لا يطابق المسجَّل في Google Cloud Console";
+      else if (j.error === "invalid_client")
+        detail = "معرّف العميل أو سرّه غير صحيح";
+      else detail = j.error_description ?? j.error ?? detail;
+    } catch {}
+    return { error: `تعذر تبادل رمز جوجل (${res.status}): ${detail}` };
+  }
+
+  return { tokens: JSON.parse(text) as GoogleTokens };
+}
