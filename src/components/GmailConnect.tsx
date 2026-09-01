@@ -111,14 +111,14 @@ export default function GmailConnect() {
           <p className="text-[0.72rem] text-amber-300 leading-relaxed">
             {t("gmail.expired")}
           </p>
-          <a href="/api/auth/google" className="gmail-chip is-stale">
+          <a href="/api/auth/google?service=gmail" className="gmail-chip is-stale">
             <GmailIcon muted />
             {t("gmail.reconnect")}
             <span className="gmail-dot is-stale" aria-hidden />
           </a>
         </div>
       ) : (
-        <a href="/api/auth/google" className="gmail-chip">
+        <a href="/api/auth/google?service=gmail" className="gmail-chip">
           <GmailIcon muted />
           {t("gmail.connect")}
         </a>

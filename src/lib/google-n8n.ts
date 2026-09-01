@@ -79,10 +79,13 @@ export async function syncGoogleServiceCredentials(
   userId: string,
   tokens: GoogleTokens,
   refreshToken: string,
-  previous: Partial<Record<GoogleService, string | null>> = {}
+  previous: Partial<Record<GoogleService, string | null>> = {},
+  /** الخدمات المُنح إذنها — لا نُنشئ اعتمادًا لخدمة بلا نطاق */
+  only: GoogleService[] = SERVICES
 ): Promise<ServiceSyncResult[]> {
+  if (only.length === 0) return [];
   if (!hasN8nKey())
-    return SERVICES.map((service) => ({
+    return only.map((service) => ({
       service,
       ok: false,
       error: "N8N_API_KEY غير مضبوط",
@@ -91,7 +94,7 @@ export async function syncGoogleServiceCredentials(
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   if (!clientId || !clientSecret)
-    return SERVICES.map((service) => ({
+    return only.map((service) => ({
       service,
       ok: false,
       error: "بيانات عميل جوجل ناقصة",
@@ -99,7 +102,7 @@ export async function syncGoogleServiceCredentials(
 
   const results: ServiceSyncResult[] = [];
 
-  for (const service of SERVICES) {
+  for (const service of only) {
     // القديم يُحذف أولًا كي لا تتراكم اعتمادات ميتة في المحرّك
     const old = previous[service];
     if (old) {

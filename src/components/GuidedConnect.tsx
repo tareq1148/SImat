@@ -11,6 +11,16 @@ import { TOKEN_PROVIDERS } from "@/lib/connections";
 export const GUIDED_PROVIDERS = TOKEN_PROVIDERS;
 
 /** ما يُربط بموافقة OAuth واحدة بدل اعتماد منصة */
+/** المزوّد ← اسم الخدمة في مسار الموافقة */
+export const GOOGLE_SERVICE_OF: Partial<Record<Provider, string>> = {
+  gmail: "gmail",
+  google_drive: "drive",
+  google_sheets: "sheets",
+  google_slides: "slides",
+  google_calendar: "calendar",
+  google_docs: "docs",
+};
+
 export const GOOGLE_OAUTH_PROVIDERS = new Set<Provider>([
   "gmail",
   "google_drive",
@@ -127,19 +137,25 @@ export default function GuidedConnect({
 
   // خدمات جوجل: موافقة OAuth واحدة تُنشئ اعتمادات الست في المحرّك.
   // كانت تمرّ على اعتماد المنصة، فتردّ «غير متاح» بعد تفريغ N8N_CRED_*.
-  if (GOOGLE_OAUTH_PROVIDERS.has(provider))
+  if (GOOGLE_OAUTH_PROVIDERS.has(provider)) {
+    const svc = GOOGLE_SERVICE_OF[provider];
+    const name = PROVIDER_LABELS[provider];
     return (
       <div className="space-y-2">
         <p className="text-[0.72rem] text-[var(--text-soft)] leading-relaxed">
           {lang === "ar"
-            ? "موافقة واحدة على حساب جوجل تربط Gmail وDrive وSheets وSlides وCalendar وDocs معًا."
-            : "One Google consent connects Gmail, Drive, Sheets, Slides, Calendar and Docs together."}
+            ? `يطلب صلاحيات ${name} وحدها. أذوناتك السابقة تبقى كما هي.`
+            : `Requests ${name} permissions only. Your existing grants stay intact.`}
         </p>
-        <a href="/api/auth/google" className="btn btn-primary text-xs py-1.5 inline-flex">
-          {lang === "ar" ? "اربط حساب جوجل" : "Connect Google account"}
+        <a
+          href={`/api/auth/google?service=${svc}`}
+          className="btn btn-primary text-xs py-1.5 inline-flex"
+        >
+          {lang === "ar" ? `اربط ${name}` : `Connect ${name}`}
         </a>
       </div>
     );
+  }
 
   // بقية المزوّدين بلا دليل: اعتماد المنصة بضغطة
   if (!guide)

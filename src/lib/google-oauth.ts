@@ -62,13 +62,42 @@ export function googleConfig(): { config: GoogleConfig } | { error: string } {
   return { config: { clientId: clientId!, clientSecret: clientSecret!, redirectUri: redirectUri! } };
 }
 
-/** رابط شاشة موافقة جوجل */
-export function buildConsentUrl(config: GoogleConfig, state: string): string {
+/** نطاقات خدمة بعينها — أو الكل إن لم تُحدَّد */
+export function scopesFor(service?: string): string[] {
+  if (service === "gmail") return GMAIL_SCOPES;
+  if (service && service in SERVICE_SCOPES)
+    return [...SERVICE_SCOPES[service as GoogleService]];
+  return ALL_SCOPES;
+}
+
+/**
+ * أي الخدمات مُنحت فعلًا؟ يُقرأ من scope العائد في استجابة التوكن.
+ * include_granted_scopes يجعل جوجل يراكم الأذونات، فالعائد يشمل ما سبق منحه.
+ */
+export function grantedServices(scope: string | undefined): GoogleService[] {
+  const granted = new Set((scope ?? "").split(/\s+/).filter(Boolean));
+  return (Object.keys(SERVICE_SCOPES) as GoogleService[]).filter((svc) =>
+    SERVICE_SCOPES[svc].every((s) => granted.has(s))
+  );
+}
+
+/** هل مُنحت نطاقات Gmail؟ */
+export function gmailGranted(scope: string | undefined): boolean {
+  const granted = new Set((scope ?? "").split(/\s+/).filter(Boolean));
+  return GMAIL_SCOPES.every((s) => granted.has(s));
+}
+
+/** رابط شاشة موافقة جوجل — بنطاقات الخدمة المطلوبة وحدها */
+export function buildConsentUrl(
+  config: GoogleConfig,
+  state: string,
+  scopes: string[] = ALL_SCOPES
+): string {
   const params = new URLSearchParams({
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     response_type: "code",
-    scope: ALL_SCOPES.join(" "),
+    scope: scopes.join(" "),
     // offline + consent ضروريان معًا للحصول على refresh_token في كل مرة
     access_type: "offline",
     prompt: "consent",

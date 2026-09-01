@@ -7,7 +7,11 @@ import {
 } from "@/lib/google-oauth";
 import { syncGmailCredential } from "@/lib/gmail-n8n";
 import { syncGoogleServiceCredentials } from "@/lib/google-n8n";
-import type { GoogleService } from "@/lib/google-oauth";
+import {
+  gmailGranted,
+  grantedServices,
+  type GoogleService,
+} from "@/lib/google-oauth";
 
 function back(origin: string, params: Record<string, string>) {
   const url = new URL("/chat", origin);
@@ -114,13 +118,13 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const sync = await syncGmailCredential(
-    db,
-    user.id,
-    tokens,
-    refreshToken,
-    prev?.n8n_credential_id ?? null
-  );
+  // ما مُنح فعلًا يُقرأ من scope العائد — لا نفترض ما طلبناه
+  const granted = grantedServices(tokens.scope);
+  const hasGmail = gmailGranted(tokens.scope);
+
+  const sync = hasGmail
+    ? await syncGmailCredential(db, user.id, tokens, refreshToken, prev?.n8n_credential_id ?? null)
+    : { ok: true as const, credentialId: undefined };
 
   // الخدمات الخمس: اعتماد لكل واحدة من نفس التوكن — بنفس نهج Gmail
   const serviceResults = await syncGoogleServiceCredentials(
@@ -128,11 +132,16 @@ export async function GET(req: NextRequest) {
     user.id,
     tokens,
     refreshToken,
-    prev?.service_credentials ?? {}
+    prev?.service_credentials ?? {},
+    granted
   );
-  const serviceCreds = Object.fromEntries(
-    serviceResults.filter((r) => r.credentialId).map((r) => [r.service, r.credentialId])
-  );
+  // المعرّفات السابقة تبقى لما لم يُعَد ربطه في هذه الجولة
+  const serviceCreds: Record<string, string | null> = {
+    ...(prev?.service_credentials ?? {}),
+    ...Object.fromEntries(
+      serviceResults.filter((r) => r.credentialId).map((r) => [r.service, r.credentialId!])
+    ),
+  };
 
   if (sync.credentialId || Object.keys(serviceCreds).length) {
     await db
@@ -150,7 +159,7 @@ export async function GET(req: NextRequest) {
   if (!sync.ok || failed.length) {
     // بعض الاعتمادات لم تُنشأ — نسمّيها بدل ادّعاء نجاح كامل
     const parts = [
-      ...(sync.ok ? [] : [`Gmail: ${sync.error ?? "فشل"}`]),
+      ...(sync.ok ? [] : [`Gmail: ${("error" in sync && sync.error) || "فشل"}`]),
       ...failed.map((f) => `${f.service}: ${f.error ?? "فشل"}`),
     ];
     return back(origin, {

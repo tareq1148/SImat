@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { OAUTH_STATE_COOKIE, buildConsentUrl, googleConfig } from "@/lib/google-oauth";
+import {
+  OAUTH_STATE_COOKIE,
+  buildConsentUrl,
+  googleConfig,
+  scopesFor,
+} from "@/lib/google-oauth";
 
 // بدء ربط Gmail — يحوّل المستخدم إلى شاشة موافقة جوجل
 export async function GET(req: NextRequest) {
@@ -20,9 +25,15 @@ export async function GET(req: NextRequest) {
     );
   }
 
+  // خدمة بعينها → نطاقاتها وحدها. جوجل يراكم ما سبق منحه عبر
+  // include_granted_scopes، فلا يفقد المستخدم أذوناته السابقة.
+  const service = req.nextUrl.searchParams.get("service") ?? undefined;
+
   // حالة CSRF: قيمة عشوائية تُحفظ في كوكي وتُقارَن عند العودة
   const state = crypto.randomUUID();
-  const res = NextResponse.redirect(buildConsentUrl(cfg.config, state));
+  const res = NextResponse.redirect(
+    buildConsentUrl(cfg.config, state, scopesFor(service))
+  );
   res.cookies.set(OAUTH_STATE_COOKIE, state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
