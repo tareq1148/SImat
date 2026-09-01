@@ -8,6 +8,9 @@ export interface CredentialMap {
   gmail?: { id: string; name: string };
   google_sheets?: { id: string; name: string };
   google_drive?: { id: string; name: string };
+  google_slides?: { id: string; name: string };
+  google_calendar?: { id: string; name: string };
+  google_docs?: { id: string; name: string };
   openai?: { id: string; name: string };
   telegram?: { id: string; name: string };
   slack?: { id: string; name: string };

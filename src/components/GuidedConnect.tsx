@@ -10,6 +10,16 @@ import { TOKEN_PROVIDERS } from "@/lib/connections";
 
 export const GUIDED_PROVIDERS = TOKEN_PROVIDERS;
 
+/** ما يُربط بموافقة OAuth واحدة بدل اعتماد منصة */
+export const GOOGLE_OAUTH_PROVIDERS = new Set<Provider>([
+  "gmail",
+  "google_drive",
+  "google_sheets",
+  "google_slides",
+  "google_calendar",
+  "google_docs",
+]);
+
 const GUIDES: Partial<
   Record<
     Provider,
@@ -115,7 +125,23 @@ export default function GuidedConnect({
       </p>
     );
 
-  // Google وأشباهه: ربط بحساب المنصة الموثّق بضغطة
+  // خدمات جوجل: موافقة OAuth واحدة تُنشئ اعتمادات الست في المحرّك.
+  // كانت تمرّ على اعتماد المنصة، فتردّ «غير متاح» بعد تفريغ N8N_CRED_*.
+  if (GOOGLE_OAUTH_PROVIDERS.has(provider))
+    return (
+      <div className="space-y-2">
+        <p className="text-[0.72rem] text-[var(--text-soft)] leading-relaxed">
+          {lang === "ar"
+            ? "موافقة واحدة على حساب جوجل تربط Gmail وDrive وSheets وSlides وCalendar وDocs معًا."
+            : "One Google consent connects Gmail, Drive, Sheets, Slides, Calendar and Docs together."}
+        </p>
+        <a href="/api/auth/google" className="btn btn-primary text-xs py-1.5 inline-flex">
+          {lang === "ar" ? "اربط حساب جوجل" : "Connect Google account"}
+        </a>
+      </div>
+    );
+
+  // بقية المزوّدين بلا دليل: اعتماد المنصة بضغطة
   if (!guide)
     return (
       <div className="space-y-2">

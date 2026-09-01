@@ -4,6 +4,9 @@ export type Provider =
   | "gmail"
   | "google_sheets"
   | "google_drive"
+  | "google_slides"
+  | "google_calendar"
+  | "google_docs"
   | "openai"
   | "telegram"
   | "slack"
@@ -84,6 +87,9 @@ export type IRNodeType =
   | "gmail"
   | "google_sheets"
   | "google_drive"
+  | "google_slides"
+  | "google_calendar"
+  | "google_docs"
   | "openai"
   | "telegram"
   | "slack"
@@ -160,6 +166,9 @@ export const PROVIDER_LABELS: Record<Provider, string> = {
   gmail: "Gmail",
   google_sheets: "Google Sheets",
   google_drive: "Google Drive",
+  google_slides: "Google Slides",
+  google_calendar: "Google Calendar",
+  google_docs: "Google Docs",
   openai: "OpenAI",
   telegram: "Telegram",
   slack: "Slack",

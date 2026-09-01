@@ -10,6 +10,10 @@ const PLATFORM_CREDS: Record<Provider, string | undefined> = {
   gmail: process.env.N8N_CRED_GMAIL,
   google_sheets: process.env.N8N_CRED_SHEETS,
   google_drive: process.env.N8N_CRED_DRIVE,
+  // الثلاثة تُربط عبر OAuth لا باعتماد منصة
+  google_slides: undefined,
+  google_calendar: undefined,
+  google_docs: undefined,
   openai: process.env.N8N_CRED_OPENAI,
   telegram: process.env.N8N_CRED_TELEGRAM,
   slack: process.env.N8N_CRED_SLACK,

@@ -9,7 +9,10 @@ import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
 import { toggleLang, useLang } from "@/lib/i18n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
 import { providerIcon } from "@/components/icons";
-import GuidedConnect, { GUIDED_PROVIDERS } from "@/components/GuidedConnect";
+import GuidedConnect, {
+  GOOGLE_OAUTH_PROVIDERS,
+  GUIDED_PROVIDERS,
+} from "@/components/GuidedConnect";
 import GmailConnect from "@/components/GmailConnect";
 
 interface ConnRow {
@@ -76,12 +79,14 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
 
   function onConnectClick(p: Provider) {
     if (connected.has(p)) return connect(p, { revoke: true });
-    if (GUIDED_PROVIDERS.has(p)) {
+    // خدمات جوجل تُربط بموافقة OAuth واحدة — تُعرض داخل اللوحة لا بطلب مباشر.
+    // كان الاستدعاء المباشر يمرّ على اعتماد المنصة فيردّ «غير متاح».
+    if (GUIDED_PROVIDERS.has(p) || GOOGLE_OAUTH_PROVIDERS.has(p)) {
       setErr(null);
       setGuideFor(guideFor === p ? null : p);
       return;
     }
-    connect(p); // Google: حساب المنصة الموثّق عبر OAuth — ضغطة واحدة
+    connect(p);
   }
 
   const [voiceInfo, setVoiceInfo] = useState<{ provider: string | null; voice?: { name?: string } | null } | null>(null);
@@ -174,7 +179,7 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                       </button>
                     </div>
 
-                    {open && !isOn && (
+                    {open && (!isOn || GOOGLE_OAUTH_PROVIDERS.has(p)) && (
                       <div className="border-t border-[var(--line-soft)] px-3.5 py-3 rise">
                         <GuidedConnect
                           provider={p}
