@@ -35,6 +35,7 @@ const DICT: Record<string, { ar: string; en: string }> = {
   "nav.theme.dark": { ar: "الوضع الداكن", en: "Dark mode" },
   "nav.theme.light": { ar: "الوضع الفاتح", en: "Light mode" },
   "nav.signout": { ar: "خروج", en: "Sign out" },
+  "nav.account": { ar: "حسابك", en: "Your account" },
   "home.w1": { ar: "تحدث", en: "Talk" },
   "home.w2": { ar: "اربط", en: "Connect" },
   "home.w3": { ar: "أتمت", en: "Automate" },

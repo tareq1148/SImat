@@ -2,66 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import AutomationSummaryCard from "@/components/AutomationSummaryCard";
-import Logo from "@/components/Logo";
+import NeuralField from "@/components/NeuralField";
 import NeuralThinking from "@/components/NeuralThinking";
-import OverviewStats from "@/components/OverviewStats";
 import VoiceExperience from "@/components/VoiceExperience";
 import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
-import { supabaseBrowser } from "@/lib/supabase/client";
 import { useLang } from "@/lib/i18n";
 import { useVoice } from "@/lib/useVoice";
-import type { FlowStatus } from "@/lib/types";
-
-const FLOW_DOTS: Partial<Record<FlowStatus, string>> = {
-  Ready: "var(--ok)",
-  Active: "var(--ok)",
-  NeedsRepair: "var(--bad)",
-  NotSuitable: "var(--bad)",
-  NeedsInformation: "var(--warn)",
-  NeedsConnections: "var(--warn)",
-};
-
-// مساراتك كشرائح أفقية داخل الرئيسية — بدل شاشة كاملة
-function FlowsStrip() {
-  const { t } = useLang();
-  const [flows, setFlows] = useState<
-    { id: string; name: string; status: FlowStatus }[] | null
-  >(null);
-
-  useEffect(() => {
-    supabaseBrowser()
-      .from("flows")
-      .select("id, name, status")
-      .order("updated_at", { ascending: false })
-      .limit(8)
-      .then(({ data }) => setFlows((data as never) ?? []));
-  }, []);
-
-  if (!flows || flows.length === 0) return null;
-  return (
-    <div className="rise-2">
-      <p className="text-[0.72rem] font-semibold text-[var(--text-soft)] mb-2">{t("home.flows")}</p>
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {flows.map((f) => (
-          <Link
-            key={f.id}
-            href={`/flow/${f.id}`}
-            className="shrink-0 flex items-center gap-2 rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2 text-[0.78rem] font-medium hover:border-[var(--accent-bg)] transition-colors"
-          >
-            <span
-              className="status-dot"
-              style={{ background: FLOW_DOTS[f.status] ?? "var(--edge)" }}
-            />
-            {f.name.length > 34 ? f.name.slice(0, 34) + "…" : f.name}
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 interface Msg {
   role: "user" | "assistant";
@@ -293,16 +241,8 @@ export default function ChatPage() {
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-6">
       {messages.length === 0 && (
-        <div className="flex-1 space-y-9 pt-10 pb-6">
+        <div className="flex-1 flex flex-col items-center justify-center pt-8 pb-4">
           <div className="rise text-center">
-            <Link
-              href="/"
-              title={t("brand")}
-              className="flex items-center justify-center gap-2.5 mb-6 hover:opacity-80 transition-opacity"
-            >
-              <Logo size={40} id="wLogoHero" />
-              <span className="text-[1.5rem] font-bold">{t("brand")}</span>
-            </Link>
             <h1 className="text-[2.1rem] md:text-[2.9rem] font-bold leading-snug mb-3 tracking-tight">
               {t("home.w1")}.{" "}
               {t("home.w2")}.{" "}
@@ -310,10 +250,14 @@ export default function ChatPage() {
             </h1>
             <p className="text-[0.95rem] text-[var(--text-soft)]">{t("home.sub")}</p>
           </div>
-          <div className="rise-1">
-            <OverviewStats />
+
+          {/* كوكبة الشبكة — تحت العنوان مباشرة، بهالة قطرية ناعمة خلفها */}
+          <div className="rise-1 relative w-full max-w-3xl mt-7 sm:mt-9" aria-hidden>
+            <div className="hero-glow pointer-events-none absolute inset-0" />
+            <div className="neural-mask relative">
+              <NeuralField height={260} />
+            </div>
           </div>
-          <FlowsStrip />
         </div>
       )}
 
@@ -493,8 +437,8 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className="w-full max-w-3xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)] flex items-center gap-3">
-        <form onSubmit={send} className="composer flex-1">
+      <div className="w-full max-w-2xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)]">
+        <form onSubmit={send} className="composer">
           {/* + المرفقات */}
           <button
             type="button"
@@ -525,7 +469,22 @@ export default function ChatPage() {
             />
           )}
 
-          {/* إرسال */}
+          {/* كرة الصوت ثم زر الإرسال — داخل الحبّة على يسارها، والإرسال في الطرف */}
+          {voice.mode !== "none" && (
+            <button
+              type="button"
+              onClick={() => setVoiceMode(true)}
+              disabled={busy}
+              title={t("input.talk")}
+              className="shrink-0 leading-none disabled:opacity-45 disabled:cursor-not-allowed"
+            >
+              <VoiceOrb
+                size={40}
+                state={voice.speaking || voice.transcribing ? "speaking" : "idle"}
+              />
+            </button>
+          )}
+
           <button
             className="composer-send"
             disabled={busy || (!input.trim() && attachments.length === 0)}
@@ -536,22 +495,6 @@ export default function ChatPage() {
             </svg>
           </button>
         </form>
-
-        {/* كرة الصوت — خارج الصندوق، تفتح شاشة المحادثة الصوتية */}
-        {voice.mode !== "none" && (
-          <button
-            type="button"
-            onClick={() => setVoiceMode(true)}
-            disabled={busy}
-            title={t("input.talk")}
-            className="shrink-0"
-          >
-            <VoiceOrb
-              size={52}
-              state={voice.speaking || voice.transcribing ? "speaking" : "idle"}
-            />
-          </button>
-        )}
       </div>
 
       {voiceMode && (

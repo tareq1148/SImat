@@ -215,6 +215,17 @@ h2, h3 { letter-spacing: -0.01em; }
   mask-image: radial-gradient(72% 70% at 50% 50%, #000 55%, transparent 100%);
 }
 
+/* هالة قطرية ناعمة خلف كوكبة الشبكة في صدر المحادثة */
+.hero-glow {
+  background: radial-gradient(
+    58% 62% at 50% 50%,
+    color-mix(in srgb, var(--accent-bg) 16%, transparent) 0%,
+    color-mix(in srgb, #38bdf8 9%, transparent) 42%,
+    transparent 72%
+  );
+  filter: blur(26px);
+}
+
 /* كرة «ابدأ» — حلقة ألوان دوّارة + لمعان يسري + نبض */
 .start-orb {
   position: relative;
@@ -466,8 +477,13 @@ h2, h3 { letter-spacing: -0.01em; }
   color: var(--text);
   padding-inline: 6px;
 }
+.composer-input {
+  /* RTL: النص والبديل يبدآن من اليمين دائمًا */
+  text-align: start;
+}
 .composer-input::placeholder {
   color: color-mix(in srgb, var(--text-soft) 80%, transparent);
+  text-align: start;
 }
 /* زر + للمرفقات (بأسلوب Gemini) */
 .composer-plus {
@@ -495,9 +511,9 @@ h2, h3 { letter-spacing: -0.01em; }
 /* زر الإرسال */
 .composer-send {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
   border: 0;
   background: var(--grad-accent);
   color: #fff;
