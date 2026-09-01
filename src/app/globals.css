@@ -1237,10 +1237,12 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   overflow: hidden;
 }
 
-/* داخل مساحة العمل يمتدّ القماش بلا حدّ ولا استدارة — تبقى لصفحة الفحص وحدها */
+/* داخل مساحة العمل يمتدّ القماش بلا حدّ ولا استدارة ولا وهج خلفي —
+   كلّها تبقى لصفحة الفحص وحدها حيث الرسم صندوقٌ وسط صفحة */
 .ws-canvas-inner .xg-canvas {
   border: 0;
   border-radius: 0;
+  background: var(--panel-solid);
 }
 
 .ws-bar {
