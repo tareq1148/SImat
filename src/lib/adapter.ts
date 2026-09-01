@@ -202,6 +202,9 @@ export function irToN8n(
     (n) => n.type !== "trigger" && n.type !== "output"
   );
 
+  // سلاسل استخراجٍ منظَّم لا تأليف — تبقى سلسلة بسيطة ولا تتحوّل إلى وكيل
+  const structuredLlm = new Set<string>();
+
   // بوابة الإجراء الحساس: التأليف مشترك، ثم اختبار → معاينة فقط (لا تنفيذ)؛
   // فعلي → طلب موافقة → انتظار → موافقة → تنفيذ. الرفض يُنهي التشغيل.
   const buildSensitiveGate = (
@@ -412,7 +415,7 @@ export function irToN8n(
       addOpenAiModel(composeName, xPos);
 
       const sendName = nodeName;
-      const composeRef = `$('${composeName}').item.json.text`;
+      const composeRef = `($('${composeName}').item.json.output ?? $('${composeName}').item.json.text)`;
       const gmailNode: N8nNode = {
         id: irNode.id,
         name: sendName,
@@ -470,7 +473,7 @@ export function irToN8n(
       addOpenAiModel(composeName, xPos);
 
       const sendName = nodeName;
-      const composeRef = `$('${composeName}').item.json.text`;
+      const composeRef = `($('${composeName}').item.json.output ?? $('${composeName}').item.json.text)`;
       const msgNode: N8nNode = isTelegram
         ? {
             id: irNode.id,
@@ -554,7 +557,7 @@ export function irToN8n(
       connectPrev(composeName);
       addOpenAiModel(composeName, xPos);
 
-      const composeRef = `$('${composeName}').item.json.text`;
+      const composeRef = `($('${composeName}').item.json.output ?? $('${composeName}').item.json.text)`;
       const igUser =
         irNode.params.ig_user_id ??
         "={{ $('" + INPUT_NODE + "').item.json.payload.ig_user_id }}";
@@ -647,7 +650,7 @@ export function irToN8n(
       connectPrev(composeName);
       addOpenAiModel(composeName, xPos);
 
-      const composeRef = `$('${composeName}').item.json.text`;
+      const composeRef = `($('${composeName}').item.json.output ?? $('${composeName}').item.json.text)`;
       const videoExpr = irNode.params.video_url
         ? JSON.stringify(irNode.params.video_url)
         : "$('" + INPUT_NODE + "').item.json.payload.video_url";
@@ -687,6 +690,7 @@ export function irToN8n(
 
     if (irNode.provider === "google_sheets") {
       const composeName = `تجهيز الصف: ${nodeName}`;
+      structuredLlm.add(`${irNode.id}-compose`);
       nodes.push({
         id: `${irNode.id}-compose`,
         name: composeName,
@@ -716,7 +720,8 @@ export function irToN8n(
         position: [step(), Y],
         parameters: {
           mode: "raw",
-          jsonOutput: "={{ JSON.parse($json.text) }}",
+          jsonOutput:
+            "={{ JSON.parse(String($json.output ?? $json.text).replace(/```json/g, '').replace(/```/g, '').trim()) }}",
           options: {},
         },
       });
@@ -767,7 +772,7 @@ export function irToN8n(
           resource: "file",
           operation: "createFromText",
           content:
-            "={{ typeof $json.text === 'string' ? $json.text : JSON.stringify($json, null, 2) }}",
+            "={{ typeof ($json.output ?? $json.text) === 'string' ? ($json.output ?? $json.text) : JSON.stringify($json, null, 2) }}",
           name:
             irNode.params.file_name ??
             "={{ 'muhawwil-' + $now.toFormat('yyyy-MM-dd-HHmm') + '.txt' }}",
@@ -846,7 +851,7 @@ export function irToN8n(
             actionFields: [
               {
                 action: "insert",
-                text: `={{ $('${composeName}').item.json.text }}`,
+                text: `={{ $('${composeName}').item.json.output ?? $('${composeName}').item.json.text }}`,
               },
             ],
           },
@@ -897,7 +902,8 @@ export function irToN8n(
         position: [step(), Y],
         parameters: {
           mode: "raw",
-          jsonOutput: "={{ JSON.parse($json.text) }}",
+          jsonOutput:
+            "={{ JSON.parse(String($json.output ?? $json.text).replace(/```json/g, '').replace(/```/g, '').trim()) }}",
           options: {},
         },
       });
@@ -1062,6 +1068,26 @@ export function irToN8n(
     // أي فشل تنفيذ يُبلَّغ للمنصة عبر معالج الأخطاء العام (PRD 10.7)
     settings.errorWorkflow = process.env.N8N_ERROR_WORKFLOW_ID;
   }
+
+  // الخطوات التي فيها تأليف — مستند، عرض، رسالة، منشور، نصّ مولّد — تُنفَّذ
+  // بوكيل ذكاء لا بسلسلة استدعاء واحدة. موضع واحد يحوّلها جميعًا بعد بنائها،
+  // فلا تتكرّر المعرفة في كل فرع. الوكيل يُخرج في output لا في text.
+  nodes.forEach((n) => {
+    if (n.type !== "@n8n/n8n-nodes-langchain.chainLlm") return;
+    if (structuredLlm.has(n.id)) return;
+    const p = n.parameters as {
+      text?: unknown;
+      messages?: { messageValues?: Array<{ message?: string }> };
+    };
+    const system = p.messages?.messageValues?.[0]?.message;
+    n.type = "@n8n/n8n-nodes-langchain.agent";
+    n.typeVersion = 2;
+    n.parameters = {
+      promptType: "define",
+      text: p.text,
+      options: system ? { systemMessage: system } : {},
+    };
+  });
 
   return {
     name: `[وَتيرة] ${ir.name}`,
