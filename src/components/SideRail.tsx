@@ -4,8 +4,9 @@
 // يضم: محادثة جديدة، مساراتك، إنجازاتي، الإعدادات، وحسابك
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { usePathname, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useLang } from "@/lib/i18n";
 import SettingsDrawer from "./SettingsDrawer";
@@ -38,6 +39,13 @@ function Icon({ name, size = 19 }: { name: string; size?: number }) {
       </>
     ),
     progress: <path d="M4 20v-6M10 20V6M16 20v-9M21 20H3" />,
+    dots: (
+      <>
+        <circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="19" r="1.4" fill="currentColor" stroke="none" />
+      </>
+    ),
     gear: (
       <>
         <circle cx="12" cy="12" r="3.2" />
@@ -62,12 +70,225 @@ function Icon({ name, size = 19 }: { name: string; size?: number }) {
   );
 }
 
+interface FlowLite {
+  id: string;
+  name: string;
+  status: FlowStatus;
+}
+
+// صف مسار + قائمة النقاط الثلاث: إعادة تسمية وحذف.
+// القائمة بموضع fixed لأن حاويتها تُمرَّر (overflow-y) فتقصّ أي قائمة مطلقة داخلها.
+function FlowRow({
+  flow,
+  onRenamed,
+  onDeleted,
+}: {
+  flow: FlowLite;
+  onRenamed: (id: string, name: string) => void;
+  onDeleted: (id: string) => void;
+}) {
+  const { t } = useLang();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [menu, setMenu] = useState<{ top: number; right: number } | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(flow.name);
+  const [busy, setBusy] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const closeMenu = useCallback(() => {
+    setMenu(null);
+    setConfirming(false);
+  }, []);
+
+  useEffect(() => {
+    if (!menu) return;
+    const onDown = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-flow-menu]")) closeMenu();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMenu();
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menu, closeMenu]);
+
+  function openMenu() {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (!r) return;
+    setMenu({ top: r.bottom + 6, right: window.innerWidth - r.right });
+  }
+
+  async function rename() {
+    const name = draft.trim();
+    if (!name || name === flow.name) {
+      setRenaming(false);
+      setDraft(flow.name);
+      return;
+    }
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/flows/${flow.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error ?? "تعذّرت إعادة التسمية");
+      onRenamed(flow.id, data.name ?? name);
+      router.refresh();
+    } catch {
+      setDraft(flow.name);
+    } finally {
+      setRenaming(false);
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/flows/${flow.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      closeMenu();
+      onDeleted(flow.id);
+      // إن كنّا واقفين على المسار المحذوف، لا نترك المستخدم في صفحة ميتة
+      if (pathname.startsWith(`/flow/${flow.id}`)) router.push("/workflows");
+      else router.refresh();
+    } catch {
+      setBusy(false);
+    }
+  }
+
+  if (renaming) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg px-3 h-9">
+        <span
+          className="status-dot shrink-0"
+          style={{ background: DOTS[flow.status] ?? "var(--edge)" }}
+        />
+        <input
+          autoFocus
+          disabled={busy}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={rename}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") rename();
+            if (e.key === "Escape") {
+              setDraft(flow.name);
+              setRenaming(false);
+            }
+          }}
+          className="min-w-0 flex-1 bg-transparent border-b border-[var(--accent-bg)] outline-none text-[0.78rem] text-[var(--text)]"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="group relative flex items-center rounded-lg hover:bg-[var(--well)] transition-colors">
+      <Link
+        href={`/flow/${flow.id}`}
+        title={flow.name}
+        className="flex min-w-0 flex-1 items-center gap-2 ps-3 h-9 text-[0.78rem] text-[var(--text-soft)] group-hover:text-[var(--text)] transition-colors"
+      >
+        <span
+          className="status-dot shrink-0"
+          style={{ background: DOTS[flow.status] ?? "var(--edge)" }}
+        />
+        <span className="truncate">{flow.name}</span>
+      </Link>
+
+      <button
+        ref={btnRef}
+        data-flow-menu
+        aria-label={t("rail.menu")}
+        aria-expanded={!!menu}
+        title={t("rail.menu")}
+        onClick={(e) => {
+          e.preventDefault();
+          if (menu) closeMenu();
+          else openMenu();
+        }}
+        className={`shrink-0 me-1 w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--surface)] transition-opacity ${
+          menu ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+        }`}
+      >
+        <Icon name="dots" size={15} />
+      </button>
+
+      {mounted && menu &&
+        createPortal(
+          <div
+            data-flow-menu
+          role="menu"
+          style={{ position: "fixed", top: menu.top, right: menu.right }}
+          className="z-50 w-44 rounded-xl border border-[var(--line)] bg-[var(--panel-solid)] p-1 shadow-lg"
+        >
+          {confirming ? (
+            <>
+              <p className="px-3 py-2 text-[0.72rem] leading-snug text-[var(--text-soft)]">
+                {t("rail.confirmDelete")}
+              </p>
+              <button
+                role="menuitem"
+                disabled={busy}
+                onClick={remove}
+                className="w-full text-start rounded-lg px-3 h-8 text-[0.76rem] font-semibold text-[var(--bad)] hover:bg-[var(--well)] disabled:opacity-50"
+              >
+                {busy ? "…" : t("rail.deleteYes")}
+              </button>
+              <button
+                role="menuitem"
+                onClick={() => setConfirming(false)}
+                className="w-full text-start rounded-lg px-3 h-8 text-[0.76rem] text-[var(--text-soft)] hover:bg-[var(--well)]"
+              >
+                {t("rail.cancel")}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                role="menuitem"
+                onClick={() => {
+                  closeMenu();
+                  setDraft(flow.name);
+                  setRenaming(true);
+                }}
+                className="w-full text-start rounded-lg px-3 h-8 text-[0.76rem] text-[var(--text)] hover:bg-[var(--well)]"
+              >
+                {t("rail.rename")}
+              </button>
+              <button
+                role="menuitem"
+                onClick={() => setConfirming(true)}
+                className="w-full text-start rounded-lg px-3 h-8 text-[0.76rem] text-[var(--bad)] hover:bg-[var(--well)]"
+              >
+                {t("rail.delete")}
+              </button>
+            </>
+          )}
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}
+
 export default function SideRail() {
   const pathname = usePathname();
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [drawer, setDrawer] = useState(false);
-  const [flows, setFlows] = useState<{ id: string; name: string; status: FlowStatus }[]>([]);
+  const [flows, setFlows] = useState<FlowLite[]>([]);
 
   useEffect(() => {
     try {
@@ -141,18 +362,14 @@ export default function SideRail() {
               {t("wf.yours")}
             </p>
             {flows.map((f) => (
-              <Link
+              <FlowRow
                 key={f.id}
-                href={`/flow/${f.id}`}
-                title={f.name}
-                className="flex items-center gap-2 rounded-lg px-3 h-9 text-[0.78rem] text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
-              >
-                <span
-                  className="status-dot shrink-0"
-                  style={{ background: DOTS[f.status] ?? "var(--edge)" }}
-                />
-                <span className="truncate">{f.name}</span>
-              </Link>
+                flow={f}
+                onRenamed={(id, name) =>
+                  setFlows((list) => list.map((x) => (x.id === id ? { ...x, name } : x)))
+                }
+                onDeleted={(id) => setFlows((list) => list.filter((x) => x.id !== id))}
+              />
             ))}
           </div>
         )}

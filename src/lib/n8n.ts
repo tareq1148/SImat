@@ -70,6 +70,18 @@ export async function deactivateWorkflow(id: string): Promise<void> {
   await api("POST", `/workflows/${id}/deactivate`);
 }
 
+// حذف سير العمل من المحرك — يُستدعى عند حذف المسار من المنصّة
+// حتى لا يبقى سير عمل يتيم يعمل بعد اختفاء صاحبه.
+// 404 يعني أنه محذوف أصلًا، والنتيجة المرجوّة متحققة.
+export async function deleteWorkflow(id: string): Promise<void> {
+  try {
+    await api("DELETE", `/workflows/${id}`);
+  } catch (err) {
+    if (err instanceof N8nError && err.status === 404) return;
+    throw err;
+  }
+}
+
 export async function createN8nCredential(
   name: string,
   type: string,
