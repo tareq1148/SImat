@@ -6,25 +6,30 @@
 import { useEffect, useRef, useState } from "react";
 import WorkspaceCanvas from "./WorkspaceCanvas";
 import NeuralThinking from "./NeuralThinking";
-
-interface Msg {
-  role: "user" | "assistant";
-  text: string;
-}
+import type { TranscriptMsg as Msg } from "@/lib/transcript";
 
 export default function FlowEditWorkspace({
   flowId,
   flowName,
+  history = [],
 }: {
   flowId: string;
   flowName: string;
+  /** محادثة المقابلة التي وُلد منها المسار */
+  history?: Msg[];
 }) {
-  const [messages, setMessages] = useState<Msg[]>([
-    {
-      role: "assistant",
-      text: `هذا مسار «${flowName}». اكتب أي تعديل تبيه وأطبّقه على المسار مباشرة.`,
-    },
-  ]);
+  // المحادثة السابقة تُعرض كما جرت؛ وإن لم تُحفظ نكتفي بسطر تعريفي
+  const [messages, setMessages] = useState<Msg[]>(
+    history.length > 0
+      ? history
+      : [
+          {
+            role: "assistant",
+            text: `هذا مسار «${flowName}». اكتب أي تعديل تبيه وأطبّقه على المسار مباشرة.`,
+          },
+        ]
+  );
+  const [hasHistory] = useState(history.length > 0);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,6 +107,16 @@ export default function FlowEditWorkspace({
               </div>
             </div>
           ))}
+          {hasHistory && messages.length === history.length && (
+            <div className="flex items-center gap-3 pt-1">
+              <span className="h-px flex-1 bg-[var(--line)]" />
+              <span className="text-[0.68rem] text-[var(--text-soft)] shrink-0">
+                اكتب أي تعديل هنا
+              </span>
+              <span className="h-px flex-1 bg-[var(--line)]" />
+            </div>
+          )}
+
           {busy && (
             <div className="flex justify-end">
               <div className="card rounded-2xl px-4 py-3">

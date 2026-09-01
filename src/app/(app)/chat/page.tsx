@@ -9,29 +9,13 @@ import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
 import WorkspaceCanvas from "@/components/WorkspaceCanvas";
 import { useLang } from "@/lib/i18n";
+import { cleanText, extractOptions } from "@/lib/transcript";
 import type { Provider } from "@/lib/types";
 import { useVoice } from "@/lib/useVoice";
 
 interface Msg {
   role: "user" | "assistant";
   text: string;
-}
-
-// خيارات سريعة يقترحها وَتيرة بصيغة [[خيارات: أ | ب]] — تُعرض أزرارًا وتُخفى من النص
-const OPTIONS_RE = /\[\[خيارات:([^\]]*)\]\]/;
-
-function extractOptions(text: string): string[] {
-  const m = text.match(OPTIONS_RE);
-  if (!m) return [];
-  return m[1]
-    .split("|")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
-function cleanText(text: string): string {
-  // يزيل الصيغة كاملة أو ناقصة أثناء البث حتى لا تومض للمستخدم
-  return text.replace(OPTIONS_RE, "").replace(/\[\[خيارات:[^\]]*$/, "").trimEnd();
 }
 
 function ToolIcon({ kind }: { kind: "clip" | "mic" | "stop" | "speaker" | "send" }) {
