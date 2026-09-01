@@ -1,8 +1,29 @@
 // تكامل Gmail عبر OAuth 2.0 — المنطق المشترك بين مسار البدء ومسار العودة.
 
+// Gmail: يُنفَّذ عبر اعتماد gmailOAuth2 في المحرك (تكامل قائم يعمل)
 export const GMAIL_SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.send",
+];
+
+// الخدمات الخمس التي ينفّذها n8n عبر Webhook — لكلٍّ نطاقاته
+export const SERVICE_SCOPES = {
+  drive: [
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/drive.file",
+  ],
+  sheets: ["https://www.googleapis.com/auth/spreadsheets"],
+  slides: ["https://www.googleapis.com/auth/presentations"],
+  calendar: ["https://www.googleapis.com/auth/calendar.events"],
+  docs: ["https://www.googleapis.com/auth/documents"],
+} as const;
+
+export type GoogleService = keyof typeof SERVICE_SCOPES;
+
+/** كل النطاقات المطلوبة — Gmail يبقى لأن تكامله قائم ويعمل */
+export const ALL_SCOPES = [
+  ...GMAIL_SCOPES,
+  ...Object.values(SERVICE_SCOPES).flat(),
 ];
 
 const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
@@ -47,7 +68,7 @@ export function buildConsentUrl(config: GoogleConfig, state: string): string {
     client_id: config.clientId,
     redirect_uri: config.redirectUri,
     response_type: "code",
-    scope: GMAIL_SCOPES.join(" "),
+    scope: ALL_SCOPES.join(" "),
     // offline + consent ضروريان معًا للحصول على refresh_token في كل مرة
     access_type: "offline",
     prompt: "consent",

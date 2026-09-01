@@ -1069,3 +1069,105 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
 }
+/* ===== رسم التنفيذ (ExecutionGraph) — بطاقات زجاجية للقراءة فقط ===== */
+.xg-canvas {
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(70% 60% at 30% 20%, color-mix(in srgb, var(--accent-bg) 9%, transparent), transparent 70%),
+    var(--panel-solid);
+}
+/* نقاط الخلفية بلون الحواف — تخفت في الفاتح وتظهر في الداكن */
+.xg-canvas .xg-bg path,
+.xg-canvas .xg-bg circle {
+  fill: color-mix(in srgb, var(--edge) 55%, transparent);
+}
+
+/* البطاقة: تمويه خلفي + حد فاتح + ظل عميق */
+.xg-node {
+  min-width: 220px;
+  max-width: 268px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
+  background: color-mix(in srgb, var(--panel-solid) 62%, transparent);
+  /* التمويه عبر أداة Tailwind (backdrop-blur-md) — خط معالجة CSS يُسقط
+     backdrop-filter المكتوبة يدويًا هنا */
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.xg-node:hover {
+  border-color: color-mix(in srgb, var(--accent-bg) 45%, transparent);
+}
+.react-flow__node.selected .xg-node {
+  border-color: var(--accent-bg);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-bg) 28%, transparent),
+    0 18px 44px rgba(0, 0, 0, 0.3);
+}
+
+.xg-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--grad-accent);
+}
+
+/* المقابض مخفية بصريًا — الحواف ترتكز عليها فقط */
+.xg-handle {
+  opacity: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  border: 0 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+/* شارة الحالة */
+.xg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--xg-state);
+  border: 1px solid color-mix(in srgb, var(--xg-state) 40%, transparent);
+  background: color-mix(in srgb, var(--xg-state) 13%, transparent);
+}
+.xg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--xg-state);
+  box-shadow: 0 0 8px var(--xg-state);
+}
+.xg-badge.is-running .xg-dot {
+  animation: xg-pulse 1.3s ease-in-out infinite;
+}
+@keyframes xg-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.55; }
+}
+
+/* الحواف: منحنية هادئة، وجزيء ضوء يسري عند التنفيذ */
+.xg-edge {
+  stroke: color-mix(in srgb, var(--text) 22%, transparent);
+  stroke-width: 2;
+  fill: none;
+}
+.xg-particle {
+  fill: var(--accent);
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+@media (prefers-reduced-motion: reduce) {
+  .xg-badge.is-running .xg-dot { animation: none; }
+  .xg-particle { display: none; }
+}
