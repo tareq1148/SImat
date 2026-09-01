@@ -860,14 +860,56 @@ export function irToN8n(
       continue;
     }
 
-    // عرض تقديمي: عقدة n8n تنشئ العرض بعنوانه فقط — لا تبني شرائح بمحتوى
+    // عرض تقديمي: عقدة n8n تُنشئ العرض بعنوانه فقط وتتركه بشريحة فارغة.
+    // فيُولَّد المحتوى، ثم يُنشأ العرض، ثم تُبنى الشرائح عبر batchUpdate في
+    // واجهة Slides مباشرةً — وتُحذف الشريحة الافتراضية الفارغة في آخر الدفعة.
     if (irNode.provider === "google_slides") {
-      const slidesNode: N8nNode = {
-        id: irNode.id,
-        name: nodeName,
+      const composeName = `تجهيز الشرائح: ${nodeName}`;
+      nodes.push({
+        id: `${irNode.id}-compose`,
+        name: composeName,
+        type: "@n8n/n8n-nodes-langchain.chainLlm",
+        typeVersion: 1.9,
+        position: [xPos, Y],
+        parameters: {
+          promptType: "define",
+          text: composePromptFor(
+            irNode,
+            'أخرج JSON بالشكل {"slides":[{"title":"عنوان الشريحة","body":"نقاط الشريحة"}]} ' +
+              "بين ثلاث وستّ شرائح. " +
+              STRICT_JSON
+          ),
+          messages: {
+            messageValues: [{ message: "أنت تعدّ عروضًا تقديمية عربية موجزة." }],
+          },
+          batching: {},
+        },
+      });
+      connectPrev(composeName);
+      addOpenAiModel(composeName, xPos);
+
+      const parseName = `شرائح جاهزة: ${nodeName}`;
+      nodes.push({
+        id: `${irNode.id}-parse`,
+        name: parseName,
+        type: "n8n-nodes-base.set",
+        typeVersion: 3.4,
+        position: [step(), Y],
+        parameters: {
+          mode: "raw",
+          jsonOutput: "={{ JSON.parse($json.text) }}",
+          options: {},
+        },
+      });
+      link(composeName, parseName);
+
+      const createName = `إنشاء العرض: ${nodeName}`;
+      const createNode: N8nNode = {
+        id: `${irNode.id}-create`,
+        name: createName,
         type: "n8n-nodes-base.googleSlides",
         typeVersion: 2,
-        position: [xPos, Y],
+        position: [step(), Y],
         parameters: {
           resource: "presentation",
           operation: "create",
@@ -877,9 +919,64 @@ export function irToN8n(
         },
       };
       if (creds.google_slides)
-        slidesNode.credentials = { googleSlidesOAuth2Api: creds.google_slides };
-      nodes.push(slidesNode);
-      connectPrev(nodeName);
+        createNode.credentials = { googleSlidesOAuth2Api: creds.google_slides };
+      nodes.push(createNode);
+      link(parseName, createName);
+
+      const buildName = `بناء طلبات الشرائح: ${nodeName}`;
+      nodes.push({
+        id: `${irNode.id}-batch`,
+        name: buildName,
+        type: "n8n-nodes-base.code",
+        typeVersion: 2,
+        position: [step(), Y],
+        parameters: {
+          jsCode: [
+            `const src = $('${parseName}').first().json;`,
+            `const made = $('${createName}').first().json;`,
+            "const slides = Array.isArray(src.slides) ? src.slides : [];",
+            "const requests = [];",
+            "slides.forEach((s, i) => {",
+            "  const sid = 'wt_slide_' + i, tid = 'wt_title_' + i, bid = 'wt_body_' + i;",
+            "  requests.push({ createSlide: { objectId: sid,",
+            "    slideLayoutReference: { predefinedLayout: 'TITLE_AND_BODY' },",
+            "    placeholderIdMappings: [",
+            "      { layoutPlaceholder: { type: 'TITLE', index: 0 }, objectId: tid },",
+            "      { layoutPlaceholder: { type: 'BODY', index: 0 }, objectId: bid }",
+            "    ] } });",
+            "  if (s.title) requests.push({ insertText: { objectId: tid, text: String(s.title) } });",
+            "  if (s.body) requests.push({ insertText: { objectId: bid, text: String(s.body) } });",
+            "});",
+            "// الشريحة الافتراضية تُحذف بعد إضافة شرائحنا حتى لا يمرّ العرض فارغًا",
+            "const firstId = made.slides && made.slides[0] && made.slides[0].objectId;",
+            "if (firstId && requests.length) requests.push({ deleteObject: { objectId: firstId } });",
+            "return [{ json: { presentationId: made.presentationId, requests } }];",
+          ].join("\n"),
+        },
+      });
+      link(createName, buildName);
+
+      const fillNode: N8nNode = {
+        id: irNode.id,
+        name: nodeName,
+        type: "n8n-nodes-base.httpRequest",
+        typeVersion: 4.2,
+        position: [step(), Y],
+        parameters: {
+          method: "POST",
+          url: "=https://slides.googleapis.com/v1/presentations/{{ $json.presentationId }}:batchUpdate",
+          authentication: "predefinedCredentialType",
+          nodeCredentialType: "googleSlidesOAuth2Api",
+          sendBody: true,
+          specifyBody: "json",
+          jsonBody: "={{ JSON.stringify({ requests: $json.requests }) }}",
+          options: {},
+        },
+      };
+      if (creds.google_slides)
+        fillNode.credentials = { googleSlidesOAuth2Api: creds.google_slides };
+      nodes.push(fillNode);
+      link(buildName, nodeName);
       prev = nodeName;
       continue;
     }
@@ -991,6 +1088,7 @@ export function missingProviders(
         n.provider === "gmail" ||
         n.provider === "google_sheets" ||
         n.provider === "google_docs" ||
+        n.provider === "google_slides" ||
         n.provider === "telegram" ||
         n.provider === "slack" ||
         n.provider === "instagram" ||
