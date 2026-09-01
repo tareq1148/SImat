@@ -296,6 +296,23 @@ export default function SideRail() {
     } catch {}
   }, []);
 
+  // رسوّ مساحة العمل تُبلّغ عنه شاشة المحادثة: عندها يُطوى الشريط ويعلو
+  // فوق المحادثة عند فتحه بدل أن يدفعها. التفضيل المحفوظ لا يُمَس.
+  const [docked, setDocked] = useState(false);
+  useEffect(() => {
+    const onDock = (e: Event) => {
+      const on = !!(e as CustomEvent<{ docked: boolean }>).detail?.docked;
+      setDocked(on);
+      if (on) setOpen(false);
+      else
+        try {
+          setOpen(localStorage.getItem("wt_rail") === "1");
+        } catch {}
+    };
+    window.addEventListener("wt:workspace", onDock);
+    return () => window.removeEventListener("wt:workspace", onDock);
+  }, []);
+
   const toggle = useCallback(() => {
     setOpen((v) => {
       try {
@@ -334,10 +351,14 @@ export default function SideRail() {
 
   return (
     <>
+      {/* حاجز يحجز عرض الشريط المطويّ وحده — فيبقى المحتوى ثابتًا مهما اتّسع الشريط */}
+      {docked && <div className="hidden md:block shrink-0 w-[68px]" aria-hidden />}
       <aside
-        className={`hidden md:flex flex-col shrink-0 gap-1.5 border-e border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-[74px] h-[calc(100vh-74px)] p-3 transition-[width] duration-200 ${
-          open ? "w-[248px]" : "w-[68px]"
-        }`}
+        className={`hidden md:flex flex-col shrink-0 gap-1.5 border-e border-[var(--line-soft)] backdrop-blur h-[calc(100vh-74px)] p-3 transition-[width] duration-200 ${
+          docked
+            ? "fixed top-[74px] start-0 z-40 bg-[var(--panel-solid)]"
+            : "sticky top-[74px] bg-[var(--panel)]"
+        } ${open ? "w-[248px]" : "w-[68px]"} ${docked && open ? "shadow-2xl" : ""}`}
       >
         <button
           onClick={toggle}

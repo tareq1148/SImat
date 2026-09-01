@@ -242,19 +242,18 @@ export default function ChatPage() {
   // انتقال مساحة العمل: بمجرد ولادة المسار ترسو المحادثة جانبًا وتتمدّد اللوحة
   const split = !!flowId;
 
+  // إشعار الشريط الجانبي — يطوي نفسه ويصير طبقة تعلو المحادثة بدل أن تدفعها
+  useEffect(() => {
+    const tell = (docked: boolean) =>
+      window.dispatchEvent(new CustomEvent("wt:workspace", { detail: { docked } }));
+    tell(split);
+    return () => {
+      tell(false);
+    };
+  }, [split]);
+
   return (
     <main className={`ws-root ${split ? "is-split" : ""}`}>
-      {split && (
-        <section className="ws-canvas" aria-label="لوحة سير العمل">
-          <WorkspaceCanvas
-            flowId={flowId}
-            building={building}
-            onDeploy={buildFromChat}
-            onOpenFull={() => router.push(`/flow/${flowId}`)}
-          />
-        </section>
-      )}
-
       <section className="ws-chat">
       {messages.length === 0 && !split && (
         <div className="flex-1 flex flex-col items-center justify-start pt-16 sm:pt-24 pb-4">
@@ -509,6 +508,17 @@ export default function ChatPage() {
         )}
       </div>
       </section>
+
+      {split && (
+        <section className="ws-canvas" aria-label="لوحة سير العمل">
+          <WorkspaceCanvas
+            flowId={flowId}
+            building={building}
+            onDeploy={buildFromChat}
+            onOpenFull={() => router.push(`/flow/${flowId}`)}
+          />
+        </section>
+      )}
 
       {voiceMode && (
         <VoiceExperience
