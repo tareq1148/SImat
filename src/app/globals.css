@@ -1207,6 +1207,13 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   flex-basis: 25%;
   padding-inline: 0.9rem;
   border-inline-end: 1px solid var(--line);
+  /* السطح نفسه الذي عليه القماش — بلا فرق درجة بين الجزأين */
+  background: var(--panel-solid);
+}
+
+/* صندوق الكتابة لاصق فوق الرسائل: تطابق خلفيته العمود وإلا ظهر شريط مخالف */
+.is-split .ws-composer {
+  background: var(--panel-solid);
 }
 
 /* اللوحة تشغل ما تبقّى — 75% — وتدخل بتلاشٍ وانزلاق خفيف */

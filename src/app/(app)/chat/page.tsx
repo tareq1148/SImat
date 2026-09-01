@@ -447,7 +447,7 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className="w-full max-w-2xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)] flex items-center gap-3">
+      <div className="ws-composer w-full max-w-2xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)] flex items-center gap-3">
         <form onSubmit={send} className="composer flex-1 min-w-0">
           {/* + المرفقات */}
           <button

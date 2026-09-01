@@ -133,7 +133,7 @@ export default function FlowEditWorkspace({
           </div>
         )}
 
-        <div className="sticky bottom-0 pt-2 pb-5 bg-[var(--bg)]">
+        <div className="ws-composer sticky bottom-0 pt-2 pb-5 bg-[var(--bg)]">
           <form onSubmit={send} className="composer">
             <input
               className="composer-input"
