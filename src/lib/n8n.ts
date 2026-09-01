@@ -89,6 +89,31 @@ export async function deleteN8nCredential(id: string): Promise<void> {
   }
 }
 
+// ترجمة أخطاء n8n لرسائل تسمّي السبب.
+// n8n يقول "credentials that are not shared with you" سواء كان الاعتماد محذوفًا
+// أو مملوكًا لحساب آخر — والرسالة لا تسمّي أيّها، فنستخرجها من الحمولة نفسها.
+export function friendlyBuildError(
+  raw: string,
+  payload: { nodes: unknown[] }
+): string {
+  if (!/not shared with you|credential.*not found/i.test(raw)) return raw;
+
+  const used = new Set<string>();
+  for (const n of payload.nodes as { credentials?: Record<string, { id?: string }> }[]) {
+    for (const [type, c] of Object.entries(n.credentials ?? {})) {
+      if (c?.id) used.add(`${type} (${c.id})`);
+    }
+  }
+
+  return (
+    "محرّك التنفيذ رفض المسار: أحد الاعتمادات غير موجود فيه أو يخصّ حسابًا آخر. " +
+    (used.size
+      ? `الاعتمادات المستخدمة: ${[...used].join("، ")}. `
+      : "") +
+    "تحقق من قيم N8N_CRED_* في .env.local — قد تكون بقايا من نسخة n8n سابقة."
+  );
+}
+
 // ترجمة أخطاء الاستدعاء لرسائل عربية موجِّهة
 export function friendlyWebhookError(status: number, text: string): string {
   if (status === 404 && text.includes("not registered"))

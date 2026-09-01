@@ -6,6 +6,7 @@ import { validateIR } from "@/lib/validate-ir";
 import {
   activateWorkflow,
   createWorkflow,
+  friendlyBuildError,
   hasN8nKey,
   updateWorkflow,
 } from "@/lib/n8n";
@@ -122,8 +123,11 @@ export async function POST(
       .update({ n8n_payload: payload })
       .eq("id", versionRow.id);
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "خطأ غير متوقع";
-    return Response.json({ error: msg }, { status: 502 });
+    const raw = err instanceof Error ? err.message : "خطأ غير متوقع";
+    return Response.json(
+      { error: friendlyBuildError(raw, payload) },
+      { status: 502 }
+    );
   }
 
   try {
