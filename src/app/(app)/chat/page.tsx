@@ -114,6 +114,8 @@ export default function ChatPage() {
   >([]);
   const [uploading, setUploading] = useState(false);
   const [options, setOptions] = useState<string[]>([]);
+  const [otherOpen, setOtherOpen] = useState(false);
+  const [otherText, setOtherText] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -157,6 +159,8 @@ export default function ChatPage() {
     setAttachments([]);
     setInput("");
     setOptions([]);
+    setOtherOpen(false);
+    setOtherText("");
     setError(null);
     setBusy(true);
     const displayText =
@@ -434,28 +438,48 @@ export default function ChatPage() {
               <button
                 key={opt}
                 onClick={() => send(undefined, opt)}
-                className="group flex items-center gap-2.5 text-start rounded-xl border px-3.5 py-2.5 text-[0.83rem] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] transition-colors hover:border-[var(--accent-bg)]"
-                style={{ borderColor: "color-mix(in srgb, var(--accent-bg) 32%, transparent)" }}
+                className="opt-btn group flex items-center gap-2.5 text-start rounded-xl border px-3.5 py-2.5 text-[0.83rem] font-semibold"
               >
-                <span
-                  className="shrink-0 w-5 h-5 rounded-md text-[0.62rem] font-bold text-white flex items-center justify-center"
-                  style={{ background: "var(--accent-bg)" }}
-                >
+                <span className="opt-num shrink-0 w-5 h-5 rounded-md text-[0.62rem] font-bold text-white flex items-center justify-center">
                   {i + 1}
                 </span>
                 <span className="leading-snug">{opt}</span>
               </button>
             ))}
           </div>
-          <button
-            onClick={() => {
-              setOptions([]);
-              textInputRef.current?.focus();
-            }}
-            className="w-full rounded-xl border border-dashed border-[var(--line)] text-[var(--text-soft)] px-3.5 py-2.5 text-[0.8rem] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
-          >
-            {t("opts.other")}
-          </button>
+
+          {otherOpen ? (
+            <div className="flex gap-2 items-center rounded-xl border border-[var(--accent-bg)] bg-[var(--surface)] p-1.5 rise">
+              <input
+                autoFocus
+                className="flex-1 bg-transparent border-0 outline-none px-2.5 text-[0.83rem] text-[var(--text)] placeholder:text-[var(--text-soft)]"
+                placeholder={t("opts.otherPlaceholder")}
+                value={otherText}
+                onChange={(e) => setOtherText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && otherText.trim()) {
+                    e.preventDefault();
+                    send(undefined, otherText.trim());
+                  }
+                  if (e.key === "Escape") setOtherOpen(false);
+                }}
+              />
+              <button
+                onClick={() => otherText.trim() && send(undefined, otherText.trim())}
+                disabled={!otherText.trim()}
+                className="btn btn-primary text-[0.75rem] py-1.5 px-4 shrink-0"
+              >
+                {t("input.send")}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setOtherOpen(true)}
+              className="opt-other w-full rounded-xl border border-dashed border-[var(--line)] text-[var(--text-soft)] px-3.5 py-2.5 text-[0.8rem]"
+            >
+              {t("opts.other")}
+            </button>
+          )}
         </div>
       )}
 

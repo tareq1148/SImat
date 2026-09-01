@@ -24,6 +24,7 @@ const DICT: Record<string, { ar: string; en: string }> = {
   "input.send": { ar: "إرسال", en: "Send" },
   "input.listening": { ar: "نسمعك…", en: "Listening…" },
   "opts.other": { ar: "أخرى — أكتبها بنفسي", en: "Other — I'll type it" },
+  "opts.otherPlaceholder": { ar: "اكتب إجابتك هنا…", en: "Type your answer here…" },
   "voice.speaking": { ar: "وَتيرة يتحدث", en: "وَتيرة is speaking" },
   "spec.ready": { ar: "المواصفة جاهزة للتقييم.", en: "Spec is ready for evaluation." },
   "spec.showEval": { ar: "اعرض التقييم ←", en: "Show evaluation →" },

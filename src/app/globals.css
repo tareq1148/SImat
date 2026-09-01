@@ -246,6 +246,50 @@ h2, h3 { letter-spacing: -0.01em; }
   cursor: not-allowed;
 }
 
+/* أزرار خيارات المقابلة — استجابة لمس واضحة */
+.opt-btn {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent-bg) 32%, transparent);
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease,
+    transform 0.08s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.opt-btn:hover {
+  background: color-mix(in srgb, var(--accent-bg) 16%, transparent);
+  border-color: var(--accent-bg);
+}
+/* اللمس/الضغط: تعبئة كاملة بلون المنصة — لا يبقى شك أنك لمست الخيار */
+.opt-btn:active {
+  background: var(--accent-bg);
+  border-color: var(--accent-bg);
+  color: #fff;
+  transform: scale(0.985);
+}
+.opt-btn:active .opt-num {
+  background: rgba(255, 255, 255, 0.25);
+}
+.opt-num {
+  background: var(--accent-bg);
+  transition: background 0.12s ease;
+}
+
+.opt-other {
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease,
+    transform 0.08s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.opt-other:hover {
+  background: var(--well);
+  color: var(--text);
+}
+.opt-other:active {
+  background: var(--accent-soft);
+  border-color: var(--accent-bg);
+  color: var(--accent);
+  transform: scale(0.985);
+}
+
 /* مفتاح تبديل الثيم */
 .theme-switch {
   position: relative;
