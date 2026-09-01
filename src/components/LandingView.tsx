@@ -89,7 +89,7 @@ export default function LandingView({ authed }: { authed: boolean }) {
             <span className="text-[1.8rem] font-bold tracking-tight">{t("brand")}</span>
           </Link>
 
-          <h1 className="text-[2.2rem] sm:text-[3rem] font-bold leading-[1.22] mb-5 rise-1">
+          <h1 className="text-[2.2rem] sm:text-[3rem] font-bold leading-[1.42] mb-5 rise-1">
             {ar ? (
               <>
                 حوّل فكرتك إلى{" "}
@@ -103,16 +103,10 @@ export default function LandingView({ authed }: { authed: boolean }) {
             )}
           </h1>
 
-          <p className="text-[1.1rem] sm:text-[1.3rem] font-semibold text-[var(--text-soft)] mb-3 tracking-tight rise-2">
+          <p className="text-[1.1rem] sm:text-[1.3rem] font-semibold text-[var(--text-soft)] mb-11 tracking-tight rise-2">
             <span className="tag-word">{t("home.w1")}.</span>{" "}
             <span className="tag-word">{t("home.w2")}.</span>{" "}
             <span className="tag-word text-[var(--accent)]">{t("home.w3")}.</span>
-          </p>
-
-          <p className="text-[0.88rem] text-[var(--text-soft)] opacity-80 mb-11 max-w-sm mx-auto md:mx-0 leading-relaxed rise-2">
-            {ar
-              ? "صف مهمتك المتكررة بجملة واحدة — ووَتيرة يبنيها أتمتة تعمل عنك."
-              : "Describe your recurring task in one line — Wateera builds the automation for you."}
           </p>
 
           <div className="flex justify-center md:justify-start rise-3">

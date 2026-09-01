@@ -183,9 +183,12 @@ h2, h3 { letter-spacing: -0.01em; }
   transform: translateY(0) scale(0.985);
 }
 
-/* نص متدرج بألوان الهوية */
+/* نص متدرج بألوان الهوية
+   background-size الرأسي الموسّع يضمن تلوين ذيول الحروف العربية (ي، ج، ...) بدل قصّها */
 .grad-text {
   background: linear-gradient(90deg, #72cb15 0%, #58ed32 38%, #20cbd0 76%, #2874f0 100%);
+  background-size: 100% 260%;
+  background-position: 50% 50%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
