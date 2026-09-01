@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import AutomationSummaryCard from "@/components/AutomationSummaryCard";
+import ConnectionsPrompt from "@/components/ConnectionsPrompt";
 import NeuralField from "@/components/NeuralField";
 import NeuralThinking from "@/components/NeuralThinking";
 import VoiceExperience from "@/components/VoiceExperience";
@@ -10,6 +10,7 @@ import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
 import WorkspaceCanvas from "@/components/WorkspaceCanvas";
 import { useLang } from "@/lib/i18n";
+import type { Provider } from "@/lib/types";
 import { useVoice } from "@/lib/useVoice";
 
 interface Msg {
@@ -60,6 +61,8 @@ export default function ChatPage() {
   const [evaluating, setEvaluating] = useState(false);
   const [building, setBuilding] = useState(false);
   const [flowId, setFlowId] = useState<string | null>(null);
+  // ما ينقص المسار من ارتباطات — يحدّده محرّك البناء بعد المحاولة، لا قبلها
+  const [missing, setMissing] = useState<Provider[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<
     { id: string; name: string; size: number }[]
@@ -227,6 +230,7 @@ export default function ChatPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "تعذر التقييم");
       setFlowId(data.flowId);
+      await buildFromChat(data.flowId);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
     } finally {
@@ -234,16 +238,37 @@ export default function ChatPage() {
     }
   }
 
-  async function buildFromChat() {
-    if (!flowId) return;
+  // البناء يجري في مكانه بلا مغادرة الشاشة: ما ينقص يُطلب هنا بعد المحاولة
+  async function buildFromChat(id?: string) {
+    const fid = id ?? flowId;
+    if (!fid) return;
     setBuilding(true);
+    setError(null);
+    setMissing([]);
     try {
-      const res = await fetch(`/api/flows/${flowId}/build`, { method: "POST" });
+      const res = await fetch(`/api/flows/${fid}/build`, { method: "POST" });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "تعذر البناء");
-      router.push(`/flow/${flowId}?tab=run`);
+
+      if (data.status === "NeedsConnections") {
+        setMissing((data.missing ?? []) as Provider[]);
+      } else if (data.status === "NeedsInformation") {
+        // نقص معلومة لا ارتباط — يُصلحه المستخدم بالكتابة ثم يُعاد البناء
+        const fields = Array.isArray(data.blocking)
+          ? data.blocking
+              .flatMap((b: { missing?: { label: string }[] }) => b.missing ?? [])
+              .map((m: { label: string }) => m.label)
+              .join("، ")
+          : (data.missing_params ?? "");
+        setError(
+          fields
+            ? `ينقص المسار: ${fields} — اذكرها في المحادثة وسأعيد البناء.`
+            : "ينقص المسار معلومة — وضّحها في المحادثة وسأعيد البناء."
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
       setBuilding(false);
     }
   }
@@ -328,16 +353,9 @@ export default function ChatPage() {
         </div>
       )}
 
-      {/* اللوحة تتكفّل بالاسم والحالة وزر التشغيل — فيبقى هنا ما يحتاج تدخّل المستخدم */}
-      {flowId && !building && (
-        <div className="w-full max-w-3xl mx-auto mb-3">
-          <AutomationSummaryCard
-            flowId={flowId}
-            variant="connections"
-            onOpenFlow={() => router.push(`/flow/${flowId}`)}
-            onBuild={buildFromChat}
-          />
-        </div>
+      {/* لا بطاقة ملخّص: اللوحة تعرض المسار، وهنا يُطلب الناقص وحده */}
+      {!building && missing.length > 0 && (
+        <ConnectionsPrompt missing={missing} onConnected={() => buildFromChat()} />
       )}
 
       {voice.error && (

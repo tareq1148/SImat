@@ -71,7 +71,7 @@ export default function WorkspaceCanvas({
             افتح كاملًا
           </button>
           <button
-            onClick={onDeploy}
+            onClick={() => onDeploy()}
             disabled={building}
             className="btn btn-primary text-[0.75rem] py-1.5"
             title={deployable ? "ابنِ المسار في محرّك التنفيذ" : "أعد البناء"}
