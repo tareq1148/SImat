@@ -24,11 +24,17 @@ export default function LandingView({ authed }: { authed: boolean }) {
 
   return (
     <main className="flex-1 relative overflow-hidden">
-      {/* أدوات سريعة: اللغة والمظهر */}
-      <div
-        className="absolute top-6 z-20 flex items-center gap-2"
-        style={{ insetInlineEnd: "1.75rem" }}
-      >
+      {/* ترويسة علوية: الشعار في جهة القراءة الأولى والأدوات مقابله */}
+      <header className="absolute top-0 inset-x-0 z-20 h-20 flex items-center justify-between px-7 sm:px-12 md:px-16">
+        <Link
+          href="/"
+          className="flex items-center gap-3 hover:opacity-85 transition-opacity"
+        >
+          <Logo size={40} id="wLogoLanding" />
+          <span className="text-[1.4rem] font-bold tracking-tight">{t("brand")}</span>
+        </Link>
+
+        <div className="flex items-center gap-2">
         <button
           onClick={() => toggleLang()}
           className="w-11 h-9 rounded-full border border-[var(--line)] bg-[var(--panel)] backdrop-blur text-[0.72rem] font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--accent-bg)] transition-colors"
@@ -68,8 +74,9 @@ export default function LandingView({ authed }: { authed: boolean }) {
               </>
             )}
           </svg>
-        </button>
-      </div>
+          </button>
+        </div>
+      </header>
 
       {/* الشبكة العصبية تملأ الجهة المقابلة للنص وتمتد خلف الصفحة */}
       <div
@@ -81,26 +88,8 @@ export default function LandingView({ authed }: { authed: boolean }) {
 
       <div className="relative z-10 min-h-[calc(100vh-2rem)] flex items-center px-7 sm:px-12 md:px-16">
         <div className="w-full md:w-[46%] text-center md:text-start py-14">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-3 mb-9 hover:opacity-85 transition-opacity"
-          >
-            <Logo size={48} id="wLogoLanding" />
-            <span className="text-[1.8rem] font-bold tracking-tight">{t("brand")}</span>
-          </Link>
-
-          <h1 className="text-[2.2rem] sm:text-[3rem] font-bold leading-[1.42] mb-5 rise-1">
-            {ar ? (
-              <>
-                حوّل فكرتك إلى{" "}
-                <span className="grad-text">سير عمل ذكي</span>
-              </>
-            ) : (
-              <>
-                Turn your idea into a{" "}
-                <span className="grad-text">smart workflow</span>
-              </>
-            )}
+          <h1 className="text-[2.2rem] sm:text-[3rem] font-bold leading-[1.42] mb-5 rise-1 text-[var(--text)]">
+            {ar ? "حوّل فكرتك إلى سير عمل ذكي" : "Turn your idea into a smart workflow"}
           </h1>
 
           <p className="text-[1.1rem] sm:text-[1.3rem] font-semibold text-[var(--text-soft)] mb-11 tracking-tight rise-2">
