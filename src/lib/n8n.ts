@@ -73,9 +73,20 @@ export async function deactivateWorkflow(id: string): Promise<void> {
 export async function createN8nCredential(
   name: string,
   type: string,
-  data: Record<string, string>
+  data: Record<string, unknown>
 ): Promise<{ id: string }> {
   return api("POST", "/credentials", { name, type, data });
+}
+
+// حذف اعتماد — يُستخدم عند فصل الربط وعند استبدال اعتماد قديم بآخر.
+// لا يرمي إن كان محذوفًا أصلًا (404): النتيجة المرجوّة متحققة.
+export async function deleteN8nCredential(id: string): Promise<void> {
+  try {
+    await api("DELETE", `/credentials/${id}`);
+  } catch (err) {
+    if (err instanceof N8nError && err.status === 404) return;
+    throw err;
+  }
 }
 
 // ترجمة أخطاء الاستدعاء لرسائل عربية موجِّهة

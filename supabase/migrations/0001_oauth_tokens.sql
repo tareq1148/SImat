@@ -29,6 +29,10 @@ alter table public.oauth_tokens
 alter table public.oauth_tokens
   add column if not exists last_error text;
 
+-- معرّف اعتماد n8n المُنشأ من هذه التوكنات — نحتاجه لحذفه أو استبداله عند إعادة الربط
+alter table public.oauth_tokens
+  add column if not exists n8n_credential_id text;
+
 alter table public.oauth_tokens enable row level security;
 
 -- لا CREATE POLICY هنا. أي إضافة سياسة لاحقًا تفتح التوكنات للعميل.

@@ -5,6 +5,7 @@ import {
   exchangeCodeForTokens,
   googleConfig,
 } from "@/lib/google-oauth";
+import { syncGmailCredential } from "@/lib/gmail-n8n";
 
 function back(origin: string, params: Record<string, string>) {
   const url = new URL("/chat", origin);
@@ -63,6 +64,14 @@ export async function GET(req: NextRequest) {
     ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
     : null;
 
+  // الصف السابق: نحتاج refresh_token المحفوظ (جوجل قد لا يعيده) ومعرّف الاعتماد القديم
+  const { data: prev } = await db
+    .from("oauth_tokens")
+    .select("refresh_token, n8n_credential_id")
+    .eq("user_id", user.id)
+    .eq("provider", "google")
+    .maybeSingle<{ refresh_token: string | null; n8n_credential_id: string | null }>();
+
   const { error } = await db.from("oauth_tokens").upsert(
     {
       user_id: user.id,
@@ -86,6 +95,41 @@ export async function GET(req: NextRequest) {
       ? "جدول oauth_tokens غير موجود — نفّذ supabase/migrations/0001_oauth_tokens.sql"
       : error.message;
     return back(origin, { gmail_error: hint });
+  }
+
+  // الحلقة الواصلة: اعتماد gmailOAuth2 في المحرك حتى تُبنى المسارات بحساب المستخدم
+  const refreshToken = tokens.refresh_token ?? prev?.refresh_token ?? null;
+  if (!refreshToken) {
+    // بلا refresh_token لن يستطيع n8n التجديد — الربط محفوظ لكن الأتمتة لن تدوم
+    return back(origin, {
+      gmail_connected: "true",
+      gmail_error:
+        "لم يُعِد جوجل refresh_token — افصل الربط من myaccount.google.com/permissions ثم أعد المحاولة.",
+    });
+  }
+
+  const sync = await syncGmailCredential(
+    db,
+    user.id,
+    tokens,
+    refreshToken,
+    prev?.n8n_credential_id ?? null
+  );
+
+  if (sync.credentialId) {
+    await db
+      .from("oauth_tokens")
+      .update({ n8n_credential_id: sync.credentialId })
+      .eq("user_id", user.id)
+      .eq("provider", "google");
+  }
+
+  if (!sync.ok) {
+    // التوكن محفوظ، لكن المحرك لا يعرفه — نقولها صراحة بدل ادّعاء نجاح كامل
+    return back(origin, {
+      gmail_connected: "true",
+      gmail_error: `حُفظ الربط لكن تعذّر إنشاء الاعتماد في المحرك: ${sync.error ?? ""}`,
+    });
   }
 
   return back(origin, { gmail_connected: "true" });
