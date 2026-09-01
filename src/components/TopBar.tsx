@@ -14,7 +14,6 @@ export default function TopBar() {
   const { lang, t } = useLang();
 
   const onCreate = pathname.startsWith("/chat");
-  const onFlows = pathname.startsWith("/workflows") || pathname.startsWith("/flow");
 
   // .seg-tab يتكفّل بالتوسيط (inline-flex + place-items) ومنع اللف — انظر globals.css
   const tab = (active: boolean) => `seg-tab ${active ? "is-on" : ""}`;
@@ -33,9 +32,6 @@ export default function TopBar() {
       <nav className="seg">
         <Link href="/chat" className={tab(onCreate)}>
           {t("tab.create")}
-        </Link>
-        <Link href="/workflows" className={tab(onFlows)}>
-          {t("tab.flows")}
         </Link>
       </nav>
 

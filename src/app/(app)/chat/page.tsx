@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import ConnectionsPrompt from "@/components/ConnectionsPrompt";
 import NeuralField from "@/components/NeuralField";
 import NeuralThinking from "@/components/NeuralThinking";
@@ -51,7 +50,6 @@ function ToolIcon({ kind }: { kind: "clip" | "mic" | "stop" | "speaker" | "send"
 }
 
 export default function ChatPage() {
-  const router = useRouter();
   const { lang, t } = useLang();
   const [specId, setSpecId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -529,12 +527,7 @@ export default function ChatPage() {
 
       {split && (
         <section className="ws-canvas" aria-label="لوحة سير العمل">
-          <WorkspaceCanvas
-            flowId={flowId}
-            building={building}
-            onDeploy={buildFromChat}
-            onOpenFull={() => router.push(`/flow/${flowId}`)}
-          />
+          <WorkspaceCanvas flowId={flowId} building={building} />
         </section>
       )}
 

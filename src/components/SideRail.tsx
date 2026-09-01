@@ -340,12 +340,6 @@ export default function SideRail() {
 
   const NAV = [
     { href: "/chat", key: "rail.new", icon: "edit", on: pathname.startsWith("/chat") },
-    {
-      href: "/workflows",
-      key: "tab.flows",
-      icon: "flows",
-      on: pathname.startsWith("/workflows") || pathname.startsWith("/flow"),
-    },
     { href: "/progress", key: "nav.progress", icon: "progress", on: pathname.startsWith("/progress") },
   ];
 

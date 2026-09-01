@@ -1,9 +1,10 @@
 "use client";
 
-// لوحة المسار (75%) — تظهر بعد توليد سير العمل بجوار المحادثة المرساة.
+// لوحة المسار (75%) — تظهر بجوار المحادثة المرساة.
 // عرض للقراءة فقط: تصفّح وتفتيش بلا سحب عقد ولا تحرير.
+// في شريطها زرّان لا ثالث لهما: اختبار ثم اعتماد.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ExecutionGraph from "./ExecutionGraph";
 import StatusChip from "./StatusChip";
 import NeuralThinking from "./NeuralThinking";
@@ -15,46 +16,89 @@ interface FlowInfo {
   ir: WorkflowIR | null;
 }
 
+/** الاعتماد يشترطه الخادم بعد نجاح الاختبار — نعكس الشرط نفسه في الزر */
+const APPROVABLE: FlowStatus[] = ["Ready", "Paused"];
+/** لا اختبار قبل أن يوجد المسار في المحرك */
+const TESTABLE: FlowStatus[] = ["ReadyToTest", "NeedsRepair", "Ready", "Active", "Paused"];
+
 export default function WorkspaceCanvas({
   flowId,
-  building,
-  onDeploy,
-  onOpenFull,
+  building = false,
+  reloadKey = 0,
 }: {
   flowId: string;
-  building: boolean;
-  onDeploy: () => void;
-  onOpenFull: () => void;
+  building?: boolean;
+  /** تغييره يعيد قراءة الرسم — بعد تعديلٍ يُنشئ إصدارًا جديدًا */
+  reloadKey?: number;
 }) {
   const [info, setInfo] = useState<FlowInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState<"test" | "approve" | null>(null);
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
-  // تُقرأ عند التركيب، وتُعاد القراءة بعد البناء لأن الحالة تتغيّر في الخادم.
-  // الحارس alive يمنع ردًّا متأخّرًا من الكتابة فوق مسارٍ صار غير معروض.
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/flows/${flowId}/ir`);
+      if (!res.ok) return;
+      const d = await res.json();
+      setInfo({ name: d.name ?? "", status: d.status, ir: d.ir ?? null });
+    } catch {
+      // تعذّر الجلب — نُبقي ما لدينا
+    } finally {
+      setLoading(false);
+    }
+  }, [flowId]);
+
   useEffect(() => {
     let alive = true;
     (async () => {
-      try {
-        const res = await fetch(`/api/flows/${flowId}/ir`);
-        if (!res.ok || !alive) return;
-        const d = await res.json();
-        if (!alive) return;
-        setInfo({ name: d.name ?? "", status: d.status, ir: d.ir ?? null });
-      } catch {
-        // تعذّر الجلب — نُبقي ما لدينا
-      } finally {
-        if (alive) setLoading(false);
-      }
+      if (alive) await load();
     })();
     return () => {
       alive = false;
     };
-  }, [flowId, building]);
+  }, [load, building, reloadKey]);
 
-  const deployable =
-    info?.status === "Draft" ||
-    info?.status === "NeedsConnections" ||
-    info?.status === "NeedsInformation";
+  // الاختبار غير متزامن: نتيجته تصل المحرك لاحقًا، فنستطلع ما دامت الحالة «Testing»
+  useEffect(() => {
+    if (info?.status !== "Testing") return;
+    const timer = setInterval(() => {
+      fetch(`/api/flows/${flowId}/reconcile`, { method: "POST" }).catch(() => {});
+      load();
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [info?.status, flowId, load]);
+
+  async function act(kind: "test" | "approve") {
+    setBusy(kind);
+    setNotice(null);
+    try {
+      const url =
+        kind === "test"
+          ? `/api/flows/${flowId}/test`
+          : `/api/flows/${flowId}/activate`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(kind === "test" ? {} : { action: "activate" }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error ?? "تعذّر التنفيذ");
+      setNotice({
+        ok: true,
+        text: kind === "test" ? "بدأ الاختبار — النتيجة خلال لحظات…" : "تم الاعتماد ✓",
+      });
+      await load();
+    } catch (err) {
+      setNotice({ ok: false, text: err instanceof Error ? err.message : "خطأ" });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  const status = info?.status;
+  const testing = status === "Testing";
+  const active = status === "Active";
 
   return (
     <div className="ws-canvas-inner">
@@ -63,23 +107,48 @@ export default function WorkspaceCanvas({
           <span className="text-[0.9rem] font-bold truncate">
             {info?.name || "سير العمل"}
           </span>
-          {info?.status && <StatusChip status={info.status} />}
+          {status && <StatusChip status={status} />}
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button onClick={onOpenFull} className="btn btn-ghost text-[0.72rem] py-1.5">
-            افتح كاملًا
+          <button
+            onClick={() => act("test")}
+            disabled={busy !== null || testing || !status || !TESTABLE.includes(status)}
+            className="btn btn-ghost text-[0.75rem] py-1.5"
+            title={
+              status && TESTABLE.includes(status)
+                ? "شغّل تشغيلًا تجريبيًا"
+                : "ابنِ المسار وأكمل ارتباطاته أولًا"
+            }
+          >
+            {busy === "test" || testing ? "جارٍ الاختبار…" : "اختبار"}
           </button>
           <button
-            onClick={() => onDeploy()}
-            disabled={building}
+            onClick={() => act("approve")}
+            disabled={busy !== null || active || !status || !APPROVABLE.includes(status)}
             className="btn btn-primary text-[0.75rem] py-1.5"
-            title={deployable ? "ابنِ المسار في محرّك التنفيذ" : "أعد البناء"}
+            title={
+              active
+                ? "المسار معتمد ويعمل"
+                : status && APPROVABLE.includes(status)
+                  ? "اعتمد المسار ليعمل تلقائيًا"
+                  : "الاعتماد بعد نجاح الاختبار"
+            }
           >
-            {building ? "جارٍ البناء…" : deployable ? "شغّل" : "أعد البناء"}
+            {busy === "approve" ? "…" : active ? "معتمد ✓" : "اعتماد"}
           </button>
         </div>
       </header>
+
+      {notice && (
+        <p
+          className={`px-4 py-2 text-[0.75rem] border-b border-[var(--line-soft)] ${
+            notice.ok ? "text-emerald-300" : "text-amber-300"
+          }`}
+        >
+          {notice.text}
+        </p>
+      )}
 
       <div className="flex-1 min-h-0 p-3">
         {building ? (
