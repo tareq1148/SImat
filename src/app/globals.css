@@ -1086,52 +1086,65 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 }
 
 /* البطاقة: تمويه خلفي + حد فاتح + ظل عميق */
-/* العقدة: حبّة مضغوطة — دائرة الخدمة واسم العملية، لا ثالث لهما */
+/* العقدة: دائرةٌ فيها شعار الخدمة، والاسم تحتها خارجها — بلا صندوق */
 .xg-node {
+  position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 9px;
-  max-width: 230px;
-  padding: 7px 14px 7px 7px;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  background: var(--panel-solid);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  gap: 8px;
+  width: 124px;
   color: var(--text);
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 .xg-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  /* سطران على الأكثر ثم نقاط — الاسم الكامل في تلميح العنوان */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
-.xg-node:hover {
-  border-color: color-mix(in srgb, var(--accent-bg) 45%, transparent);
+/* التمييز والتحديد انتقلا إلى الدائرة بعدما زال الصندوق */
+.xg-node:hover .xg-icon {
+  border-color: color-mix(in srgb, var(--accent-bg) 55%, transparent);
 }
-.react-flow__node.selected .xg-node {
+.react-flow__node.selected .xg-icon {
   border-color: var(--accent-bg);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent-bg) 28%, transparent),
-    0 18px 44px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-bg) 30%, transparent);
 }
 
 .xg-icon {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   display: grid;
   place-items: center;
-  color: #fff;
-  background: var(--grad-accent);
+  /* سطح فاتح ليظهر الشعار الملوّن على طبيعته لا على تدرّج */
+  background: var(--panel-solid);
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  color: var(--text-soft);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
+/* شعارا OpenAI وTikTok مرسومان بالأبيض وحده — يحتاجان سطحًا داكنًا وإلا اختفيا.
+   بقيّة الشعارات ترسم خلفيتها الملوّنة بنفسها فتظهر على الأبيض. */
+.xg-icon[data-brand="openai"],
+.xg-icon[data-brand="tiktok"] {
+  background: #0e0e11;
+  border-color: #0e0e11;
+}
+
 /* الحالة حلقةٌ حول الدائرة — الخامل بلا حلقة فتبقى العقدة نظيفة */
 .xg-icon[data-state="running"],
 .xg-icon[data-state="success"],
 .xg-icon[data-state="error"] {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--xg-state) 35%, transparent);
+  border-color: color-mix(in srgb, var(--xg-state) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--xg-state) 30%, transparent),
+    0 4px 14px rgba(0, 0, 0, 0.1);
 }
 .xg-icon.is-running {
   animation: xgPulse 1.4s ease-in-out infinite;
@@ -1139,15 +1152,19 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 @keyframes xgPulse {
   0%,
   100% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--xg-state) 32%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--xg-state) 32%, transparent),
+      0 4px 14px rgba(0, 0, 0, 0.1);
   }
   50% {
-    box-shadow: 0 0 0 7px color-mix(in srgb, var(--xg-state) 12%, transparent);
+    box-shadow: 0 0 0 8px color-mix(in srgb, var(--xg-state) 10%, transparent),
+      0 4px 14px rgba(0, 0, 0, 0.1);
   }
 }
 
 /* المقابض مخفية بصريًا — الحواف ترتكز عليها فقط */
 .xg-handle {
+  /* منتصف الدائرة (52/2) — الافتراضي 50% صار تحتها بعدما نزل الاسم خارجها */
+  top: 26px !important;
   opacity: 0 !important;
   width: 1px !important;
   height: 1px !important;

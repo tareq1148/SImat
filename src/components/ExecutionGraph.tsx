@@ -22,6 +22,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { IRNode, WorkflowIR } from "@/lib/types";
+import { providerIcon } from "./icons";
 
 export type RunState = "idle" | "running" | "success" | "error";
 
@@ -38,6 +39,18 @@ interface NodeData extends Record<string, unknown> {
   glyph: string;
   state: RunState;
 }
+
+/** ما له شعار علامة حقيقي — البقية ترتدّ إلى الرمز الهندسي */
+const BRANDED = new Set([
+  "gmail",
+  "google_sheets",
+  "google_drive",
+  "openai",
+  "telegram",
+  "slack",
+  "instagram",
+  "tiktok",
+]);
 
 function Glyph({ name }: { name: string }) {
   const paths: Record<string, React.ReactNode> = {
@@ -86,8 +99,13 @@ function GraphNode({ data }: NodeProps<Node<NodeData>>) {
         className={`xg-icon ${data.state === "running" ? "is-running" : ""}`}
         style={{ ["--xg-state" as string]: s.color }}
         data-state={data.state}
+        data-brand={data.glyph}
       >
-        <Glyph name={data.glyph} />
+        {BRANDED.has(data.glyph) ? (
+          providerIcon(data.glyph, 24)
+        ) : (
+          <Glyph name={data.glyph} />
+        )}
       </span>
       <span className="xg-title">{data.title}</span>
 
@@ -137,8 +155,8 @@ const DEMO_NODES: { id: string; title: string; action: string; glyph: string; st
   { id: "user", title: "طلب المستخدم", action: "أنشئ عرضًا واحجز موعدًا", glyph: "user", state: "success" },
   { id: "agent", title: "المنسّق الذكي", action: "يختار الأدوات", glyph: "ai", state: "success" },
   { id: "n8n", title: "محرّك n8n", action: "ينفّذ الإجراءات", glyph: "n8n", state: "running" },
-  { id: "drive", title: "Drive", action: "drive:create", glyph: "drive", state: "idle" },
-  { id: "sheets", title: "Sheets", action: "sheets:append", glyph: "sheets", state: "idle" },
+  { id: "drive", title: "Drive", action: "drive:create", glyph: "google_drive", state: "idle" },
+  { id: "sheets", title: "Sheets", action: "sheets:append", glyph: "google_sheets", state: "idle" },
   { id: "slides", title: "Slides", action: "slides:create", glyph: "slides", state: "idle" },
   { id: "calendar", title: "Calendar", action: "calendar:createEvent", glyph: "calendar", state: "idle" },
   { id: "docs", title: "Docs", action: "docs:create", glyph: "docs", state: "idle" },
@@ -188,8 +206,8 @@ function demoGraph(states: Record<string, RunState>): {
 
 function irToGraph(ir: WorkflowIR): { nodes: Node<NodeData>[]; edges: Edge[] } {
   const glyphOf = (n: IRNode) =>
-    n.provider === "gmail"
-      ? "gmail"
+    n.provider && BRANDED.has(n.provider)
+      ? n.provider
       : n.type === "trigger"
         ? "webhook"
         : n.type === "approval"
