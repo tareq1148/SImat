@@ -59,6 +59,11 @@ const DICT: Record<string, { ar: string; en: string }> = {
   "prog.level": { ar: "مستواك:", en: "Your level:" },
   "prog.totalClosed": { ar: "مهمة مقفلة إجمالًا", en: "tasks closed in total" },
   "prog.plan": { ar: "خطتك القادمة", en: "Your next plan" },
+  "prog.ideas": { ar: "أفكار جاهزة للأتمتة", en: "Ready automation ideas" },
+  "prog.ideasSub": {
+    ar: "اضغط أي فكرة لتبدأ بها محادثة جديدة",
+    en: "Tap an idea to start a new chat with it",
+  },
   "diagram.tasks": { ar: "مهامك المتكررة", en: "Your recurring tasks" },
   "diagram.done": { ar: "أُنجزت تلقائيًا", en: "Auto-completed" },
   "diagram.time": { ar: "ساعة موفَّرة", en: "Hours saved" },

@@ -386,6 +386,36 @@ export default function ProgressView() {
         </p>
       </div>
 
+      {/* أفكار جاهزة — تبدأ محادثة بالنص مباشرة */}
+      <div className="rise-3">
+        <h2 className="font-semibold text-[0.95rem] mb-1">{t("prog.ideas")}</h2>
+        <p className="text-xs text-[var(--text-soft)] mb-3">{t("prog.ideasSub")}</p>
+        <div className="flex gap-2 flex-wrap">
+          {(lang === "ar"
+            ? [
+                "سجّل طلبات العملاء من الإيميل في جدول ورد عليهم بتأكيد",
+                "أرسل لي على بريدي ملخص رسائل تيليجرام كل مساء",
+                "انشر صورة اليوم على إنستقرام بكابشن جاهز",
+                "لخّص اجتماعات الأسبوع وأرسلها للفريق على Slack",
+              ]
+            : [
+                "Log email orders into a sheet and send confirmations",
+                "Email me a summary of Telegram messages every evening",
+                "Post today's photo to Instagram with a ready caption",
+                "Summarize this week's meetings and send them to Slack",
+              ]
+          ).map((idea) => (
+            <Link
+              key={idea}
+              href={`/chat?q=${encodeURIComponent(idea)}`}
+              className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2 text-[0.78rem] text-[var(--text-soft)] hover:text-[var(--accent)] hover:border-[var(--accent-bg)] transition-colors"
+            >
+              {idea}
+            </Link>
+          ))}
+        </div>
+      </div>
+
       {plan.length > 0 && (
       <div className="rise-3">
         <h2 className="font-semibold text-[0.95rem] mb-3">{t("prog.plan")}</h2>

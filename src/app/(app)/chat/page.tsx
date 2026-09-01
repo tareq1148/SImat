@@ -130,6 +130,15 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, busy]);
 
+  // فكرة جاهزة قادمة من شاشة الإنجازات (?q=) تُعبّأ في الحقل — والإرسال قرار المستخدم
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) {
+      setInput(q);
+      textInputRef.current?.focus();
+    }
+  }, []);
+
   async function uploadFiles(list: FileList | null) {
     if (!list || list.length === 0) return;
     setUploading(true);
@@ -286,33 +295,6 @@ export default function ChatPage() {
               <span className="text-[var(--accent)]">{t("home.w3")}.</span>
             </h1>
             <p className="text-[0.95rem] text-[var(--text-soft)]">{t("home.sub")}</p>
-
-            <div className="mt-7 flex items-center justify-center gap-2 flex-wrap">
-              <span className="text-[0.72rem] text-[var(--text-soft)]">{t("home.try")}</span>
-              {(lang === "ar"
-                ? [
-                    "سجّل طلبات العملاء من الإيميل في جدول ورد عليهم بتأكيد",
-                    "أرسل لي على بريدي ملخص رسائل تيليجرام كل مساء",
-                    "انشر صورة اليوم على إنستقرام بكابشن جاهز",
-                  ]
-                : [
-                    "Log email orders into a sheet and send confirmations",
-                    "Email me a summary of Telegram messages every evening",
-                    "Post today's photo to Instagram with a ready caption",
-                  ]
-              ).map((ex) => (
-                <button
-                  key={ex}
-                  onClick={() => {
-                    setInput(ex);
-                    textInputRef.current?.focus();
-                  }}
-                  className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-1.5 text-[0.76rem] text-[var(--text-soft)] hover:text-[var(--accent)] hover:border-[var(--accent-bg)] transition-colors"
-                >
-                  {ex}
-                </button>
-              ))}
-            </div>
           </div>
           <div className="rise-1">
             <OverviewStats />
