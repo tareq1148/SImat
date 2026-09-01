@@ -70,13 +70,8 @@ export default function TopBar({ email }: { email: string | null }) {
   const onCreate = pathname.startsWith("/chat");
   const onFlows = pathname.startsWith("/workflows") || pathname.startsWith("/flow");
 
-  // inline-flex + توسيط: بدونها يُصيَّر الرابط كتلةً فيلتصق النص بأعلى الصندوق ويمينه
-  const tab = (active: boolean) =>
-    `inline-flex items-center justify-center whitespace-nowrap min-w-[112px] h-11 px-6 rounded-[14px] text-[0.85rem] font-semibold transition-all ${
-      active
-        ? "bg-[var(--panel-solid)] text-[var(--text)] shadow-sm"
-        : "text-[var(--text-soft)] hover:text-[var(--text)]"
-    }`;
+  // .seg-tab يتكفّل بالتوسيط (inline-flex + place-items) ومنع اللف — انظر globals.css
+  const tab = (active: boolean) => `seg-tab ${active ? "is-on" : ""}`;
 
   const toolBtn =
     "w-9 h-9 rounded-full border border-[var(--line)] bg-[var(--panel)] backdrop-blur flex items-center justify-center text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--accent-bg)] transition-colors";
@@ -93,7 +88,7 @@ export default function TopBar({ email }: { email: string | null }) {
         </Link>
 
         {/* التبويبات */}
-        <nav className="flex items-center gap-1 p-1.5 rounded-[18px] border border-[var(--line-soft)] bg-[var(--well)]">
+        <nav className="seg">
           <Link href="/chat" className={tab(onCreate)}>
             {t("tab.create")}
           </Link>
