@@ -70,8 +70,9 @@ export default function TopBar({ email }: { email: string | null }) {
   const onCreate = pathname.startsWith("/chat");
   const onFlows = pathname.startsWith("/workflows") || pathname.startsWith("/flow");
 
+  // inline-flex + توسيط: بدونها يُصيَّر الرابط كتلةً فيلتصق النص بأعلى الصندوق ويمينه
   const tab = (active: boolean) =>
-    `min-w-[112px] h-11 px-6 rounded-[14px] text-[0.85rem] font-semibold transition-all ${
+    `inline-flex items-center justify-center whitespace-nowrap min-w-[112px] h-11 px-6 rounded-[14px] text-[0.85rem] font-semibold transition-all ${
       active
         ? "bg-[var(--panel-solid)] text-[var(--text)] shadow-sm"
         : "text-[var(--text-soft)] hover:text-[var(--text)]"
