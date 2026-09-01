@@ -44,6 +44,7 @@ export function useVoice(onTranscript: (text: string) => void) {
   const [serverTts, setServerTts] = useState(false);
   // كشف الصمت: يوقف التسجيل وحده فتصير المحادثة متصلة بلا ضغط زر
   const vadRef = useRef<{ ctx: AudioContext; raf: number; stream: MediaStream } | null>(null);
+  const voicedRef = useRef(0);
 
   useEffect(() => {
     fetch("/api/voice/status")
@@ -139,8 +140,8 @@ export function useVoice(onTranscript: (text: string) => void) {
         stream.getTracks().forEach((t) => t.stop());
         setRecording(false);
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
-        // أقل من نصف ثانية = نقرة أو ضجيج، لا كلام
-        if (blob.size < 4000) return;
+        // نقرة أو ضجيج قصير، لا كلام
+        if (blob.size < 4000 || voicedRef.current < 320) return;
         setTranscribing(true);
         try {
           const form = new FormData();
@@ -167,13 +168,14 @@ export function useVoice(onTranscript: (text: string) => void) {
       const buf = new Uint8Array(analyser.fftSize);
 
       const SPEECH_RMS = 0.022; // عتبة اعتبار الإشارة كلامًا
-      const SILENCE_MS = 1300; // صمت بعد الكلام ← أنهِ الدور
+      const SILENCE_MS = 900; // صمت بعد الكلام ← أنهِ الدور
       const LEAD_IN_MS = 6000; // مهلة البدء قبل أن نيأس من كلام أصلًا
       const MAX_MS = 30000; // سقف أمان للدور الواحد
 
       const startedAt = performance.now();
       let spokeAt = 0;
       let quietSince = 0;
+      let voiced = 0; // مجموع الزمن المنطوق فعلًا
 
       const tick = () => {
         analyser.getByteTimeDomainData(buf);
@@ -187,10 +189,13 @@ export function useVoice(onTranscript: (text: string) => void) {
 
         if (rms > SPEECH_RMS) {
           if (!spokeAt) spokeAt = t;
+          voiced += 16; // ~إطار واحد
           quietSince = 0;
         } else if (spokeAt) {
           if (!quietSince) quietSince = t;
           else if (t - quietSince > SILENCE_MS) {
+            // أقل من ثلث ثانية كلام = كحّة أو طقطقة، لا دور
+            voicedRef.current = voiced;
             mediaRef.current?.stop();
             return;
           }
@@ -204,6 +209,7 @@ export function useVoice(onTranscript: (text: string) => void) {
         if (vadRef.current) vadRef.current.raf = requestAnimationFrame(tick);
       };
 
+      voicedRef.current = 0;
       vadRef.current = { ctx, raf: requestAnimationFrame(tick), stream };
     } catch {
       setError("اسمح للمايك من المتصفح");

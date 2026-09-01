@@ -80,12 +80,22 @@ export async function elevenLabsStatus(): Promise<{
   }
 }
 
+// حزام أمان ثانٍ: ينزع أي وسم بين قوسين مربّعين، ويرجع فراغًا إن لم يبقَ كلام.
+// الفراغ يعني «لم يتكلم» فيعاود الاستماع، بدل أن يرد على ضجيج.
+export function cleanTranscript(raw: string): string {
+  const stripped = raw.replace(/\[[^\]]*\]/g, " ").replace(/\s+/g, " ").trim();
+  return /[\p{L}\p{N}]/u.test(stripped) ? stripped : "";
+}
+
 /** تفريغ تسجيل إلى نص */
 export async function elevenTranscribe(file: Blob, filename: string): Promise<string> {
   const form = new FormData();
   form.append("model_id", STT_MODEL);
   form.append("file", file, filename);
   if (STT_LANG) form.append("language_code", STT_LANG);
+  // بدونها يُرجع النموذج وسومًا مثل [background noise] و[outro jingle]
+  // فتُرسَل كأنها إجابة المستخدم — وهذا يقطع المقابلة
+  form.append("tag_audio_events", "false");
 
   const res = await fetch(`${BASE}/v1/speech-to-text`, {
     method: "POST",
@@ -97,7 +107,7 @@ export async function elevenTranscribe(file: Blob, filename: string): Promise<st
     throw new Error(`ElevenLabs STT ${res.status}: ${(await res.text()).slice(0, 300)}`);
   }
   const data = (await res.json()) as { text?: string };
-  return (data.text ?? "").trim();
+  return cleanTranscript(data.text ?? "");
 }
 
 /** نطق نص — يرجع صوت mp3 */

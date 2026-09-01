@@ -68,7 +68,7 @@ export default function VoiceExperience({
       setPending(false);
       return;
     }
-    const id = setTimeout(() => setPending(false), 1800);
+    const id = setTimeout(() => setPending(false), 1100);
     return () => clearTimeout(id);
   }, [pending, voice.speaking]);
 
@@ -76,7 +76,7 @@ export default function VoiceExperience({
   useEffect(() => {
     if (paused || confirmed || pending || voice.error || voice.mode === "none") return;
     if (busy || voice.speaking || voice.recording || voice.transcribing) return;
-    const id = setTimeout(() => startRef.current(), 500);
+    const id = setTimeout(() => startRef.current(), 250);
     return () => clearTimeout(id);
   }, [
     paused,

@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { INTERVIEW_MODEL, INTERVIEW_SYSTEM, UPDATE_SPEC_TOOL } from "@/lib/interview";
+import { INTERVIEW_EFFORT, INTERVIEW_MODEL, INTERVIEW_SYSTEM, UPDATE_SPEC_TOOL } from "@/lib/interview";
 import type { TaskSpec } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -154,6 +154,9 @@ export async function POST(req: NextRequest) {
           const msgStream = client.messages.stream({
             model: INTERVIEW_MODEL,
             max_tokens: 8000,
+            // المقابلة استخراج منظّم لا مسألة صعبة: الجهد العالي الافتراضي كان
+            // يكلّف ~10 ثوانٍ قبل أول حرف، وهو دهر في محادثة صوتية حيّة.
+            output_config: { effort: INTERVIEW_EFFORT },
             system: [
               {
                 type: "text",
