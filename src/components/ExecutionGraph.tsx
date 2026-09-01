@@ -77,28 +77,19 @@ function Glyph({ name }: { name: string }) {
 function GraphNode({ data }: NodeProps<Node<NodeData>>) {
   const s = STATE_STYLE[data.state];
   return (
-    <div dir="rtl" className="xg-node backdrop-blur-md">
+    <div dir="rtl" className="xg-node" title={`${data.title} — ${data.action}`}>
       {/* المقابض مخفية: لا توصيل في وضع القراءة، لكن الحواف تحتاج نقاط ارتساء */}
       <Handle type="target" position={Position.Right} className="xg-handle" isConnectable={false} />
 
-      <div className="flex items-center gap-2.5 mb-2.5">
-        <span className="xg-icon">
-          <Glyph name={data.glyph} />
-        </span>
-        <span className="text-[0.86rem] font-bold leading-tight truncate">{data.title}</span>
-      </div>
-
-      <p className="text-[0.72rem] text-[var(--text-soft)] leading-snug mb-3 truncate">
-        {data.action}
-      </p>
-
+      {/* الحالة تُلوّن حلقة الدائرة بدل شارة نصّية — لا عنصر ثالث في العقدة */}
       <span
-        className={`xg-badge ${data.state === "running" ? "is-running" : ""}`}
+        className={`xg-icon ${data.state === "running" ? "is-running" : ""}`}
         style={{ ["--xg-state" as string]: s.color }}
+        data-state={data.state}
       >
-        <span className="xg-dot" />
-        {s.label}
+        <Glyph name={data.glyph} />
       </span>
+      <span className="xg-title">{data.title}</span>
 
       <Handle type="source" position={Position.Left} className="xg-handle" isConnectable={false} />
     </div>
@@ -168,8 +159,8 @@ function demoGraph(states: Record<string, RunState>): {
       type: "graph",
       position:
         leafIdx >= 0
-          ? { x: -3 * 300, y: (leafIdx - 2) * 130 }
-          : { x: -chainIdx * 300, y: 0 },
+          ? { x: -3 * 210, y: (leafIdx - 2) * 96 }
+          : { x: -chainIdx * 210, y: 0 },
       data: {
         title: d.title,
         action: d.action,
@@ -225,7 +216,7 @@ function irToGraph(ir: WorkflowIR): { nodes: Node<NodeData>[]; edges: Edge[] } {
     nodes: ir.nodes.map((n) => ({
       id: n.id,
       type: "graph",
-      position: { x: -(order.get(n.id) ?? 0) * 300, y: ((order.get(n.id) ?? 0) % 2) * 26 },
+      position: { x: -(order.get(n.id) ?? 0) * 210, y: ((order.get(n.id) ?? 0) % 2) * 20 },
       data: { title: n.label, action: n.operation, glyph: glyphOf(n), state: "idle" as RunState },
     })),
     edges: ir.edges.map((e) => ({

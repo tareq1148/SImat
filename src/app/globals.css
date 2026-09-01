@@ -1086,18 +1086,27 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 }
 
 /* البطاقة: تمويه خلفي + حد فاتح + ظل عميق */
+/* العقدة: حبّة مضغوطة — دائرة الخدمة واسم العملية، لا ثالث لهما */
 .xg-node {
-  min-width: 220px;
-  max-width: 268px;
-  padding: 16px;
-  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 230px;
+  padding: 7px 14px 7px 7px;
+  border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--text) 12%, transparent);
-  background: color-mix(in srgb, var(--panel-solid) 62%, transparent);
-  /* التمويه عبر أداة Tailwind (backdrop-blur-md) — خط معالجة CSS يُسقط
-     backdrop-filter المكتوبة يدويًا هنا */
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: var(--panel-solid);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
   color: var(--text);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.xg-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .xg-node:hover {
   border-color: color-mix(in srgb, var(--accent-bg) 45%, transparent);
@@ -1110,13 +1119,31 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 
 .xg-icon {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   color: #fff;
   background: var(--grad-accent);
+}
+/* الحالة حلقةٌ حول الدائرة — الخامل بلا حلقة فتبقى العقدة نظيفة */
+.xg-icon[data-state="running"],
+.xg-icon[data-state="success"],
+.xg-icon[data-state="error"] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--xg-state) 35%, transparent);
+}
+.xg-icon.is-running {
+  animation: xgPulse 1.4s ease-in-out infinite;
+}
+@keyframes xgPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--xg-state) 32%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 7px color-mix(in srgb, var(--xg-state) 12%, transparent);
+  }
 }
 
 /* المقابض مخفية بصريًا — الحواف ترتكز عليها فقط */
@@ -1127,34 +1154,6 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   border: 0 !important;
   min-width: 0 !important;
   min-height: 0 !important;
-}
-
-/* شارة الحالة */
-.xg-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--xg-state);
-  border: 1px solid color-mix(in srgb, var(--xg-state) 40%, transparent);
-  background: color-mix(in srgb, var(--xg-state) 13%, transparent);
-}
-.xg-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--xg-state);
-  box-shadow: 0 0 8px var(--xg-state);
-}
-.xg-badge.is-running .xg-dot {
-  animation: xg-pulse 1.3s ease-in-out infinite;
-}
-@keyframes xg-pulse {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.5); opacity: 0.55; }
 }
 
 /* الحواف: منحنية هادئة، وجزيء ضوء يسري عند التنفيذ */
@@ -1168,7 +1167,7 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   filter: drop-shadow(0 0 6px var(--accent));
 }
 @media (prefers-reduced-motion: reduce) {
-  .xg-badge.is-running .xg-dot { animation: none; }
+  .xg-icon.is-running { animation: none; }
   .xg-particle { display: none; }
 }
 
