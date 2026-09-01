@@ -28,7 +28,20 @@ function getBrowserRecognition(): BrowserRecognition | null {
   return Ctor ? new Ctor() : null;
 }
 
-export function useVoice(onTranscript: (text: string) => void) {
+// رسائل المزوّد خام (JSON و رموز HTTP) ولا تصلح لعين مستخدم ولا لأذنه.
+// نترجمها لجملة بشرية واحدة، والتفصيل يبقى في سجل الخادم.
+function humanVoiceError(e: unknown): string {
+  const m = e instanceof Error ? e.message : String(e ?? "");
+  if (/not-allowed|permission|مايك/i.test(m)) return "اسمح للمايك من المتصفح";
+  if (/429|rate|quota|credit|رصيد/i.test(m)) return "الصوت أخذ راحة شوي — جرّب بعد لحظة";
+  if (/network|fetch|timeout|ECONN|502|503/i.test(m)) return "الشبكة تقطعت — عيد كلامك";
+  return "ما ضبطت معي — عيدها؟";
+}
+
+export function useVoice(
+  onTranscript: (text: string) => void,
+  onNoSpeech?: () => void
+) {
   const [mode, setMode] = useState<VoiceMode>("none");
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
@@ -45,6 +58,8 @@ export function useVoice(onTranscript: (text: string) => void) {
   // كشف الصمت: يوقف التسجيل وحده فتصير المحادثة متصلة بلا ضغط زر
   const vadRef = useRef<{ ctx: AudioContext; raf: number; stream: MediaStream } | null>(null);
   const voicedRef = useRef(0);
+  const noSpeechRef = useRef(onNoSpeech);
+  noSpeechRef.current = onNoSpeech;
 
   useEffect(() => {
     fetch("/api/voice/status")
@@ -90,7 +105,7 @@ export function useVoice(onTranscript: (text: string) => void) {
   const teardownVad = useCallback(() => {
     const v = vadRef.current;
     if (!v) return;
-    cancelAnimationFrame(v.raf);
+    clearInterval(v.raf);
     void v.ctx.close().catch(() => {});
     vadRef.current = null;
   }, []);
@@ -128,7 +143,15 @@ export function useVoice(onTranscript: (text: string) => void) {
     // MediaRecorder لا يتوقف وحده كما يفعل تعرّف المتصفح، فنقيس مستوى الصوت
     // ونوقف التسجيل بعد صمت قصير — بهذا تصير المحادثة متصلة بلا ضغط زر.
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          // إلغاء الصدى شرط للمقاطعة: بدونه يسمع المايك صوت وَتيرة نفسه فيحسبه كلامًا.
+          // وكبح الضجيج يمنع ضجيج القاعة من تشغيل كشف الصمت في المعرض.
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       const rec = new MediaRecorder(stream);
       mediaRef.current = rec;
       chunksRef.current = [];
@@ -140,8 +163,11 @@ export function useVoice(onTranscript: (text: string) => void) {
         stream.getTracks().forEach((t) => t.stop());
         setRecording(false);
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
-        // نقرة أو ضجيج قصير، لا كلام
-        if (blob.size < 4000 || voicedRef.current < 320) return;
+        // نقرة أو ضجيج قصير، لا كلام — نُعلم الشاشة بدل الصمت المطبق
+        if (blob.size < 4000 || voicedRef.current < 320) {
+          noSpeechRef.current?.();
+          return;
+        }
         setTranscribing(true);
         try {
           const form = new FormData();
@@ -149,9 +175,12 @@ export function useVoice(onTranscript: (text: string) => void) {
           const res = await fetch("/api/voice/transcribe", { method: "POST", body: form });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? "تعذر التفريغ");
-          if (data.text?.trim()) onTranscript(data.text.trim());
+          const said = (data.text ?? "").trim();
+          // فراغ = ضجيج أو كلام غير مفهوم؛ الصمت هنا يبدو كأن النظام تجاهلك
+          if (said) onTranscript(said);
+          else noSpeechRef.current?.();
         } catch (err) {
-          setError(err instanceof Error ? err.message : "تعذر التفريغ");
+          setError(humanVoiceError(err));
         } finally {
           setTranscribing(false);
         }
@@ -177,6 +206,10 @@ export function useVoice(onTranscript: (text: string) => void) {
       let quietSince = 0;
       let voiced = 0; // مجموع الزمن المنطوق فعلًا
 
+      // مؤقّت لا إطار عرض: requestAnimationFrame يتجمّد في تبويب مخفي فيبقى
+      // المايك مفتوحًا للأبد، ويعمل بـ120Hz على بعض الشاشات فيُحتسب زمن الكلام ضعفه.
+      let lastT = performance.now();
+
       const tick = () => {
         analyser.getByteTimeDomainData(buf);
         let sum = 0;
@@ -186,16 +219,17 @@ export function useVoice(onTranscript: (text: string) => void) {
         }
         const rms = Math.sqrt(sum / buf.length);
         const t = performance.now();
+        const dt = t - lastT; // الزمن الحقيقي المنقضي لا ثابت مفترض
+        lastT = t;
 
         if (rms > SPEECH_RMS) {
           if (!spokeAt) spokeAt = t;
-          voiced += 16; // ~إطار واحد
+          voiced += dt;
+          voicedRef.current = voiced; // في كل نبضة: أي مسار إيقاف يجد القيمة صحيحة
           quietSince = 0;
         } else if (spokeAt) {
           if (!quietSince) quietSince = t;
           else if (t - quietSince > SILENCE_MS) {
-            // أقل من ثلث ثانية كلام = كحّة أو طقطقة، لا دور
-            voicedRef.current = voiced;
             mediaRef.current?.stop();
             return;
           }
@@ -204,13 +238,15 @@ export function useVoice(onTranscript: (text: string) => void) {
         // لم ينطق شيئًا خلال مهلة البدء، أو تجاوز سقف الدور
         if ((!spokeAt && t - startedAt > LEAD_IN_MS) || t - startedAt > MAX_MS) {
           mediaRef.current?.stop();
-          return;
         }
-        if (vadRef.current) vadRef.current.raf = requestAnimationFrame(tick);
       };
 
       voicedRef.current = 0;
-      vadRef.current = { ctx, raf: requestAnimationFrame(tick), stream };
+      vadRef.current = {
+        ctx,
+        raf: window.setInterval(tick, 32) as unknown as number,
+        stream,
+      };
     } catch {
       setError("اسمح للمايك من المتصفح");
       setRecording(false);
@@ -288,5 +324,6 @@ export function useVoice(onTranscript: (text: string) => void) {
     stopSpeaking,
     speak,
     clearError: () => setError(null),
+    setTransientError: (msg: string) => setError(msg),
   };
 }
