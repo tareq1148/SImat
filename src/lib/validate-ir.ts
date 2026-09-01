@@ -31,11 +31,9 @@ export function validateIR(ir: WorkflowIR): BlockingIssue[] {
     const missing: { field: string; label: string }[] = [];
     if (node.provider === "telegram" && missingOrFake(node, "chat_id"))
       missing.push({ field: "chat_id", label: FIELD_LABELS.chat_id });
-    if (
-      node.provider === "google_sheets" &&
-      missingOrFake(node, "spreadsheet_url") &&
-      !node.params.spreadsheet_name?.trim()
-    )
+    // الاسم المقروء لا يعرّف الجدول لواجهة جوجل: كان وجوده يُسقط الفحص
+    // فيمرّ مسارٌ لا يُبنى، ويظهر العطل متأخّرًا باسم حقل n8n الخام.
+    if (node.provider === "google_sheets" && missingOrFake(node, "spreadsheet_url"))
       missing.push({ field: "spreadsheet_url", label: FIELD_LABELS.spreadsheet_url });
     if (node.provider === "instagram") {
       if (missingOrFake(node, "ig_user_id"))

@@ -254,12 +254,25 @@ export default function ChatPage() {
         setMissing((data.missing ?? []) as Provider[]);
       } else if (data.status === "NeedsInformation") {
         // نقص معلومة لا ارتباط — يُصلحه المستخدم بالكتابة ثم يُعاد البناء
+        // n8n يردّ أسماء حقوله الخام — تُترجم وإلا قرأ المستخدم «documentId»
+        const N8N_FIELDS: Record<string, string> = {
+          documentId: "رابط جدول البيانات",
+          sheetName: "اسم الورقة",
+          chatId: "معرف محادثة تيليجرام",
+          channel: "قناة Slack",
+          documentURL: "رابط المستند",
+          calendar: "التقويم",
+        };
         const fields = Array.isArray(data.blocking)
           ? data.blocking
               .flatMap((b: { missing?: { label: string }[] }) => b.missing ?? [])
               .map((m: { label: string }) => m.label)
               .join("، ")
-          : (data.missing_params ?? "");
+          : String(data.missing_params ?? "")
+              .split(/[,،]\s*/)
+              .map((f: string) => N8N_FIELDS[f.trim()] ?? f.trim())
+              .filter(Boolean)
+              .join("، ");
         setError(
           fields
             ? `ينقص المسار: ${fields} — اذكرها في المحادثة وسأعيد البناء.`

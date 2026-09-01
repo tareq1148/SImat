@@ -699,6 +699,45 @@ export function irToN8n(
     }
 
     if (irNode.provider === "google_sheets") {
+      const sheetRl = (url: unknown, name: unknown) =>
+        url
+          ? { __rl: true, mode: "url", value: url }
+          : {
+              __rl: true,
+              mode: "list",
+              value: "",
+              cachedResultName: name ?? "اختر الجدول من داخل المنصة",
+            };
+
+      // قراءة صفوف: لا تأليف قبلها ولا صفّ يُجهَّز — تُخرج الصفوف كما هي
+      if (/read|get|list|fetch|lookup|قراءة|جلب/i.test(`${irNode.operation} ${irNode.label}`)) {
+        const readNode: N8nNode = {
+          id: irNode.id,
+          name: nodeName,
+          type: "n8n-nodes-base.googleSheets",
+          typeVersion: 4.7,
+          position: [xPos, Y],
+          parameters: {
+            resource: "sheet",
+            operation: "read",
+            documentId: sheetRl(
+              irNode.params.spreadsheet_url,
+              irNode.params.spreadsheet_name
+            ),
+            sheetName: irNode.params.sheet_name
+              ? { __rl: true, mode: "name", value: irNode.params.sheet_name }
+              : { __rl: true, mode: "id", value: "0", cachedResultName: "الورقة الأولى" },
+            options: {},
+          },
+        };
+        if (creds.google_sheets)
+          readNode.credentials = { googleSheetsOAuth2Api: creds.google_sheets };
+        nodes.push(readNode);
+        connectPrev(nodeName);
+        prev = nodeName;
+        continue;
+      }
+
       const composeName = `تجهيز الصف: ${nodeName}`;
       structuredLlm.add(`${irNode.id}-compose`);
       nodes.push({
