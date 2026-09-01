@@ -1,6 +1,8 @@
 import { supabaseServer, supabaseService } from "@/lib/supabase/server";
 import { getValidGoogleAccessToken } from "@/lib/google-tokens";
 import { revokeGmailCredential } from "@/lib/gmail-n8n";
+import { revokeGoogleServiceCredentials } from "@/lib/google-n8n";
+import type { GoogleService } from "@/lib/google-oauth";
 
 // حالة ربط Gmail — يجدّد التوكن إن لزم، ولا يمرّر أي توكن للعميل
 export async function GET() {
@@ -44,12 +46,16 @@ export async function DELETE() {
     // نقرأ معرّف الاعتماد قبل حذف الصف، وإلا بقي اعتماد يتيم في المحرك
     const { data: row } = await db
       .from("oauth_tokens")
-      .select("n8n_credential_id")
+      .select("n8n_credential_id, service_credentials")
       .eq("user_id", user.id)
       .eq("provider", "google")
-      .maybeSingle<{ n8n_credential_id: string | null }>();
+      .maybeSingle<{
+        n8n_credential_id: string | null;
+        service_credentials: Partial<Record<GoogleService, string | null>> | null;
+      }>();
 
     await revokeGmailCredential(db, user.id, row?.n8n_credential_id ?? null);
+    await revokeGoogleServiceCredentials(db, user.id, row?.service_credentials ?? {});
 
     await db
       .from("oauth_tokens")

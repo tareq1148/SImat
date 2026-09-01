@@ -71,8 +71,12 @@ export interface N8nResult<T = unknown> {
 }
 
 export interface TriggerOptions {
-  /** يُرفق توكن جوجل الصالح للمستخدم في الحمولة (افتراضيًا نعم) */
+  /** المستخدم — يُتحقَّق من صلاحية ربطه قبل الإرسال */
   userId?: string;
+  /**
+   * إرفاق التوكن في الحمولة. الافتراض false: بعد مزامنة الاعتمادات صار
+   * المحرّك يملك اعتمادًا لكل خدمة، فتمريره تسريبٌ بلا فائدة.
+   */
   forwardToken?: boolean;
   timeoutMs?: number;
   /** مسار Webhook مخصّص بدل المشتقّ من الإجراء */
@@ -117,7 +121,7 @@ export async function triggerN8nWorkflow<T = unknown>(
 
   // توكن المستخدم يُمرَّر للمحرك ليعمل باسمه لا باسم المنصة
   let accessToken: string | undefined;
-  if (options.forwardToken !== false && options.userId) {
+  if (options.userId) {
     const t = await getValidGoogleAccessToken(options.userId);
     if (!t.ok) {
       return {
@@ -134,7 +138,8 @@ export async function triggerN8nWorkflow<T = unknown>(
         ms: Date.now() - started,
       };
     }
-    accessToken = t.accessToken;
+    // نتحقّق من الصلاحية دائمًا، ونُرفق التوكن فقط عند الطلب الصريح
+    if (options.forwardToken === true) accessToken = t.accessToken;
   }
 
   const path = options.path ?? `muhawwil-${service}`;

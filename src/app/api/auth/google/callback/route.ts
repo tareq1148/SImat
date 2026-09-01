@@ -6,6 +6,8 @@ import {
   googleConfig,
 } from "@/lib/google-oauth";
 import { syncGmailCredential } from "@/lib/gmail-n8n";
+import { syncGoogleServiceCredentials } from "@/lib/google-n8n";
+import type { GoogleService } from "@/lib/google-oauth";
 
 function back(origin: string, params: Record<string, string>) {
   const url = new URL("/chat", origin);
@@ -67,10 +69,14 @@ export async function GET(req: NextRequest) {
   // الصف السابق: نحتاج refresh_token المحفوظ (جوجل قد لا يعيده) ومعرّف الاعتماد القديم
   const { data: prev } = await db
     .from("oauth_tokens")
-    .select("refresh_token, n8n_credential_id")
+    .select("refresh_token, n8n_credential_id, service_credentials")
     .eq("user_id", user.id)
     .eq("provider", "google")
-    .maybeSingle<{ refresh_token: string | null; n8n_credential_id: string | null }>();
+    .maybeSingle<{
+      refresh_token: string | null;
+      n8n_credential_id: string | null;
+      service_credentials: Partial<Record<GoogleService, string | null>> | null;
+    }>();
 
   const { error } = await db.from("oauth_tokens").upsert(
     {
@@ -116,19 +122,40 @@ export async function GET(req: NextRequest) {
     prev?.n8n_credential_id ?? null
   );
 
-  if (sync.credentialId) {
+  // الخدمات الخمس: اعتماد لكل واحدة من نفس التوكن — بنفس نهج Gmail
+  const serviceResults = await syncGoogleServiceCredentials(
+    db,
+    user.id,
+    tokens,
+    refreshToken,
+    prev?.service_credentials ?? {}
+  );
+  const serviceCreds = Object.fromEntries(
+    serviceResults.filter((r) => r.credentialId).map((r) => [r.service, r.credentialId])
+  );
+
+  if (sync.credentialId || Object.keys(serviceCreds).length) {
     await db
       .from("oauth_tokens")
-      .update({ n8n_credential_id: sync.credentialId })
+      .update({
+        ...(sync.credentialId ? { n8n_credential_id: sync.credentialId } : {}),
+        service_credentials: serviceCreds,
+      })
       .eq("user_id", user.id)
       .eq("provider", "google");
   }
 
-  if (!sync.ok) {
-    // التوكن محفوظ، لكن المحرك لا يعرفه — نقولها صراحة بدل ادّعاء نجاح كامل
+  const failed = serviceResults.filter((r) => !r.ok);
+
+  if (!sync.ok || failed.length) {
+    // بعض الاعتمادات لم تُنشأ — نسمّيها بدل ادّعاء نجاح كامل
+    const parts = [
+      ...(sync.ok ? [] : [`Gmail: ${sync.error ?? "فشل"}`]),
+      ...failed.map((f) => `${f.service}: ${f.error ?? "فشل"}`),
+    ];
     return back(origin, {
       gmail_connected: "true",
-      gmail_error: `حُفظ الربط لكن تعذّر إنشاء الاعتماد في المحرك: ${sync.error ?? ""}`,
+      gmail_error: `حُفظ الربط لكن تعذّر إنشاء بعض الاعتمادات — ${parts.join(" · ")}`,
     });
   }
 
