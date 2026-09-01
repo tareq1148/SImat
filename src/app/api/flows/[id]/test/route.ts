@@ -68,9 +68,17 @@ export async function POST(
       .from("test_runs")
       .update({ passed: false, error: friendly })
       .eq("id", testRun.id);
-    // عدم التفعيل نقصُ معلومات وليس عطلًا — لا نحوّله لحالة إصلاح
-    if (!isInactiveWebhook(hook.status, hook.text))
-      await supabase.from("flows").update({ status: "NeedsRepair" }).eq("id", id);
+    // الحالة صارت Testing قبل النداء؛ فشلُه يجب أن يُخرجها منها وإلا بقي
+    // المسار «قيد الاختبار» أبدًا وظلّ الزرّ يدور بلا نهاية.
+    // عدم التفعيل نقصُ معلومات وليس عطلًا — يعود لما قبل الاختبار لا لحالة إصلاح.
+    await supabase
+      .from("flows")
+      .update({
+        status: isInactiveWebhook(hook.status, hook.text)
+          ? "ReadyToTest"
+          : "NeedsRepair",
+      })
+      .eq("id", id);
     return Response.json(
       { error: friendly, detail: hook.text.slice(0, 300) },
       { status: 502 }

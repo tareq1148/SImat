@@ -840,7 +840,8 @@ export function irToN8n(
         position: [step(), Y],
         parameters: {
           operation: "update",
-          documentURL: "={{ $json.documentId }}",
+          // عقدة الإنشاء تُخرج ملفًا بصيغة Drive: المعرّف في id لا في documentId
+          documentURL: "={{ $json.id }}",
           actionsUi: {
             actionFields: [
               {
