@@ -136,11 +136,17 @@ export async function syncGoogleServiceCredentials(
         { onConflict: "user_id,provider" }
       );
 
-      results.push(
-        error
-          ? { service, ok: false, credentialId: cred.id, error: error.message }
-          : { service, ok: true, credentialId: cred.id }
-      );
+      if (error) {
+        // الاعتماد أُنشئ لكن ربطه فشل — نحذفه كي لا يبقى يتيمًا في المحرّك
+        try {
+          await deleteN8nCredential(cred.id);
+        } catch {
+          // الحذف أفضل جهد؛ الفشل يُبلَّغ للمستدعي على أي حال
+        }
+        results.push({ service, ok: false, error: `تعذّر ربط ${service}: ${error.message}` });
+      } else {
+        results.push({ service, ok: true, credentialId: cred.id });
+      }
     } catch (err) {
       results.push({
         service,
