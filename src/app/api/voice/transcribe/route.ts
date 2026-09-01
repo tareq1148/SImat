@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
+import { elevenTranscribe, hasElevenLabs } from "@/lib/elevenlabs";
 import { transcribeAudio } from "@/lib/voicestudio";
 
 export const maxDuration = 180;
 
-// تحويل تسجيل الموظف الصوتي إلى نص عبر VoiceStudio المحلي (خصوصية كاملة)
+// تحويل تسجيل الموظف الصوتي إلى نص — ElevenLabs أولًا ثم VoiceStudio المحلي
 export async function POST(req: NextRequest) {
   const supabase = await supabaseServer();
   const {
@@ -21,10 +22,27 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "التسجيل أكبر من 25MB" }, { status: 400 });
   }
 
+  const name = file instanceof File && file.name ? file.name : "recording.webm";
+
+  if (hasElevenLabs()) {
+    try {
+      const text = await elevenTranscribe(file, name);
+      return Response.json({ text, provider: "elevenlabs" });
+    } catch (err) {
+      return Response.json(
+        {
+          error:
+            "تعذر التفريغ عبر ElevenLabs — " +
+            (err instanceof Error ? err.message : "خطأ غير معروف"),
+        },
+        { status: 502 }
+      );
+    }
+  }
+
   try {
-    const name = file instanceof File && file.name ? file.name : "recording.webm";
     const text = await transcribeAudio(file, name);
-    return Response.json({ text });
+    return Response.json({ text, provider: "voicestudio" });
   } catch (err) {
     return Response.json(
       {

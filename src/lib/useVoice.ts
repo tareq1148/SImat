@@ -1,11 +1,11 @@
 "use client";
 
-// طبقة الصوت الموحدة: VoiceStudio المحلي أولًا، وصوت المتصفح كبديل فوري
+// طبقة الصوت الموحدة — الترتيب: ElevenLabs ← VoiceStudio المحلي ← صوت المتصفح
 // ASR: مايك → نص | TTS: نطق ردود «وَتيرة»
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type VoiceMode = "voicestudio" | "browser" | "none";
+type VoiceMode = "server" | "browser" | "none";
 
 interface BrowserRecognition {
   lang: string;
@@ -39,15 +39,21 @@ export function useVoice(onTranscript: (text: string) => void) {
   const chunksRef = useRef<Blob[]>([]);
   const recogRef = useRef<BrowserRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [provider, setProvider] = useState<string | null>(null);
+  // كشف الصمت: يوقف التسجيل وحده فتصير المحادثة متصلة بلا ضغط زر
+  const vadRef = useRef<{ ctx: AudioContext; raf: number; stream: MediaStream } | null>(null);
 
   useEffect(() => {
     fetch("/api/voice/status")
       .then((r) => r.json())
       .then((d) => {
-        if (d.available) setMode("voicestudio");
-        else if (getBrowserRecognition() || "speechSynthesis" in window)
+        if (d.available) {
+          setMode("server");
+          setProvider(d.provider ?? null);
+        } else if (getBrowserRecognition() || "speechSynthesis" in window) {
           setMode("browser");
-        else setMode("none");
+          setProvider("browser");
+        } else setMode("none");
       })
       .catch(() => {
         setMode(getBrowserRecognition() ? "browser" : "none");
@@ -75,6 +81,14 @@ export function useVoice(onTranscript: (text: string) => void) {
     audioRef.current?.pause();
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setSpeaking(false);
+  }, []);
+
+  const teardownVad = useCallback(() => {
+    const v = vadRef.current;
+    if (!v) return;
+    cancelAnimationFrame(v.raf);
+    void v.ctx.close().catch(() => {});
+    vadRef.current = null;
   }, []);
 
   const startRecording = useCallback(async () => {
@@ -106,7 +120,9 @@ export function useVoice(onTranscript: (text: string) => void) {
       return;
     }
 
-    // VoiceStudio: تسجيل ثم تفريغ محلي
+    // خادم (ElevenLabs أو VoiceStudio): نسجّل ثم نرفع.
+    // MediaRecorder لا يتوقف وحده كما يفعل تعرّف المتصفح، فنقيس مستوى الصوت
+    // ونوقف التسجيل بعد صمت قصير — بهذا تصير المحادثة متصلة بلا ضغط زر.
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const rec = new MediaRecorder(stream);
@@ -116,9 +132,12 @@ export function useVoice(onTranscript: (text: string) => void) {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
       rec.onstop = async () => {
+        teardownVad();
         stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
-        if (blob.size < 1000) return;
+        // أقل من نصف ثانية = نقرة أو ضجيج، لا كلام
+        if (blob.size < 4000) return;
         setTranscribing(true);
         try {
           const form = new FormData();
@@ -135,25 +154,78 @@ export function useVoice(onTranscript: (text: string) => void) {
       };
       rec.start();
       setRecording(true);
+
+      // ===== كشف نشاط الصوت =====
+      const ctx = new AudioContext();
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 1024;
+      source.connect(analyser);
+      const buf = new Uint8Array(analyser.fftSize);
+
+      const SPEECH_RMS = 0.022; // عتبة اعتبار الإشارة كلامًا
+      const SILENCE_MS = 1300; // صمت بعد الكلام ← أنهِ الدور
+      const LEAD_IN_MS = 6000; // مهلة البدء قبل أن نيأس من كلام أصلًا
+      const MAX_MS = 30000; // سقف أمان للدور الواحد
+
+      const startedAt = performance.now();
+      let spokeAt = 0;
+      let quietSince = 0;
+
+      const tick = () => {
+        analyser.getByteTimeDomainData(buf);
+        let sum = 0;
+        for (let i = 0; i < buf.length; i++) {
+          const v = (buf[i] - 128) / 128;
+          sum += v * v;
+        }
+        const rms = Math.sqrt(sum / buf.length);
+        const t = performance.now();
+
+        if (rms > SPEECH_RMS) {
+          if (!spokeAt) spokeAt = t;
+          quietSince = 0;
+        } else if (spokeAt) {
+          if (!quietSince) quietSince = t;
+          else if (t - quietSince > SILENCE_MS) {
+            mediaRef.current?.stop();
+            return;
+          }
+        }
+
+        // لم ينطق شيئًا خلال مهلة البدء، أو تجاوز سقف الدور
+        if ((!spokeAt && t - startedAt > LEAD_IN_MS) || t - startedAt > MAX_MS) {
+          mediaRef.current?.stop();
+          return;
+        }
+        if (vadRef.current) vadRef.current.raf = requestAnimationFrame(tick);
+      };
+
+      vadRef.current = { ctx, raf: requestAnimationFrame(tick), stream };
     } catch {
       setError("اسمح للمايك من المتصفح");
+      setRecording(false);
     }
-  }, [mode, onTranscript]);
+  }, [mode, onTranscript, teardownVad]);
 
   const stopRecording = useCallback(() => {
-    setRecording(false);
     if (mode === "browser") {
+      setRecording(false);
       recogRef.current?.stop();
       return;
     }
+    // في فرع الخادم يتكفّل onstop بإطفاء الحالة بعد جمع التسجيل
     mediaRef.current?.stop();
   }, [mode]);
+
+  // تنظيف عند مغادرة الصفحة أثناء التسجيل
+  useEffect(() => () => teardownVad(), [teardownVad]);
 
   // force: وضع المحادثة الصوتية ينطق دائمًا، بغض النظر عن مفتاح «اسمع الردود»
   const speak = useCallback(
     async (text: string, force = false) => {
       if ((!speakEnabled && !force) || !text.trim()) return;
-      if (mode === "voicestudio") {
+      if (mode === "server") {
         try {
           const res = await fetch("/api/voice/speak", {
             method: "POST",
@@ -194,6 +266,7 @@ export function useVoice(onTranscript: (text: string) => void) {
 
   return {
     mode,
+    provider,
     recording,
     transcribing,
     speakEnabled,

@@ -84,6 +84,20 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
     connect(p); // Google: حساب المنصة الموثّق عبر OAuth — ضغطة واحدة
   }
 
+  const [voiceInfo, setVoiceInfo] = useState<{ provider: string | null; voice?: { name?: string } | null } | null>(null);
+  useEffect(() => {
+    fetch("/api/voice/status")
+      .then((r) => r.json())
+      .then((d) => setVoiceInfo({ provider: d.provider ?? null, voice: d.voice ?? null }))
+      .catch(() => setVoiceInfo({ provider: null }));
+  }, []);
+
+  const PROVIDER_LABEL: Record<string, string> = {
+    elevenlabs: "ElevenLabs",
+    voicestudio: "VoiceStudio",
+    browser: lang === "ar" ? "صوت المتصفح" : "Browser voice",
+  };
+
   function toggleSpeakPref() {
     setSpeak((v) => {
       try {
@@ -224,6 +238,16 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
                   {speak ? t("drawer.on") : t("drawer.off")}
                 </span>
               </button>
+              {voiceInfo && (
+                <p className="text-[0.7rem] text-[var(--text-soft)] px-1">
+                  {lang === "ar" ? "محرك الصوت: " : "Voice engine: "}
+                  <span className="text-[var(--text)]">
+                    {PROVIDER_LABEL[voiceInfo.provider ?? "browser"] ??
+                      PROVIDER_LABEL.browser}
+                  </span>
+                  {voiceInfo.voice?.name ? ` — ${voiceInfo.voice.name}` : ""}
+                </p>
+              )}
             </div>
           </section>
 
