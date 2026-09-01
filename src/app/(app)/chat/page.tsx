@@ -480,8 +480,8 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className="w-full max-w-3xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)]">
-        <form onSubmit={send} className="composer">
+      <div className="w-full max-w-3xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)] flex items-center gap-3">
+        <form onSubmit={send} className="composer flex-1">
           {/* + المرفقات */}
           <button
             type="button"
@@ -512,28 +512,6 @@ export default function ChatPage() {
             />
           )}
 
-          {/* كرة الصوت */}
-          {voice.mode !== "none" && (
-            <button
-              type="button"
-              onClick={voice.recording ? voice.stopRecording : voice.startRecording}
-              disabled={busy || voice.transcribing}
-              title={voice.recording ? t("input.stopVoice") : t("input.talk")}
-              className="shrink-0"
-            >
-              <VoiceOrb
-                size={40}
-                state={
-                  voice.recording
-                    ? "listening"
-                    : voice.speaking || voice.transcribing
-                      ? "speaking"
-                      : "idle"
-                }
-              />
-            </button>
-          )}
-
           {/* إرسال */}
           <button
             className="composer-send"
@@ -545,6 +523,28 @@ export default function ChatPage() {
             </svg>
           </button>
         </form>
+
+        {/* كرة الصوت — خارج الصندوق */}
+        {voice.mode !== "none" && (
+          <button
+            type="button"
+            onClick={voice.recording ? voice.stopRecording : voice.startRecording}
+            disabled={busy || voice.transcribing}
+            title={voice.recording ? t("input.stopVoice") : t("input.talk")}
+            className="shrink-0"
+          >
+            <VoiceOrb
+              size={52}
+              state={
+                voice.recording
+                  ? "listening"
+                  : voice.speaking || voice.transcribing
+                    ? "speaking"
+                    : "idle"
+              }
+            />
+          </button>
+        )}
       </div>
     </main>
   );
