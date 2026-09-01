@@ -228,6 +228,7 @@ h2, h3 { letter-spacing: -0.01em; }
 
 /* كرة «ابدأ» — حلقة ألوان دوّارة + لمعان يسري + نبض */
 .start-orb {
+  --orb-blur: 40px; /* 24% من 168px */
   position: relative;
   z-index: 0;
   display: grid;
@@ -288,7 +289,10 @@ h2, h3 { letter-spacing: -0.01em; }
 .orb-blob {
   position: absolute;
   border-radius: 999px;
-  filter: blur(22px);
+  /* الضباب نسبة من قطر الكرة (~24%) لا قيمة ثابتة: القيمة الثابتة تترك
+     الفقاعات أقراصًا حادّة كلما اختلف القطر عمّا ضُبطت عليه.
+     VoiceOrb يمرّره مضمّنًا، و.start-orb يعلنه بنفسه. */
+  filter: blur(var(--orb-blur, 22px));
   opacity: 0.85;
   will-change: transform;
 }
@@ -540,19 +544,27 @@ h2, h3 { letter-spacing: -0.01em; }
   display: inline-block;
   border-radius: 999px;
   overflow: hidden;
-  background: radial-gradient(circle at 38% 30%, #dcf98a 0%, #7ec81f 58%, #3f8f4a 100%);
-  box-shadow: 0 4px 12px rgba(114, 203, 21, 0.3);
+  /* ألوان الهوية: تدرّج العلامة نفسه، فتتبع الكرة السمة الفاتحة والداكنة تلقائيًا */
+  background: var(--grad-mark);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent-bg) 34%, transparent);
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 .voice-orb:hover {
   transform: scale(1.06);
 }
-.orb-sm .orb-blob {
-  filter: blur(9px);
+/* الضباب يتبع قطر الكرة (يضبطه VoiceOrb بمتغير مضمّن) بدل قيمة ثابتة
+   كانت تترك الفقاعة الزرقاء قرصًا صلبًا في المنتصف. */
+/* الأزرق العميق أغمق بكثير من محيطه الليموني فيقرأ كثقب في الكرة الصغيرة:
+   يُخفَّف إلى تلميح، ويبقى السماوي ظاهرًا كلمسة الهوية الباردة. */
+.voice-orb .orb-blob.b3 {
+  opacity: 0.92;
+}
+.voice-orb .orb-blob.b4 {
+  opacity: 0.42;
 }
 .voice-orb.is-active {
-  box-shadow: 0 0 0 3px rgba(162, 222, 27, 0.3), 0 6px 18px rgba(114, 203, 21, 0.4);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 6px 20px color-mix(in srgb, var(--accent-bg) 42%, transparent);
 }
 .voice-orb.is-listening {
   animation: orbpulse 1.4s ease-in-out infinite;
@@ -832,8 +844,9 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 }
 
 /* الكرة الكبيرة: نفس كرة الشعار بتنفّس أهدأ */
-.orb-lg .orb-blob { filter: blur(20px); }
 /* الأخضر الليموني هو السائد والأزرق لمسة سفلية — نفس كرة التصميم */
+.start-orb .orb-blob.b3 { opacity: 0.9; }
+.start-orb .orb-blob.b4 { opacity: 0.4; }
 .orb-lg .orb-blob.b3 { opacity: 0.5; }
 .orb-lg .orb-blob.b4 { opacity: 0.26; }
 .voice-orb.orb-big {

@@ -1,10 +1,11 @@
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import TopBar from "@/components/TopBar";
+import SideRail from "@/components/SideRail";
 import AccountMenu from "@/components/AccountMenu";
 
-// تخطيط القسم المسجَّل: شريط علوي بالتبويبات فقط + قائمة الحساب في الزاوية السفلية
-// (أُزيل الشريط الجانبي لصالح المظهر النظيف الفسيح)
+// تخطيط القسم المسجَّل: شريط علوي بالتبويبات + شريط جانبي يمين قابل للطي
+// + قائمة الحساب في الزاوية السفلية (تحمل السمة والخروج المُزالَين من الترويسة)
 export default async function AppLayout({
   children,
 }: {
@@ -19,7 +20,10 @@ export default async function AppLayout({
   return (
     <div className="flex-1 flex flex-col min-h-screen">
       <TopBar />
-      <div className="flex-1 flex flex-col min-w-0">{children}</div>
+      <div className="flex-1 flex items-stretch">
+        <SideRail />
+        <div className="flex-1 flex flex-col min-w-0">{children}</div>
+      </div>
       <AccountMenu email={user.email ?? null} />
     </div>
   );

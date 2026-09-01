@@ -62,7 +62,7 @@ function Icon({ name, size = 19 }: { name: string; size?: number }) {
   );
 }
 
-export default function SideRail({ email }: { email: string | null }) {
+export default function SideRail() {
   const pathname = usePathname();
   const { t } = useLang();
   const [open, setOpen] = useState(false);
@@ -163,20 +163,9 @@ export default function SideRail({ email }: { email: string | null }) {
             <Icon name="gear" />
             {open && <span>{t("drawer.title")}</span>}
           </button>
-          <div className={`flex items-center gap-3 h-11 ${open ? "px-3" : "justify-center"}`}>
-            <span
-              className="w-8 h-8 rounded-full text-white text-[0.8rem] font-bold flex items-center justify-center shrink-0"
-              style={{ background: "var(--grad-accent)" }}
-              title={email ?? ""}
-            >
-              {(email ?? "?").charAt(0).toUpperCase()}
-            </span>
-            {open && (
-              <span dir="ltr" className="text-[0.68rem] text-[var(--text-soft)] truncate">
-                {email}
-              </span>
-            )}
-          </div>
+          {/* موضع الحساب: تشغله قائمة AccountMenu العائمة (تحمل السمة والخروج).
+              نترك فراغه فقط كي لا يتراكب أفاتاران في المكان نفسه. */}
+          <div className="h-11" aria-hidden />
         </div>
       </aside>
 

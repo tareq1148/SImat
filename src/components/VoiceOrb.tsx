@@ -17,7 +17,14 @@ export default function VoiceOrb({
       className={`voice-orb ${big ? "orb-big" : ""} ${state !== "idle" ? "is-active" : ""} ${
         state === "listening" ? "is-listening" : ""
       } ${state === "speaking" ? "is-speaking" : ""}`}
-      style={{ width: size, height: size }}
+      // الضباب يتناسب مع القطر — قيمة ثابتة تترك الفقاعات أقراصًا صلبة عند تغيّر الحجم
+      style={
+        {
+          width: size,
+          height: size,
+          "--orb-blur": `${Math.max(6, Math.round(size * 0.24))}px`,
+        } as React.CSSProperties
+      }
     >
       <span className={`orb-fluid ${big ? "orb-lg" : "orb-sm"}`}>
         <i className="orb-blob b1" />

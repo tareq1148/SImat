@@ -241,7 +241,7 @@ export default function ChatPage() {
   return (
     <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-6">
       {messages.length === 0 && (
-        <div className="flex-1 flex flex-col items-center justify-center pt-8 pb-4">
+        <div className="flex-1 flex flex-col items-center justify-start pt-16 sm:pt-24 pb-4">
           <div className="rise text-center">
             <h1 className="text-[2.1rem] md:text-[2.9rem] font-bold leading-snug mb-3 tracking-tight">
               {t("home.w1")}.{" "}
@@ -252,10 +252,10 @@ export default function ChatPage() {
           </div>
 
           {/* كوكبة الشبكة — تحت العنوان مباشرة، بهالة قطرية ناعمة خلفها */}
-          <div className="rise-1 relative w-full max-w-3xl mt-7 sm:mt-9" aria-hidden>
+          <div className="rise-1 relative w-full max-w-5xl mt-6 sm:mt-8" aria-hidden>
             <div className="hero-glow pointer-events-none absolute inset-0" />
             <div className="neural-mask relative">
-              <NeuralField height={260} />
+              <NeuralField height={420} />
             </div>
           </div>
         </div>
@@ -437,8 +437,8 @@ export default function ChatPage() {
         </div>
       )}
 
-      <div className="w-full max-w-2xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)]">
-        <form onSubmit={send} className="composer">
+      <div className="w-full max-w-2xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)] flex items-center gap-3">
+        <form onSubmit={send} className="composer flex-1 min-w-0">
           {/* + المرفقات */}
           <button
             type="button"
@@ -469,22 +469,7 @@ export default function ChatPage() {
             />
           )}
 
-          {/* كرة الصوت ثم زر الإرسال — داخل الحبّة على يسارها، والإرسال في الطرف */}
-          {voice.mode !== "none" && (
-            <button
-              type="button"
-              onClick={() => setVoiceMode(true)}
-              disabled={busy}
-              title={t("input.talk")}
-              className="shrink-0 leading-none disabled:opacity-45 disabled:cursor-not-allowed"
-            >
-              <VoiceOrb
-                size={40}
-                state={voice.speaking || voice.transcribing ? "speaking" : "idle"}
-              />
-            </button>
-          )}
-
+          {/* إرسال — في طرف الحبّة الأيسر */}
           <button
             className="composer-send"
             disabled={busy || (!input.trim() && attachments.length === 0)}
@@ -495,6 +480,22 @@ export default function ChatPage() {
             </svg>
           </button>
         </form>
+
+        {/* كرة الصوت — خارج الصندوق على يساره، تفتح شاشة المحادثة الصوتية */}
+        {voice.mode !== "none" && (
+          <button
+            type="button"
+            onClick={() => setVoiceMode(true)}
+            disabled={busy}
+            title={t("input.talk")}
+            className="shrink-0 leading-none disabled:opacity-45 disabled:cursor-not-allowed"
+          >
+            <VoiceOrb
+              size={48}
+              state={voice.speaking || voice.transcribing ? "speaking" : "idle"}
+            />
+          </button>
+        )}
       </div>
 
       {voiceMode && (
