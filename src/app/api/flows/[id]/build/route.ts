@@ -4,6 +4,7 @@ import { irToN8n, missingProviders, type CredentialMap } from "@/lib/adapter";
 import { activeConnections } from "@/lib/connections";
 import { validateIR } from "@/lib/validate-ir";
 import { stripApprovals } from "@/lib/ir";
+import { resolveSpreadsheetId } from "@/lib/google-lookup";
 import {
   activateWorkflow,
   createWorkflow,
@@ -59,6 +60,23 @@ export async function POST(
       if (n.provider === "telegram" && !n.params.chat_id)
         n.params.chat_id = String(tgMeta.chat_id);
     });
+  }
+
+  // المستخدم ربط حسابه، فاسم الجدول يكفي: نحلّه إلى معرّف من Drive حسابه
+  // بدل مطالبته بلصق رابط. يبقى النقص ظاهرًا إن لم يوجد أو تعدّدت المطابقات.
+  const sheetsNeedingId = ir.nodes.filter(
+    (n) =>
+      n.provider === "google_sheets" &&
+      !n.params.spreadsheet_url &&
+      typeof n.params.spreadsheet_name === "string" &&
+      n.params.spreadsheet_name.trim()
+  );
+  for (const node of sheetsNeedingId) {
+    const found = await resolveSpreadsheetId(
+      user.id,
+      String(node.params.spreadsheet_name)
+    );
+    if (found) node.params.spreadsheet_url = found;
   }
 
   const credMap: CredentialMap = {};

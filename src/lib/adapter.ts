@@ -699,9 +699,14 @@ export function irToN8n(
     }
 
     if (irNode.provider === "google_sheets") {
+      // القيمة قد تكون رابطًا كتبه المستخدم أو معرّفًا حلّه البحث في Drive
       const sheetRl = (url: unknown, name: unknown) =>
         url
-          ? { __rl: true, mode: "url", value: url }
+          ? {
+              __rl: true,
+              mode: String(url).startsWith("http") ? "url" : "id",
+              value: url,
+            }
           : {
               __rl: true,
               mode: "list",
@@ -787,7 +792,11 @@ export function irToN8n(
           resource: "sheet",
           operation: "append",
           documentId: sheetUrl
-            ? { __rl: true, mode: "url", value: sheetUrl }
+            ? {
+                __rl: true,
+                mode: String(sheetUrl).startsWith("http") ? "url" : "id",
+                value: sheetUrl,
+              }
             : {
                 __rl: true,
                 mode: "list",
@@ -811,6 +820,72 @@ export function irToN8n(
     }
 
     if (irNode.provider === "google_drive") {
+      const act = `${irNode.operation} ${irNode.label}`;
+
+      // تنزيل ملف: كان يُبنى إنشاءَ ملفٍ نصّي فيُخرج معرّفًا فارغًا بدل الصورة
+      if (/download|تنزيل|جلب|fetch_file|get_file/i.test(act)) {
+        const dl: N8nNode = {
+          id: irNode.id,
+          name: nodeName,
+          type: "n8n-nodes-base.googleDrive",
+          typeVersion: 3,
+          position: [xPos, Y],
+          parameters: {
+            resource: "file",
+            operation: "download",
+            fileId: {
+              __rl: true,
+              mode: "url",
+              // المعرّف من المواصفة، وإلا أوّل رابط في الصفّ الوارد مهما كان اسم عموده
+              value:
+                irNode.params.file_id ??
+                irNode.params.image_url ??
+                "={{ $json.id || Object.values($json).find(v => typeof v === 'string' && v.startsWith('http')) }}",
+            },
+            options: { binaryPropertyName: "data" },
+          },
+        };
+        if (creds.google_drive)
+          dl.credentials = { googleDriveOAuth2Api: creds.google_drive };
+        nodes.push(dl);
+        connectPrev(nodeName);
+        prev = nodeName;
+        continue;
+      }
+
+      // رفع ملفّ جاهز (صورة نتجت عن خطوة سابقة) — لا إنشاء ملفٍ نصّي
+      if (/upload|رفع/i.test(act)) {
+        const up: N8nNode = {
+          id: irNode.id,
+          name: nodeName,
+          type: "n8n-nodes-base.googleDrive",
+          typeVersion: 3,
+          position: [xPos, Y],
+          parameters: {
+            resource: "file",
+            operation: "upload",
+            inputDataFieldName: "data",
+            name:
+              irNode.params.file_name ??
+              "={{ 'watirah-' + $now.toFormat('yyyy-MM-dd-HHmmss') + '.png' }}",
+            driveId: { __rl: true, mode: "list", value: "My Drive" },
+            folderId: {
+              __rl: true,
+              mode: "list",
+              value: "root",
+              cachedResultName: "/ (Root folder)",
+            },
+            options: {},
+          },
+        };
+        if (creds.google_drive)
+          up.credentials = { googleDriveOAuth2Api: creds.google_drive };
+        nodes.push(up);
+        connectPrev(nodeName);
+        prev = nodeName;
+        continue;
+      }
+
       const driveNode: N8nNode = {
         id: irNode.id,
         name: nodeName,
@@ -1101,9 +1176,20 @@ export function irToN8n(
     // المنصّة — المستخدم لا يربط شيئًا ولا يرى المفتاح. الخرج ملفّ ثنائي،
     // فتقدر عقدة Drive بعدها أن ترفعه كما هو.
     if (irNode.provider === "removebg") {
+      // إن سبقها تنزيل من Drive فالصورة بين يديها ملفًّا ثنائيًا — تُرسل كما هي.
+      // وإلا فرابطها في الصفّ الوارد، وأعمدة المستخدم بأسماء لا نعرفها
+      // («Image link» مثلًا)، فنلتقط أوّل قيمة نصّية تبدأ بـhttp.
+      const at = executable.indexOf(irNode);
+      const before = at > 0 ? executable[at - 1] : null;
+      const binaryUpstream =
+        !!before &&
+        before.provider === "google_drive" &&
+        /download|تنزيل|جلب|fetch_file|get_file/i.test(
+          `${before.operation} ${before.label}`
+        );
       const imageRef = irNode.params.image_url
         ? JSON.stringify(String(irNode.params.image_url))
-        : "($json.image_url || $json.url || $json.webContentLink)";
+        : "Object.values($json).find(v => typeof v === 'string' && v.startsWith('http'))";
       const rbNode: N8nNode = {
         id: irNode.id,
         name: nodeName,
@@ -1120,13 +1206,29 @@ export function irToN8n(
             ],
           },
           sendBody: true,
-          specifyBody: "json",
-          jsonBody:
-            "={{ JSON.stringify({ image_url: " +
-            imageRef +
-            ", size: " +
-            JSON.stringify(String(irNode.params.size ?? "auto")) +
-            " }) }}",
+          ...(binaryUpstream
+            ? {
+                contentType: "multipart-form-data",
+                bodyParameters: {
+                  parameters: [
+                    {
+                      parameterType: "formBinaryData",
+                      name: "image_file",
+                      inputDataFieldName: "data",
+                    },
+                    { name: "size", value: String(irNode.params.size ?? "auto") },
+                  ],
+                },
+              }
+            : {
+                specifyBody: "json",
+                jsonBody:
+                  "={{ JSON.stringify({ image_url: " +
+                  imageRef +
+                  ", size: " +
+                  JSON.stringify(String(irNode.params.size ?? "auto")) +
+                  " }) }}",
+              }),
           options: {
             response: {
               response: { responseFormat: "file", outputPropertyName: "data" },
