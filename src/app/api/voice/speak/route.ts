@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { elevenSpeak, hasElevenLabs } from "@/lib/elevenlabs";
+import { elevenSpeak, elevenTtsEnabled } from "@/lib/elevenlabs";
 import { synthesizeSpeech } from "@/lib/voicestudio";
 
 export const maxDuration = 180;
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-  if (hasElevenLabs()) {
+  if (elevenTtsEnabled()) {
     try {
       return audioResponse(await elevenSpeak(clean), "elevenlabs");
     } catch (err) {

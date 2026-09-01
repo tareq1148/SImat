@@ -40,6 +40,8 @@ export function useVoice(onTranscript: (text: string) => void) {
   const recogRef = useRef<BrowserRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
+  // النطق قد يكون معطّلًا على الخادم بينما التفريغ يعمل — نحترم الشقّين منفصلين
+  const [serverTts, setServerTts] = useState(false);
   // كشف الصمت: يوقف التسجيل وحده فتصير المحادثة متصلة بلا ضغط زر
   const vadRef = useRef<{ ctx: AudioContext; raf: number; stream: MediaStream } | null>(null);
 
@@ -50,6 +52,7 @@ export function useVoice(onTranscript: (text: string) => void) {
         if (d.available) {
           setMode("server");
           setProvider(d.provider ?? null);
+          setServerTts(d.tts !== false);
         } else if (getBrowserRecognition() || "speechSynthesis" in window) {
           setMode("browser");
           setProvider("browser");
@@ -225,7 +228,7 @@ export function useVoice(onTranscript: (text: string) => void) {
   const speak = useCallback(
     async (text: string, force = false) => {
       if ((!speakEnabled && !force) || !text.trim()) return;
-      if (mode === "server") {
+      if (mode === "server" && serverTts) {
         try {
           const res = await fetch("/api/voice/speak", {
             method: "POST",
@@ -261,12 +264,13 @@ export function useVoice(onTranscript: (text: string) => void) {
         window.speechSynthesis.speak(u);
       }
     },
-    [mode, speakEnabled]
+    [mode, speakEnabled, serverTts]
   );
 
   return {
     mode,
     provider,
+    serverTts,
     recording,
     transcribing,
     speakEnabled,

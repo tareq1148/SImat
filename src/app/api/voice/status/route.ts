@@ -1,4 +1,4 @@
-import { elevenLabsStatus, hasElevenLabs } from "@/lib/elevenlabs";
+import { elevenLabsStatus, elevenTtsEnabled, hasElevenLabs } from "@/lib/elevenlabs";
 import { voiceStudioStatus } from "@/lib/voicestudio";
 
 // ترتيب التفضيل: ElevenLabs (جودة عربية عالية) ← VoiceStudio المحلي ← صوت المتصفح
@@ -9,7 +9,9 @@ export async function GET() {
       return Response.json({
         available: true,
         provider: "elevenlabs",
-        voice: el.voice ?? null,
+        stt: true,
+        tts: elevenTtsEnabled(),
+        voice: elevenTtsEnabled() ? (el.voice ?? null) : null,
         voices: el.voices,
       });
     }
@@ -18,6 +20,8 @@ export async function GET() {
     return Response.json({
       ...vs,
       provider: vs.available ? "voicestudio" : null,
+      stt: vs.available,
+      tts: vs.available,
       error: el.error,
     });
   }
@@ -26,5 +30,7 @@ export async function GET() {
   return Response.json({
     ...status,
     provider: status.available ? "voicestudio" : null,
+    stt: status.available,
+    tts: status.available,
   });
 }

@@ -10,9 +10,18 @@ const STT_MODEL = process.env.ELEVENLABS_STT_MODEL ?? "scribe_v1";
 const CONFIGURED_VOICE = process.env.ELEVENLABS_VOICE_ID ?? "";
 // لغة التفريغ: تركها فارغة يجعل النموذج يكتشفها — أدق حين يخلط المستخدم عربي/إنجليزي
 const STT_LANG = process.env.ELEVENLABS_STT_LANG ?? "";
+// النطق منفصل عن التفريغ عمدًا: الباقة المجانية تمنع أصوات المكتبة العربية،
+// وأصوات الحساب الإنجليزية تنطق العربية مشوّهة. أطفئه ودع المتصفح ينطق
+// حتى تُضاف أصوات عربية، والتفريغ يبقى على ElevenLabs لأنه يعمل ويحسّن كثيرًا.
+const TTS_ON = process.env.ELEVENLABS_TTS !== "0";
 
 export function hasElevenLabs(): boolean {
   return KEY.trim().length > 0;
+}
+
+/** هل ننطق عبر ElevenLabs؟ التفريغ يعمل دائمًا متى وُجد المفتاح */
+export function elevenTtsEnabled(): boolean {
+  return hasElevenLabs() && TTS_ON;
 }
 
 function headers(): Record<string, string> {
