@@ -1039,3 +1039,14 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   background: var(--ok);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 22%, transparent);
 }
+
+/* ربط منتهي الصلاحية — يحتاج إعادة ربط */
+.gmail-chip.is-stale {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 48%, transparent);
+  background: color-mix(in srgb, var(--warn) 12%, var(--panel-solid));
+}
+.gmail-dot.is-stale {
+  background: var(--warn);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 22%, transparent);
+}

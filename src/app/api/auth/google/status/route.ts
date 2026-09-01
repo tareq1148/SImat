@@ -1,6 +1,7 @@
 import { supabaseServer, supabaseService } from "@/lib/supabase/server";
+import { getValidGoogleAccessToken } from "@/lib/google-tokens";
 
-// حالة ربط Gmail — يرجع الحقول غير الحسّاسة فقط، ولا يمرّ أي توكن للعميل
+// حالة ربط Gmail — يجدّد التوكن إن لزم، ولا يمرّر أي توكن للعميل
 export async function GET() {
   const supabase = await supabaseServer();
   const {
@@ -8,31 +9,24 @@ export async function GET() {
   } = await supabase.auth.getUser();
   if (!user) return Response.json({ error: "غير مسجل الدخول" }, { status: 401 });
 
-  let db;
-  try {
-    db = supabaseService();
-  } catch {
-    // مفتاح الخدمة غير مضبوط — نعتبرها غير متصلة بدل إسقاط الواجهة
-    return Response.json({ connected: false });
+  const result = await getValidGoogleAccessToken(user.id);
+
+  if (result.ok) {
+    // نرسل واقعة التجديد لا التوكن نفسه
+    return Response.json({ connected: true, needs_reauth: false, refreshed: result.refreshed });
   }
-
-  const { data, error } = await db
-    .from("oauth_tokens")
-    .select("scope, expires_at, updated_at, refresh_token")
-    .eq("user_id", user.id)
-    .eq("provider", "google")
-    .maybeSingle();
-
-  if (error || !data) return Response.json({ connected: false });
-
-  return Response.json({
-    connected: true,
-    // نرسل وجود التوكن لا قيمته
-    has_refresh_token: Boolean(data.refresh_token),
-    scope: data.scope ?? null,
-    expires_at: data.expires_at ?? null,
-    connected_at: data.updated_at ?? null,
-  });
+  if (result.reason === "needs_reauth") {
+    return Response.json({
+      connected: true,
+      needs_reauth: true,
+      error: result.error ?? "انتهت صلاحية الربط — أعد الربط",
+    });
+  }
+  if (result.reason === "error") {
+    // إعداد ناقص أو جدول مفقود: نعتبرها غير متصلة بدل إسقاط الواجهة
+    return Response.json({ connected: false, error: result.error });
+  }
+  return Response.json({ connected: false });
 }
 
 // فصل الربط — يحذف التوكنات المخزّنة

@@ -18,9 +18,11 @@ function GmailIcon({ muted }: { muted?: boolean }) {
   );
 }
 
+type State = "loading" | "off" | "on" | "reauth";
+
 export default function GmailConnect() {
   const { t } = useLang();
-  const [connected, setConnected] = useState<boolean | null>(null);
+  const [state, setState] = useState<State>("loading");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -45,18 +47,26 @@ export default function GmailConnect() {
         );
       }
 
-      let isConnected = false;
+      let next: State = "off";
+      let statusErr: string | null = null;
       try {
         const res = await fetch("/api/auth/google/status");
-        if (res.ok) isConnected = Boolean((await res.json()).connected);
+        if (res.ok) {
+          const d = await res.json();
+          if (d.needs_reauth) {
+            next = "reauth";
+            statusErr = d.error ?? null;
+          } else if (d.connected) next = "on";
+        }
       } catch {
         // تعذّر الوصول للحالة = غير متصل
       }
 
       if (!alive) return;
-      setConnected(isConnected || Boolean(ok));
+      setState(ok && next === "off" ? "on" : next);
       if (ok) setNote(t("gmail.done"));
       else if (err) setNote(err);
+      else if (next === "reauth") setNote(statusErr ?? t("gmail.expired"));
     })();
 
     return () => {
@@ -68,7 +78,7 @@ export default function GmailConnect() {
     setBusy(true);
     try {
       await fetch("/api/auth/google/status", { method: "DELETE" });
-      setConnected(false);
+      setState("off");
       setNote(t("gmail.removed"));
     } finally {
       setBusy(false);
@@ -76,11 +86,24 @@ export default function GmailConnect() {
   }
 
   // قبل وصول الحالة لا نومض بزر خاطئ
-  if (connected === null) return null;
+  if (state === "loading") return null;
 
   return (
     <>
-      {connected ? (
+      {/* انتهت صلاحية الربط: رابط إعادة ربط لا زر فصل */}
+      {state === "reauth" && (
+        <a
+          href="/api/auth/google"
+          title={t("gmail.expired")}
+          className="gmail-chip is-stale shrink-0"
+        >
+          <GmailIcon muted />
+          <span className="hidden sm:inline">{t("gmail.reconnect")}</span>
+          <span className="gmail-dot is-stale" aria-hidden />
+        </a>
+      )}
+
+      {state === "on" ? (
         <button
           type="button"
           onClick={disconnect}
@@ -92,12 +115,12 @@ export default function GmailConnect() {
           <span className="hidden sm:inline">{t("gmail.connected")}</span>
           <span className="gmail-dot" aria-hidden />
         </button>
-      ) : (
+      ) : state === "off" ? (
         <a href="/api/auth/google" title={t("gmail.connect")} className="gmail-chip shrink-0">
           <GmailIcon muted />
           <span className="hidden sm:inline">{t("gmail.connect")}</span>
         </a>
-      )}
+      ) : null}
 
       {note && (
         <span

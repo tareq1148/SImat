@@ -5,6 +5,8 @@
 -- والوصول الوحيد عبر service_role الذي يتجاوز RLS من الخادم.
 -- لهذا لا تُخزَّن التوكنات في جدول connections: الواجهة تقرأ منه مباشرة
 -- بمفتاح المتصفح، فكان أي refresh_token فيه مكشوفًا للعميل.
+--
+-- الملف قابل لإعادة التنفيذ بأمان (idempotent).
 
 create table if not exists public.oauth_tokens (
   id            uuid primary key default gen_random_uuid(),
@@ -19,6 +21,13 @@ create table if not exists public.oauth_tokens (
   updated_at    timestamptz not null default now(),
   constraint oauth_tokens_user_provider_key unique (user_id, provider)
 );
+
+-- حالة انتهاء صلاحية refresh_token (جوجل يرجع invalid_grant):
+-- يحدث بعد ٧ أيام ما دامت شاشة الموافقة في وضع Testing، أو عند سحب المستخدم للإذن.
+alter table public.oauth_tokens
+  add column if not exists needs_reauth boolean not null default false;
+alter table public.oauth_tokens
+  add column if not exists last_error text;
 
 alter table public.oauth_tokens enable row level security;
 

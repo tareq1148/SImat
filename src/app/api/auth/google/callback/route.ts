@@ -73,6 +73,9 @@ export async function GET(req: NextRequest) {
       scope: tokens.scope ?? null,
       token_type: tokens.token_type ?? null,
       expires_at: expiresAt,
+      // ربط ناجح يمسح أي حالة «يحتاج إعادة ربط» سابقة
+      needs_reauth: false,
+      last_error: null,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id,provider" }

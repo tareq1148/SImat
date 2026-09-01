@@ -99,3 +99,48 @@ export async function exchangeCodeForTokens(
 
   return { tokens: JSON.parse(text) as GoogleTokens };
 }
+
+/** فشل التجديد الذي لا يُصلحه إلا ربط جديد من المستخدم */
+export class RefreshRevokedError extends Error {}
+
+/**
+ * تجديد access_token من refresh_token.
+ * يرمي RefreshRevokedError عند invalid_grant — أي أن refresh_token نفسه انتهى
+ * أو سُحب الإذن (وضع Testing في جوجل يُنهيه بعد ٧ أيام).
+ */
+export async function refreshAccessToken(
+  config: GoogleConfig,
+  refreshToken: string
+): Promise<GoogleTokens> {
+  const res = await fetch(TOKEN_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    let code = "";
+    let desc = text.slice(0, 200);
+    try {
+      const j = JSON.parse(text) as { error?: string; error_description?: string };
+      code = j.error ?? "";
+      desc = j.error_description ?? (code || desc);
+    } catch {}
+    if (code === "invalid_grant") {
+      throw new RefreshRevokedError(
+        "انتهت صلاحية ربط Gmail أو سُحب الإذن — أعد الربط. " +
+          "(في وضع Testing لدى جوجل ينتهي التوكن بعد ٧ أيام)"
+      );
+    }
+    throw new Error(`تعذر تجديد توكن جوجل (${res.status}): ${desc}`);
+  }
+
+  // استجابة التجديد لا تحمل refresh_token جديدًا — المحفوظ يبقى صالحًا
+  return JSON.parse(text) as GoogleTokens;
+}
