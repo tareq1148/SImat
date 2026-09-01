@@ -3,7 +3,9 @@
 // نقطة البداية — صفحة كاملة بلا إطار: الكلام في جهة القراءة الأولى والشبكة العصبية تملأ الجهة المقابلة
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { toggleLang, useLang } from "@/lib/i18n";
+import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
 import Logo from "./Logo";
 import NeuralField from "./NeuralField";
 
@@ -11,18 +13,63 @@ export default function LandingView({ authed }: { authed: boolean }) {
   const { lang, t } = useLang();
   const ar = lang === "ar";
   const startHref = authed ? "/chat" : "/login";
+  const [theme, setTheme] = useState<Theme>("dark");
+
+  useEffect(() => {
+    setTheme(getTheme());
+    const on = (e: Event) => setTheme((e as CustomEvent<Theme>).detail);
+    window.addEventListener("simat-theme", on);
+    return () => window.removeEventListener("simat-theme", on);
+  }, []);
 
   return (
     <main className="flex-1 relative overflow-hidden">
-      {/* زر اللغة */}
-      <button
-        onClick={() => toggleLang()}
-        className="absolute top-6 z-20 w-11 h-9 rounded-full border border-[var(--line)] bg-[var(--panel)] backdrop-blur text-[0.72rem] font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--accent-bg)] transition-colors"
+      {/* أدوات سريعة: اللغة والمظهر */}
+      <div
+        className="absolute top-6 z-20 flex items-center gap-2"
         style={{ insetInlineEnd: "1.75rem" }}
-        title={ar ? "English" : "العربية"}
       >
-        {ar ? "EN" : "ع"}
-      </button>
+        <button
+          onClick={() => toggleLang()}
+          className="w-11 h-9 rounded-full border border-[var(--line)] bg-[var(--panel)] backdrop-blur text-[0.72rem] font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--accent-bg)] transition-colors"
+          title={ar ? "English" : "العربية"}
+        >
+          {ar ? "EN" : "ع"}
+        </button>
+        <button
+          onClick={() => setTheme(toggleTheme())}
+          className="w-9 h-9 rounded-full border border-[var(--line)] bg-[var(--panel)] backdrop-blur flex items-center justify-center text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--accent-bg)] transition-colors"
+          title={
+            theme === "dark"
+              ? ar
+                ? "الوضع الفاتح"
+                : "Light mode"
+              : ar
+                ? "الوضع الداكن"
+                : "Dark mode"
+          }
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {theme === "dark" ? (
+              <path d="M21 13.5A8.5 8.5 0 1 1 10.5 3a7 7 0 0 0 10.5 10.5z" />
+            ) : (
+              <>
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5 5l1.8 1.8M17.2 17.2 19 19M19 5l-1.8 1.8M6.8 17.2 5 19" />
+              </>
+            )}
+          </svg>
+        </button>
+      </div>
 
       {/* الشبكة العصبية تملأ الجهة المقابلة للنص وتمتد خلف الصفحة */}
       <div
@@ -70,6 +117,13 @@ export default function LandingView({ authed }: { authed: boolean }) {
 
           <div className="flex justify-center md:justify-start rise-3">
             <Link href={startHref} className="start-orb" aria-label={ar ? "ابدأ" : "Start"}>
+              {/* كتل لونية تسبح وتمتزج — بروح كرة Siri */}
+              <span className="orb-fluid" aria-hidden>
+                <i className="orb-blob b1" />
+                <i className="orb-blob b2" />
+                <i className="orb-blob b3" />
+                <i className="orb-blob b4" />
+              </span>
               <span className="orb-label">
                 {ar ? "ابدأ" : "Start"}
                 <svg
