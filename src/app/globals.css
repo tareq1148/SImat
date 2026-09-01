@@ -958,3 +958,44 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   .voice-orb.orb-big.is-listening,
   .voice-orb.orb-big.is-speaking { animation: none; }
 }
+
+
+/* ===== شريط التبويب المدمج (إنشاء / سير العمل) ===== */
+.seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: var(--well);
+}
+.seg-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 94px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 999px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.seg-tab:hover { color: var(--text); }
+.seg-tab.is-on {
+  background: var(--panel-solid);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(16, 24, 16, 0.09);
+}
+/* حلقة التركيز داخلية وخفيفة — لا تبقى كإطار أخضر بعد النقر */
+.seg-tab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--accent-bg);
+}
+.seg-tab.is-on:focus-visible {
+  box-shadow: 0 1px 2px rgba(16, 24, 16, 0.09), inset 0 0 0 2px var(--accent-bg);
+}
