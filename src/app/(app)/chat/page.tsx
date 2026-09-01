@@ -428,23 +428,31 @@ export default function ChatPage() {
       />
 
       {options.length > 0 && !busy && (
-        <div className="w-full max-w-3xl mx-auto mb-3 flex gap-2 flex-wrap">
-          {options.map((opt) => (
-            <button
-              key={opt}
-              onClick={() => send(undefined, opt)}
-              className="rounded-full border px-4 py-2 text-[0.83rem] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] transition-colors hover:border-[var(--accent-bg)]"
-              style={{ borderColor: "color-mix(in srgb, var(--accent-bg) 35%, transparent)" }}
-            >
-              {opt}
-            </button>
-          ))}
+        <div className="w-full max-w-3xl mx-auto mb-3 space-y-2 rise">
+          <div className="grid sm:grid-cols-2 gap-2">
+            {options.map((opt, i) => (
+              <button
+                key={opt}
+                onClick={() => send(undefined, opt)}
+                className="group flex items-center gap-2.5 text-start rounded-xl border px-3.5 py-2.5 text-[0.83rem] font-semibold text-[var(--accent)] bg-[var(--accent-soft)] transition-colors hover:border-[var(--accent-bg)]"
+                style={{ borderColor: "color-mix(in srgb, var(--accent-bg) 32%, transparent)" }}
+              >
+                <span
+                  className="shrink-0 w-5 h-5 rounded-md text-[0.62rem] font-bold text-white flex items-center justify-center"
+                  style={{ background: "var(--accent-bg)" }}
+                >
+                  {i + 1}
+                </span>
+                <span className="leading-snug">{opt}</span>
+              </button>
+            ))}
+          </div>
           <button
             onClick={() => {
               setOptions([]);
               textInputRef.current?.focus();
             }}
-            className="rounded-full border border-[var(--line)] text-[var(--text-soft)] px-4 py-2 text-[0.83rem] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
+            className="w-full rounded-xl border border-dashed border-[var(--line)] text-[var(--text-soft)] px-3.5 py-2.5 text-[0.8rem] hover:text-[var(--text)] hover:bg-[var(--well)] transition-colors"
           >
             {t("opts.other")}
           </button>
@@ -465,7 +473,10 @@ export default function ChatPage() {
         </div>
       )}
 
-      <form onSubmit={send} className="w-full max-w-3xl mx-auto pb-6 flex gap-2 items-center">
+      <form
+        onSubmit={send}
+        className="w-full max-w-3xl mx-auto sticky bottom-0 pt-2 pb-5 flex gap-2 items-center bg-[var(--bg)]"
+      >
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
