@@ -9,10 +9,16 @@ import ExecutionGraph from "./ExecutionGraph";
 import NeuralThinking from "./NeuralThinking";
 import { PROVIDER_LABELS, type FlowStatus, type Provider, type WorkflowIR } from "@/lib/types";
 
+interface LastTest {
+  passed: boolean | null;
+  error: string | null;
+}
+
 interface FlowInfo {
   name: string;
   status: FlowStatus;
   ir: WorkflowIR | null;
+  lastTest: LastTest | null;
 }
 
 /** حالات لم يُبنَ فيها المسار بعد — «اختبار» يبنيه أولًا بدل أن يقف معطّلًا */
@@ -38,7 +44,12 @@ export default function WorkspaceCanvas({
       const res = await fetch(`/api/flows/${flowId}/ir`);
       if (!res.ok) return;
       const d = await res.json();
-      setInfo({ name: d.name ?? "", status: d.status, ir: d.ir ?? null });
+      setInfo({
+        name: d.name ?? "",
+        status: d.status,
+        ir: d.ir ?? null,
+        lastTest: d.last_test ?? null,
+      });
     } catch {
       // تعذّر الجلب — نُبقي ما لدينا
     } finally {
@@ -116,7 +127,7 @@ export default function WorkspaceCanvas({
 
       if (kind === "test") {
         await post(`/api/flows/${flowId}/test`, {});
-        setNotice({ ok: true, text: "بدأ الاختبار — النتيجة خلال لحظات…" });
+        setNotice(null); // النتيجة نفسها تظهر أدناه متى وصلت
       } else {
         await post(`/api/flows/${flowId}/activate`, { action: "activate" });
         setNotice({ ok: true, text: "تم الاعتماد ✓" });
@@ -160,15 +171,29 @@ export default function WorkspaceCanvas({
         </div>
       </header>
 
-      {notice && (
+      {notice ? (
         <p
           className={`px-4 py-2 text-[0.75rem] border-b border-[var(--line-soft)] ${
-            notice.ok ? "text-emerald-300" : "text-amber-300"
+            notice.ok ? "text-emerald-600" : "text-amber-600"
           }`}
         >
           {notice.text}
         </p>
-      )}
+      ) : testing ? (
+        <p className="px-4 py-2 text-[0.75rem] border-b border-[var(--line-soft)] text-[var(--text-soft)]">
+          جارٍ الاختبار — النتيجة خلال لحظات…
+        </p>
+      ) : info?.lastTest && info.lastTest.passed !== null ? (
+        <p
+          className={`px-4 py-2 text-[0.75rem] border-b border-[var(--line-soft)] ${
+            info.lastTest.passed ? "text-emerald-600" : "text-amber-600"
+          }`}
+        >
+          {info.lastTest.passed
+            ? "نجح آخر اختبار ✓"
+            : `فشل آخر اختبار: ${info.lastTest.error ?? "سبب غير معروف"}`}
+        </p>
+      ) : null}
 
       <div className="flex-1 min-h-0">
         {building ? (

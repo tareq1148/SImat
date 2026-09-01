@@ -29,7 +29,18 @@ export async function GET(
     .eq("version", flow.current_version)
     .maybeSingle();
 
+  // نتيجة آخر اختبار ترافق الرسم: اللوحة تستطلع هذا المسار أصلًا،
+  // فبلا هذا يبقى المستخدم بلا خبر إن نجح الاختبار أم فشل ولماذا.
+  const { data: lastTest } = await supabase
+    .from("test_runs")
+    .select("passed, error, created_at")
+    .eq("flow_id", id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   return Response.json({
+    last_test: lastTest ?? null,
     id: flow.id,
     name: flow.name,
     status: flow.status,
