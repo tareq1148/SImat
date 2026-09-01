@@ -17,6 +17,7 @@ import {
   type IRNode,
   type Provider,
   type WorkflowIR,
+  type FlowStatus,
 } from "@/lib/types";
 
 interface TestRunRow {
@@ -87,6 +88,9 @@ export default function FlowWorkspace({
     manual_minutes_per_run: number | null;
   } | null>(null);
   const [minutesInput, setMinutesInput] = useState("");
+  // حالة المسار تصل كخاصية من الخادم ولا تتغيّر بعدها؛ نتابعها محليًا كي ينفتح
+  // زر التفعيل فور نجاح الاختبار بلا إعادة تحميل يدوية
+  const [flowStatus, setFlowStatus] = useState<FlowStatus>(flow.status);
 
   const connectedProviders = useMemo(
     () => connections.filter((c) => c.status === "connected").map((c) => c.provider),
@@ -97,7 +101,7 @@ export default function FlowWorkspace({
     // مصالحة الحالات العالقة مع المحرك قبل القراءة (لا نوقف الاستطلاع لو فشلت)
     fetch(`/api/flows/${flow.id}/reconcile`, { method: "POST" }).catch(() => {});
     const sb = supabaseBrowser();
-    const [tr, r, a] = await Promise.all([
+    const [tr, r, a, f] = await Promise.all([
       sb
         .from("test_runs")
         .select("id, passed, input, expected, actual, error, created_at")
@@ -116,10 +120,13 @@ export default function FlowWorkspace({
         .eq("flow_id", flow.id)
         .order("created_at", { ascending: false })
         .limit(5),
+      sb.from("flows").select("status").eq("id", flow.id).maybeSingle(),
     ]);
     if (tr.data) setTestRuns(tr.data as TestRunRow[]);
     if (r.data) setRuns(r.data as RunRow[]);
     if (a.data) setApprovals(a.data as ApprovalRow[]);
+    const next = (f.data as { status: FlowStatus } | null)?.status;
+    if (next) setFlowStatus(next);
   }, [flow.id]);
 
   useEffect(() => {
@@ -706,7 +713,7 @@ export default function FlowWorkspace({
             <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
               <h3 className="font-bold">⚡ التفعيل والتشغيل</h3>
               <div className="flex gap-2">
-                {flow.status === "Active" ? (
+                {flowStatus === "Active" ? (
                   <>
                     <button className="btn btn-ghost" onClick={() => toggleActive("pause")} disabled={busy === "pause"}>
                       ⏸ إيقاف مؤقت
@@ -719,17 +726,17 @@ export default function FlowWorkspace({
                   <button
                     className="btn btn-primary"
                     onClick={() => toggleActive("activate")}
-                    disabled={busy === "activate" || (flow.status !== "Ready" && flow.status !== "Paused")}
+                    disabled={busy === "activate" || (flowStatus !== "Ready" && flowStatus !== "Paused")}
                   >
                     تفعيل سير العمل
                   </button>
                 )}
               </div>
             </div>
-            {flow.status !== "Ready" && flow.status !== "Active" && flow.status !== "Paused" && (
+            {flowStatus !== "Ready" && flowStatus !== "Active" && flowStatus !== "Paused" && (
               <p className="text-xs text-amber-300 mb-3">
                 التفعيل يتاح بعد نجاح الاختبار (الحالة الحالية:{" "}
-                <StatusChip status={flow.status} />)
+                <StatusChip status={flowStatus} />)
               </p>
             )}
 
