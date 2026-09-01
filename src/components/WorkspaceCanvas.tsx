@@ -170,7 +170,7 @@ export default function WorkspaceCanvas({
         </p>
       )}
 
-      <div className="flex-1 min-h-0 p-3">
+      <div className="flex-1 min-h-0">
         {building ? (
           <div className="h-full grid place-items-center">
             <NeuralThinking phase="building" />

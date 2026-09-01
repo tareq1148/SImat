@@ -1214,8 +1214,6 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
-  padding: 0.85rem;
-  padding-inline-start: 0.5rem;
   animation: wsCanvasIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -1235,10 +1233,14 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   min-width: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: 18px;
   background: var(--panel);
   overflow: hidden;
+}
+
+/* داخل مساحة العمل يمتدّ القماش بلا حدّ ولا استدارة — تبقى لصفحة الفحص وحدها */
+.ws-canvas-inner .xg-canvas {
+  border: 0;
+  border-radius: 0;
 }
 
 .ws-bar {
@@ -1267,7 +1269,6 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   .ws-canvas {
     order: -1; /* اللوحة أولًا على الشاشات الضيّقة — هي الجديد الذي يُنتظر */
     flex: 0 0 340px;
-    padding-inline-start: 0.85rem;
   }
 }
 
