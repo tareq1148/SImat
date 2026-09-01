@@ -13,10 +13,31 @@ interface Msg {
   text: string;
 }
 
+// نغمة قصيرة تقول «دورك الآن» — مولّدة بـWeb Audio، بلا ملف وبلا رصيد.
+// الإنسان في المكالمة يعرف متى يتكلم من نبرة الصمت؛ هنا نعوّضها بإشارة.
+function earcon(up: boolean) {
+  try {
+    const a = new AudioContext();
+    const o = a.createOscillator();
+    const g = a.createGain();
+    o.type = "sine";
+    o.frequency.setValueAtTime(up ? 620 : 880, a.currentTime);
+    o.frequency.exponentialRampToValueAtTime(up ? 880 : 620, a.currentTime + 0.09);
+    g.gain.setValueAtTime(0.0001, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.05, a.currentTime + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.14);
+    o.connect(g).connect(a.destination);
+    o.start();
+    o.stop(a.currentTime + 0.16);
+    setTimeout(() => void a.close().catch(() => {}), 400);
+  } catch {}
+}
+
 export default function VoiceExperience({
   messages,
   busy,
   confirmed,
+  noSpeech,
   voice,
   cleanText,
   onClose,
@@ -24,6 +45,8 @@ export default function VoiceExperience({
   messages: Msg[];
   busy: boolean;
   confirmed: boolean;
+  /** عدّاد يتزايد كلما لم يُلتقط كلام مفهوم */
+  noSpeech: number;
   voice: ReturnType<typeof useVoice>;
   cleanText: (t: string) => string;
   onClose: () => void;
@@ -72,9 +95,20 @@ export default function VoiceExperience({
     return () => clearTimeout(id);
   }, [pending, voice.speaking]);
 
+  // خطأ عابر (شبكة، تفريغ فاشل) لا يجوز أن يوقف المحادثة للأبد — يُمسح تلقائيًا.
+  // يُستثنى رفض المايك: ذاك يحتاج تدخل المستخدم فعلًا.
+  const fatalError =
+    voice.mode === "none" || /مايك|permission|not-allowed/i.test(voice.error ?? "");
+  useEffect(() => {
+    if (!voice.error || fatalError) return;
+    const id = setTimeout(() => voice.clearError(), 2200);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voice.error, fatalError]);
+
   // الحلقة: كلما هدأ كل شيء، عاود الاستماع
   useEffect(() => {
-    if (paused || confirmed || pending || voice.error || voice.mode === "none") return;
+    if (paused || confirmed || pending || fatalError) return;
     if (busy || voice.speaking || voice.recording || voice.transcribing) return;
     const id = setTimeout(() => startRef.current(), 250);
     return () => clearTimeout(id);
@@ -83,8 +117,7 @@ export default function VoiceExperience({
     confirmed,
     pending,
     busy,
-    voice.error,
-    voice.mode,
+    fatalError,
     voice.speaking,
     voice.recording,
     voice.transcribing,
@@ -94,10 +127,31 @@ export default function VoiceExperience({
   useEffect(() => {
     if (!confirmed) return;
     voice.stopRecording();
-    const id = setTimeout(onClose, 2600);
+    // لا تقطع آخر جملة: انتظر انتهاء النطق ثم أغلق
+    if (voice.speaking) return;
+    const id = setTimeout(onClose, 900);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmed]);
+  }, [confirmed, voice.speaking]);
+
+  // «ما سمعتك» — تظهر لحظتين ثم تختفي، فلا يبقى المستخدم في صمت محيّر
+  const [hint, setHint] = useState("");
+  useEffect(() => {
+    // الشرط على العدّاد نفسه لا على «أول تشغيل»: React يشغّل الأثر مرتين
+    // عند التركيب في التطوير، فحارس المرة الأولى كان يُستهلك ثم تظهر الرسالة فورًا
+    if (noSpeech === 0) return;
+    setHint(t("voice.noSpeech"));
+    const id = setTimeout(() => setHint(""), 2400);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [noSpeech]);
+
+  // نغمة صاعدة لحظة فتح المايك
+  const wasRecording = useRef(false);
+  useEffect(() => {
+    if (voice.recording && !wasRecording.current) earcon(true);
+    wasRecording.current = voice.recording;
+  }, [voice.recording]);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -118,12 +172,19 @@ export default function VoiceExperience({
   }
 
   function tapOrb() {
+    // مقاطعة: إن كان يتكلم فأسكته وافتح المايك — كما تقاطع إنسانًا
+    if (voice.speaking) {
+      voice.stopSpeaking();
+      setPending(false);
+      setPaused(false);
+      return;
+    }
     if (voice.recording) {
       voice.stopRecording();
       setPaused(true);
-    } else {
-      setPaused(false);
+      return;
     }
+    setPaused(false);
   }
 
   const orbState = voice.recording
@@ -137,6 +198,7 @@ export default function VoiceExperience({
   if (confirmed) status = t("voice.complete");
   else if (voice.mode === "none") status = t("voice.unsupported");
   else if (voice.error) status = voice.error;
+  else if (hint) status = hint;
   else if (busy) {
     status = t("voice.processing");
     dots = true;
@@ -196,12 +258,12 @@ export default function VoiceExperience({
       <aside className="conv-panel">
         <header className="conv-head">
           <span className="conv-title">{t("voice.title")}</span>
-          <span className="conv-count">
-            {messages.filter((m) => m.role === "user").length || ""}
-          </span>
+
         </header>
         <div ref={listRef} className="conv-list">
-          <div className="conv-msg a">{t("voice.intro")}</div>
+          {messages.length === 0 && (
+            <div className="conv-msg a">{t("voice.intro")}</div>
+          )}
           {messages.map(
             (m, i) =>
               (m.role === "user" || cleanText(m.text).trim()) && (

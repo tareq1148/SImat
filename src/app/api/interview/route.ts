@@ -1,7 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
-import { INTERVIEW_EFFORT, INTERVIEW_MODEL, INTERVIEW_SYSTEM, UPDATE_SPEC_TOOL } from "@/lib/interview";
+import {
+  INTERVIEW_EFFORT,
+  INTERVIEW_MODEL,
+  INTERVIEW_SYSTEM,
+  SPOKEN_MODE_SYSTEM,
+  UPDATE_SPEC_TOOL,
+} from "@/lib/interview";
 import type { TaskSpec } from "@/lib/types";
 
 export const maxDuration = 300;
@@ -32,8 +38,11 @@ export async function POST(req: NextRequest) {
     specId?: string;
     message: string;
     attachments?: string[];
+    voice?: boolean;
   };
   const userMessage = (body.message ?? "").trim();
+  // الوضع الصوتي يغيّر أسلوب الرد جذريًا: نصّ يُسمع لا نصّ يُقرأ
+  const spokenMode = body.voice === true;
   const attachmentIds = (body.attachments ?? []).slice(0, 3);
   if (!userMessage && attachmentIds.length === 0) {
     return Response.json({ error: "رسالة فارغة" }, { status: 400 });
@@ -148,6 +157,9 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       sse(controller, { type: "spec_id", specId });
       let confirmed = false;
+      // هل نُطق كلام في هذه المحادثة؟ (الوضع الصوتي: مرة واحدة فقط)
+      let spokenSaid = false;
+      let roundHadText = false;
       try {
         // حلقة يدوية: نص متدفق + معالجة أداة حفظ المواصفة
         for (let round = 0; round < 6; round++) {
@@ -163,16 +175,31 @@ export async function POST(req: NextRequest) {
                 text: INTERVIEW_SYSTEM,
                 cache_control: { type: "ephemeral" },
               },
+              // ملحق منفصل بعد نقطة التخزين المؤقت حتى لا يُبطل ذاكرة المطالبة الأساسية
+              ...(spokenMode
+                ? [{ type: "text" as const, text: SPOKEN_MODE_SYSTEM }]
+                : []),
             ],
             tools: [UPDATE_SPEC_TOOL],
             messages,
           });
 
+          // في الوضع الصوتي: كلام الدور الأول هو الجملة الحقيقية، ويصل في ~3 ثوانٍ.
+          // ما بعد استدعاء الأداة تكرار أضعف يصل بعد ~12 ثانية — فنُسقطه:
+          // المستخدم يسمع الأفضل أسرع بأربعة أضعاف بدل انتظار الأسوأ.
           msgStream.on("text", (delta) => {
+            if (spokenMode && spokenSaid) return;
             sse(controller, { type: "delta", text: delta });
+            roundHadText = true;
           });
 
           const finalMsg = await msgStream.finalMessage();
+
+          // اكتمل كلام هذا الدور: أخبر العميل لينطقه فورًا بدل انتظار دورة الأداة
+          if (spokenMode && roundHadText && !spokenSaid) {
+            spokenSaid = true;
+            sse(controller, { type: "utterance_end" });
+          }
 
           if (finalMsg.stop_reason === "refusal") {
             sse(controller, {

@@ -9,7 +9,7 @@ import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
 import WorkspaceCanvas from "@/components/WorkspaceCanvas";
 import { useLang } from "@/lib/i18n";
-import { cleanText, extractOptions } from "@/lib/transcript";
+import { cleanText, extractOptions, speechText } from "@/lib/transcript";
 import type { Provider } from "@/lib/types";
 import { useVoice } from "@/lib/useVoice";
 
@@ -58,18 +58,25 @@ export default function ChatPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
   // شاشة المحادثة الصوتية — تُفتح من كرة الصوت
   const [voiceMode, setVoiceMode] = useState(false);
+  const [noSpeech, setNoSpeech] = useState(0);
   const voiceModeRef = useRef(false);
   voiceModeRef.current = voiceMode;
   const sendRef = useRef<(e?: React.FormEvent, override?: string) => void>(() => {});
   // داخل الشاشة الصوتية يُرسَل الكلام مباشرة؛ خارجها يعبّئ خانة الكتابة فقط
-  const voice = useVoice((text) => {
-    if (voiceModeRef.current) {
-      sendRef.current(undefined, text);
-      return;
+  const voice = useVoice(
+    (text) => {
+      if (voiceModeRef.current) {
+        sendRef.current(undefined, text);
+        return;
+      }
+      setInput((prev) => (prev.trim() ? prev.trimEnd() + " " : "") + text);
+      textInputRef.current?.focus();
+    },
+    // ما التقط كلامًا مفهومًا — الصمت هنا يبدو كأن النظام تجاهلك
+    () => {
+      if (voiceModeRef.current) setNoSpeech((n) => n + 1);
     }
-    setInput((prev) => (prev.trim() ? prev.trimEnd() + " " : "") + text);
-    textInputRef.current?.focus();
-  });
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -137,6 +144,8 @@ export default function ChatPage() {
           specId,
           message: text,
           attachments: sentAttachments.map((f) => f.id),
+          // الوضع الصوتي: الرد يُسمع لا يُقرأ، فيتغيّر أسلوبه في الخادم
+          voice: voiceModeRef.current,
         }),
       });
 
@@ -149,6 +158,7 @@ export default function ChatPage() {
       const decoder = new TextDecoder();
       let buffer = "";
       let assistantText = "";
+      let spoken = false;
       let sid = specId;
       let ready = false;
 
@@ -164,6 +174,13 @@ export default function ChatPage() {
           if (evt.type === "spec_id") {
             sid = evt.specId;
             setSpecId(evt.specId);
+          } else if (evt.type === "utterance_end") {
+            // اكتملت جملة وَتيرة — ننطقها الآن لا بعد انتهاء حفظ المواصفة،
+            // فيسمعها المستخدم بعد ~3 ثوانٍ بدل ~13
+            if (voiceModeRef.current && assistantText.trim() && !spoken) {
+              spoken = true;
+              voice.speak(speechText(assistantText), true);
+            }
           }
           else if (evt.type === "delta") {
             assistantText += evt.text;
@@ -185,7 +202,8 @@ export default function ChatPage() {
       }
       setOptions(extractOptions(assistantText));
       // في الوضع الصوتي ينطق دائمًا، وإلا يحترم مفتاح «اسمع الردود»
-      if (assistantText.trim()) voice.speak(cleanText(assistantText), voiceModeRef.current);
+      if (assistantText.trim() && !spoken)
+        voice.speak(speechText(assistantText), voiceModeRef.current);
       // اكتملت المواصفة ← يُولَّد المسار مباشرةً وتُفتح مساحة العمل
       if (ready) await evaluate(sid ?? undefined);
     } catch (err) {
@@ -519,6 +537,7 @@ export default function ChatPage() {
         <VoiceExperience
           messages={messages}
           busy={busy}
+          noSpeech={noSpeech}
           confirmed={confirmed}
           voice={voice}
           cleanText={cleanText}

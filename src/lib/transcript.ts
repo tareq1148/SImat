@@ -60,3 +60,19 @@ export function toTranscript(raw: unknown): TranscriptMsg[] {
 
   return out;
 }
+
+/** تطبيع النصّ قبل النطق — لا يمسّ النصّ المعروض.
+ *  الرموز وعلامات التنسيق والأسطر الجديدة كلها بلا معنى في الأذن، وبعضها
+ *  يُنطق حرفيًا («نجمة»، «شرطة») فيفضح أن ما تسمعه نصّ مقروء لا كلام. */
+export function speechText(text: string): string {
+  return cleanText(text)
+    .replace(/[*_#`>]/g, "")                    // تنسيق ماركداون
+    .replace(/^\s*[-••]\s*/gm, "")           // نقاط أول السطر
+    .replace(/^\s*\d+[.)]\s*/gm, "")             // ترقيم أول السطر
+    .replace(/[—–]/g, "،")                      // شرطة طويلة تصير فاصلة عربية
+    .replace(/\n{2,}/g, ". ")                   // فقرة جديدة تصير وقفة
+    .replace(/\n/g, "، ")                       // سطر جديد يصير فاصلة
+    .replace(/\s{2,}/g, " ")
+    .replace(/،\s*،/g, "،")                  // فواصل متتالية
+    .trim();
+}
