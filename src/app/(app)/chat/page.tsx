@@ -164,6 +164,8 @@ export default function ChatPage() {
       const decoder = new TextDecoder();
       let buffer = "";
       let assistantText = "";
+      let sid = specId;
+      let ready = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -174,7 +176,10 @@ export default function ChatPage() {
         for (const part of parts) {
           if (!part.startsWith("data: ")) continue;
           const evt = JSON.parse(part.slice(6));
-          if (evt.type === "spec_id") setSpecId(evt.specId);
+          if (evt.type === "spec_id") {
+            sid = evt.specId;
+            setSpecId(evt.specId);
+          }
           else if (evt.type === "delta") {
             assistantText += evt.text;
             setMessages((m) => {
@@ -187,6 +192,7 @@ export default function ChatPage() {
             });
           } else if (evt.type === "spec_saved" && evt.confirmed) {
             setConfirmed(true);
+            ready = true;
           } else if (evt.type === "error") {
             setError(evt.error);
           }
@@ -195,6 +201,8 @@ export default function ChatPage() {
       setOptions(extractOptions(assistantText));
       // في الوضع الصوتي ينطق دائمًا، وإلا يحترم مفتاح «اسمع الردود»
       if (assistantText.trim()) voice.speak(cleanText(assistantText), voiceModeRef.current);
+      // اكتملت المواصفة ← يُولَّد المسار مباشرةً وتُفتح مساحة العمل
+      if (ready) await evaluate(sid ?? undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
       setMessages((m) => m.slice(0, -1));
@@ -205,15 +213,16 @@ export default function ChatPage() {
 
   sendRef.current = send;
 
-  async function evaluate() {
-    if (!specId) return;
+  async function evaluate(id?: string) {
+    const sid = id ?? specId;
+    if (!sid) return;
     setEvaluating(true);
     setError(null);
     try {
       const res = await fetch("/api/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ specId }),
+        body: JSON.stringify({ specId: sid }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "تعذر التقييم");
@@ -313,18 +322,9 @@ export default function ChatPage() {
         </div>
       )}
 
-      {confirmed && !flowId && (
+      {evaluating && !flowId && (
         <div className="w-full max-w-3xl mx-auto mb-3 card px-5 py-3.5">
-          {evaluating ? (
-            <NeuralThinking phase="evaluating" />
-          ) : (
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-sm text-emerald-300">{t("spec.ready")}</span>
-              <button className="btn btn-primary" onClick={evaluate}>
-                {t("spec.showEval")}
-              </button>
-            </div>
-          )}
+          <NeuralThinking phase="evaluating" />
         </div>
       )}
 
