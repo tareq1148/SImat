@@ -6,9 +6,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import ExecutionGraph from "./ExecutionGraph";
-import StatusChip from "./StatusChip";
 import NeuralThinking from "./NeuralThinking";
-import type { FlowStatus, WorkflowIR } from "@/lib/types";
+import { PROVIDER_LABELS, type FlowStatus, type Provider, type WorkflowIR } from "@/lib/types";
 
 interface FlowInfo {
   name: string;
@@ -16,10 +15,8 @@ interface FlowInfo {
   ir: WorkflowIR | null;
 }
 
-/** الاعتماد يشترطه الخادم بعد نجاح الاختبار — نعكس الشرط نفسه في الزر */
-const APPROVABLE: FlowStatus[] = ["Ready", "Paused"];
-/** لا اختبار قبل أن يوجد المسار في المحرك */
-const TESTABLE: FlowStatus[] = ["ReadyToTest", "NeedsRepair", "Ready", "Active", "Paused"];
+/** حالات لم يُبنَ فيها المسار بعد — «اختبار» يبنيه أولًا بدل أن يقف معطّلًا */
+const UNBUILT: FlowStatus[] = ["Draft", "NeedsInformation", "NeedsConnections"];
 
 export default function WorkspaceCanvas({
   flowId,
@@ -69,25 +66,61 @@ export default function WorkspaceCanvas({
     return () => clearInterval(timer);
   }, [info?.status, flowId, load]);
 
+  async function post(url: string, body: unknown) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error ?? "تعذّر التنفيذ");
+    return d as Record<string, unknown>;
+  }
+
+  /** يبني المسار إن لم يُبنَ بعد — يرجع رسالة العائق إن وُجد */
+  async function ensureBuilt(): Promise<string | null> {
+    if (status && !UNBUILT.includes(status)) return null;
+    const d = await post(`/api/flows/${flowId}/build`, {});
+
+    if (d.status === "NeedsConnections") {
+      const names = ((d.missing ?? []) as Provider[])
+        .map((p) => PROVIDER_LABELS[p] ?? p)
+        .join("، ");
+      return `ينقص ربط: ${names} — اربطه ثم أعد المحاولة.`;
+    }
+    if (d.status === "NeedsInformation") {
+      const fields = Array.isArray(d.blocking)
+        ? (d.blocking as { missing?: { label: string }[] }[])
+            .flatMap((b) => b.missing ?? [])
+            .map((m) => m.label)
+            .join("، ")
+        : ((d.missing_params as string) ?? "");
+      return fields
+        ? `ينقص المسار: ${fields} — اذكرها في المحادثة.`
+        : "ينقص المسار معلومة — وضّحها في المحادثة.";
+    }
+    return null;
+  }
+
   async function act(kind: "test" | "approve") {
     setBusy(kind);
     setNotice(null);
     try {
-      const url =
-        kind === "test"
-          ? `/api/flows/${flowId}/test`
-          : `/api/flows/${flowId}/activate`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(kind === "test" ? {} : { action: "activate" }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error ?? "تعذّر التنفيذ");
-      setNotice({
-        ok: true,
-        text: kind === "test" ? "بدأ الاختبار — النتيجة خلال لحظات…" : "تم الاعتماد ✓",
-      });
+      // الاختبار يبني أولًا إن لزم، فلا يقف الزر معطّلًا على مسودة
+      const blocked = await ensureBuilt();
+      if (blocked) {
+        setNotice({ ok: false, text: blocked });
+        await load();
+        return;
+      }
+
+      if (kind === "test") {
+        await post(`/api/flows/${flowId}/test`, {});
+        setNotice({ ok: true, text: "بدأ الاختبار — النتيجة خلال لحظات…" });
+      } else {
+        await post(`/api/flows/${flowId}/activate`, { action: "activate" });
+        setNotice({ ok: true, text: "تم الاعتماد ✓" });
+      }
       await load();
     } catch (err) {
       setNotice({ ok: false, text: err instanceof Error ? err.message : "خطأ" });
@@ -103,37 +136,24 @@ export default function WorkspaceCanvas({
   return (
     <div className="ws-canvas-inner">
       <header className="ws-bar">
-        <div className="min-w-0 flex items-center gap-2.5">
-          <span className="text-[0.9rem] font-bold truncate">
-            {info?.name || "سير العمل"}
-          </span>
-          {status && <StatusChip status={status} />}
-        </div>
+        <span className="text-[0.9rem] font-bold truncate min-w-0">
+          {info?.name || "سير العمل"}
+        </span>
 
         <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => act("test")}
-            disabled={busy !== null || testing || !status || !TESTABLE.includes(status)}
+            disabled={busy !== null || testing || !status}
             className="btn btn-ghost text-[0.75rem] py-1.5"
-            title={
-              status && TESTABLE.includes(status)
-                ? "شغّل تشغيلًا تجريبيًا"
-                : "ابنِ المسار وأكمل ارتباطاته أولًا"
-            }
+            title="يبني المسار إن لزم ثم يشغّله تجريبيًا"
           >
             {busy === "test" || testing ? "جارٍ الاختبار…" : "اختبار"}
           </button>
           <button
             onClick={() => act("approve")}
-            disabled={busy !== null || active || !status || !APPROVABLE.includes(status)}
+            disabled={busy !== null || testing || active || !status}
             className="btn btn-primary text-[0.75rem] py-1.5"
-            title={
-              active
-                ? "المسار معتمد ويعمل"
-                : status && APPROVABLE.includes(status)
-                  ? "اعتمد المسار ليعمل تلقائيًا"
-                  : "الاعتماد بعد نجاح الاختبار"
-            }
+            title={active ? "المسار معتمد ويعمل" : "يبني المسار إن لزم ثم يعتمده ليعمل تلقائيًا"}
           >
             {busy === "approve" ? "…" : active ? "معتمد ✓" : "اعتماد"}
           </button>

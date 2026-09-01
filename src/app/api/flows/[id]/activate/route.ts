@@ -22,9 +22,12 @@ export async function POST(
   if (!flow) return Response.json({ error: "سير العمل غير موجود" }, { status: 404 });
 
   if (action === "activate") {
-    if (flow.status !== "Ready" && flow.status !== "Paused") {
+    // البناء شرط التفعيل لا الاختبار: الخطوات الحسّاسة تظلّ موقوفة على موافقة
+    // المستخدم وقت التنفيذ، فلا يفلت إرسالٌ لمجرّد أن المسار فُعِّل بلا اختبار.
+    const READY_TO_ACTIVATE = ["ReadyToTest", "Ready", "Paused", "NeedsRepair"];
+    if (!READY_TO_ACTIVATE.includes(flow.status)) {
       return Response.json(
-        { error: "لا يمكن التفعيل قبل نجاح الاختبار (الحالة: Ready)" },
+        { error: "ابنِ المسار أولًا — لم يُنشأ في المحرك بعد" },
         { status: 400 }
       );
     }
