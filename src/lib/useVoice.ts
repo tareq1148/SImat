@@ -149,9 +149,10 @@ export function useVoice(onTranscript: (text: string) => void) {
     mediaRef.current?.stop();
   }, [mode]);
 
+  // force: وضع المحادثة الصوتية ينطق دائمًا، بغض النظر عن مفتاح «اسمع الردود»
   const speak = useCallback(
-    async (text: string) => {
-      if (!speakEnabled || !text.trim()) return;
+    async (text: string, force = false) => {
+      if ((!speakEnabled && !force) || !text.trim()) return;
       if (mode === "voicestudio") {
         try {
           const res = await fetch("/api/voice/speak", {

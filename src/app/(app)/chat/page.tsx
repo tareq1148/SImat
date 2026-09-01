@@ -7,6 +7,7 @@ import AutomationSummaryCard from "@/components/AutomationSummaryCard";
 import Logo from "@/components/Logo";
 import NeuralThinking from "@/components/NeuralThinking";
 import OverviewStats from "@/components/OverviewStats";
+import VoiceExperience from "@/components/VoiceExperience";
 import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
 import { supabaseBrowser } from "@/lib/supabase/client";
@@ -121,8 +122,17 @@ export default function ChatPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textInputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  // التفريغ الصوتي يعبّئ خانة الكتابة فقط — الإرسال قرار المستخدم دائمًا
+  // شاشة المحادثة الصوتية — تُفتح من كرة الصوت
+  const [voiceMode, setVoiceMode] = useState(false);
+  const voiceModeRef = useRef(false);
+  voiceModeRef.current = voiceMode;
+  const sendRef = useRef<(e?: React.FormEvent, override?: string) => void>(() => {});
+  // داخل الشاشة الصوتية يُرسَل الكلام مباشرة؛ خارجها يعبّئ خانة الكتابة فقط
   const voice = useVoice((text) => {
+    if (voiceModeRef.current) {
+      sendRef.current(undefined, text);
+      return;
+    }
     setInput((prev) => (prev.trim() ? prev.trimEnd() + " " : "") + text);
     textInputRef.current?.focus();
   });
@@ -234,7 +244,8 @@ export default function ChatPage() {
         }
       }
       setOptions(extractOptions(assistantText));
-      if (assistantText.trim()) voice.speak(cleanText(assistantText));
+      // في الوضع الصوتي ينطق دائمًا، وإلا يحترم مفتاح «اسمع الردود»
+      if (assistantText.trim()) voice.speak(cleanText(assistantText), voiceModeRef.current);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
       setMessages((m) => m.slice(0, -1));
@@ -242,6 +253,8 @@ export default function ChatPage() {
       setBusy(false);
     }
   }
+
+  sendRef.current = send;
 
   async function evaluate() {
     if (!specId) return;
@@ -524,28 +537,33 @@ export default function ChatPage() {
           </button>
         </form>
 
-        {/* كرة الصوت — خارج الصندوق */}
+        {/* كرة الصوت — خارج الصندوق، تفتح شاشة المحادثة الصوتية */}
         {voice.mode !== "none" && (
           <button
             type="button"
-            onClick={voice.recording ? voice.stopRecording : voice.startRecording}
-            disabled={busy || voice.transcribing}
-            title={voice.recording ? t("input.stopVoice") : t("input.talk")}
+            onClick={() => setVoiceMode(true)}
+            disabled={busy}
+            title={t("input.talk")}
             className="shrink-0"
           >
             <VoiceOrb
               size={52}
-              state={
-                voice.recording
-                  ? "listening"
-                  : voice.speaking || voice.transcribing
-                    ? "speaking"
-                    : "idle"
-              }
+              state={voice.speaking || voice.transcribing ? "speaking" : "idle"}
             />
           </button>
         )}
       </div>
+
+      {voiceMode && (
+        <VoiceExperience
+          messages={messages}
+          busy={busy}
+          confirmed={confirmed}
+          voice={voice}
+          cleanText={cleanText}
+          onClose={() => setVoiceMode(false)}
+        />
+      )}
     </main>
   );
 }
