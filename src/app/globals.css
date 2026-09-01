@@ -183,6 +183,44 @@ h2, h3 { letter-spacing: -0.01em; }
   transform: translateY(0) scale(0.985);
 }
 
+/* نص متدرج بألوان الهوية */
+.grad-text {
+  background: linear-gradient(90deg, #72cb15 0%, #58ed32 38%, #20cbd0 76%, #2874f0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* كرة «ابدأ» — نبض هادئ وتوهج عند اللمس */
+.start-orb {
+  display: grid;
+  width: 148px;
+  height: 148px;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--lime-deep);
+  background: radial-gradient(circle at 34% 30%, #f0ff9a 0%, #d8f45f 34%, #a9de3a 100%);
+  box-shadow: 0 18px 42px rgba(114, 203, 21, 0.32), inset 0 -8px 22px rgba(41, 72, 13, 0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  animation: orbpulse 3.4s ease-in-out infinite;
+}
+.start-orb:hover {
+  transform: scale(1.045);
+  box-shadow: 0 22px 54px rgba(114, 203, 21, 0.42);
+}
+.start-orb:active {
+  transform: scale(0.97);
+}
+@keyframes orbpulse {
+  0%, 100% { box-shadow: 0 18px 42px rgba(114, 203, 21, 0.3); }
+  50% { box-shadow: 0 18px 52px rgba(114, 203, 21, 0.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .start-orb { animation: none; }
+}
+
 /* العلامة المميزة: مربع متدرج ليموني بنص أخضر داكن — قلب هوية التصميم */
 .mark {
   background: var(--grad-mark);

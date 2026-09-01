@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AutomationSummaryCard from "@/components/AutomationSummaryCard";
+import Logo from "@/components/Logo";
 import NeuralThinking from "@/components/NeuralThinking";
 import OverviewStats from "@/components/OverviewStats";
 import VoiceWave from "@/components/VoiceWave";
@@ -272,9 +273,7 @@ export default function ChatPage() {
         <div className="flex-1 space-y-9 pt-10 pb-6">
           <div className="rise text-center">
             <div className="flex items-center justify-center gap-2.5 mb-6">
-              <span className="mark w-10 h-10 rounded-xl text-lg font-bold flex items-center justify-center">
-                و
-              </span>
+              <Logo size={40} id="wLogoHero" />
               <span className="text-[1.5rem] font-bold">{t("brand")}</span>
             </div>
             <h1 className="text-[2.1rem] md:text-[2.9rem] font-bold leading-snug mb-3 tracking-tight">

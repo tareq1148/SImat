@@ -7,6 +7,7 @@ import { supabaseBrowser } from "@/lib/supabase/client";
 import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
 import { toggleLang, useLang } from "@/lib/i18n";
 import SettingsDrawer from "./SettingsDrawer";
+import Logo from "./Logo";
 
 // شريط أيقونات نحيف — 3 شاشات فقط، والإعدادات لوحة منزلقة
 
@@ -95,9 +96,9 @@ export default function Sidebar({ email }: { email: string | null }) {
         <Link
           href="/chat"
           title={t("brand")}
-          className="mark w-10 h-10 rounded-xl text-base font-bold flex items-center justify-center mb-4"
+          className="w-10 h-10 rounded-xl border border-[var(--line)] bg-[var(--panel-solid)] flex items-center justify-center mb-4 shadow-sm hover:scale-105 transition-transform"
         >
-          و
+          <Logo size={28} id="wLogoRail" />
         </Link>
 
         {NAV.map((item) => (
@@ -140,8 +141,8 @@ export default function Sidebar({ email }: { email: string | null }) {
       <div className="md:hidden border-b border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 h-13 py-2">
           <Link href="/chat" className="flex items-center gap-2 font-bold">
-            <span className="mark w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center">
-              و
+            <span className="w-8 h-8 rounded-lg border border-[var(--line)] bg-[var(--panel-solid)] flex items-center justify-center">
+              <Logo size={22} id="wLogoMob" />
             </span>
             {t("brand")}
           </Link>
