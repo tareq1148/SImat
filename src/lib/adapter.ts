@@ -91,6 +91,14 @@ function composePromptFor(node: IRNode, contract: string): string {
 const STRICT_JSON =
   "أخرج JSON صالحًا فقط بدون أي شرح أو أسوار markdown.";
 
+// البرومبت يحقن حمولة التشغيل ونتيجة الخطوة السابقة ليفهم النموذج السياق،
+// لا لينشرها. بدون هذا المنع تسرّبت معرّفات المستندات و«بيانات تجريبية»
+// إلى شرائح العرض نفسها.
+const NO_PLUMBING =
+  " اكتب محتوى حقيقيًا عن موضوع المهمة نفسه. " +
+  "ممنوع منعًا باتًا أن تذكر معرّفات أو روابط أو أسماء حقول تقنية أو حمولة التشغيل " +
+  "أو أنك داخل أتمتة أو أن البيانات تجريبية — القارئ لا يعرف شيئًا عن ذلك ولا يعنيه.";
+
 export function irToN8n(
   ir: WorkflowIR,
   creds: CredentialMap
@@ -808,7 +816,8 @@ export function irToN8n(
           promptType: "define",
           text: composePromptFor(
             irNode,
-            "أخرج نصّ المستند كاملًا كنصّ عادي بلا عناوين markdown ولا أسوار."
+            "أخرج نصّ المستند كاملًا كنصّ عادي بلا عناوين markdown ولا أسوار." +
+              NO_PLUMBING
           ),
           messages: { messageValues: [{ message: "أنت تحرّر مستندات عربية واضحة." }] },
           batching: {},
@@ -880,9 +889,13 @@ export function irToN8n(
           promptType: "define",
           text: composePromptFor(
             irNode,
-            'أخرج JSON بالشكل {"slides":[{"title":"عنوان الشريحة","body":"نقاط الشريحة"}]} ' +
-              "بين ثلاث وستّ شرائح. " +
-              STRICT_JSON
+            'أخرج JSON بالشكل {"slides":[{"title":"...","body":"..."}]} ' +
+              "من أربع إلى ستّ شرائح. الأولى شريحة عنوان: title عنوان العرض " +
+              "وbody سطر واحد يصف الموضوع. وكل شريحة بعدها body فيه سطران إلى " +
+              "أربعة، كل سطر نقطة قصيرة مستقلّة مفصولة بسطر جديد، بلا شرطات " +
+              "ولا ترقيم في أول السطر. " +
+              STRICT_JSON +
+              NO_PLUMBING
           ),
           messages: {
             messageValues: [{ message: "أنت تعدّ عروضًا تقديمية عربية موجزة." }],
@@ -942,16 +955,32 @@ export function irToN8n(
             `const made = $('${createName}').first().json;`,
             "const slides = Array.isArray(src.slides) ? src.slides : [];",
             "const requests = [];",
+            "const ACCENT = { red: 0.18, green: 0.49, blue: 0.2 };",
             "slides.forEach((s, i) => {",
             "  const sid = 'wt_slide_' + i, tid = 'wt_title_' + i, bid = 'wt_body_' + i;",
+            "  // الأولى شريحة عنوان، والبقيّة عنوان ونقاط",
+            "  const cover = i === 0;",
             "  requests.push({ createSlide: { objectId: sid,",
-            "    slideLayoutReference: { predefinedLayout: 'TITLE_AND_BODY' },",
+            "    slideLayoutReference: { predefinedLayout: cover ? 'TITLE' : 'TITLE_AND_BODY' },",
             "    placeholderIdMappings: [",
-            "      { layoutPlaceholder: { type: 'TITLE', index: 0 }, objectId: tid },",
-            "      { layoutPlaceholder: { type: 'BODY', index: 0 }, objectId: bid }",
+            "      { layoutPlaceholder: { type: cover ? 'CENTERED_TITLE' : 'TITLE', index: 0 }, objectId: tid },",
+            "      { layoutPlaceholder: { type: cover ? 'SUBTITLE' : 'BODY', index: 0 }, objectId: bid }",
             "    ] } });",
-            "  if (s.title) requests.push({ insertText: { objectId: tid, text: String(s.title) } });",
-            "  if (s.body) requests.push({ insertText: { objectId: bid, text: String(s.body) } });",
+            "  const title = String(s.title || '').trim();",
+            "  // النقاط سطرًا سطرًا، وتُنزع الشرطات إن أضافها النموذج رغم المنع",
+            "  const body = String(s.body || '')",
+            "    .split(/\\r?\\n/)",
+            "    .map((l) => l.replace(/^\\s*[-•*\\d.)]+\\s*/, '').trim())",
+            "    .filter(Boolean)",
+            "    .join('\\n');",
+            "  if (title) requests.push({ insertText: { objectId: tid, text: title } });",
+            "  if (body) requests.push({ insertText: { objectId: bid, text: body } });",
+            "  if (title) requests.push({ updateTextStyle: { objectId: tid,",
+            "    textRange: { type: 'ALL' },",
+            "    style: { bold: true, foregroundColor: { opaqueColor: { rgbColor: ACCENT } } },",
+            "    fields: 'bold,foregroundColor' } });",
+            "  if (body && !cover) requests.push({ createParagraphBullets: { objectId: bid,",
+            "    textRange: { type: 'ALL' }, bulletPreset: 'BULLET_DISC_CIRCLE_SQUARE' } });",
             "});",
             "// الشريحة الافتراضية تُحذف بعد إضافة شرائحنا حتى لا يمرّ العرض فارغًا",
             "const firstId = made.slides && made.slides[0] && made.slides[0].objectId;",
