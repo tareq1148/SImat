@@ -69,7 +69,7 @@ function NodeIcon({ kind, size = 30 }: { kind: string; size?: number }) {
       height={size * 0.55}
       viewBox="0 0 24 24"
       fill="none"
-      stroke="white"
+      stroke="currentColor"
       strokeWidth="1.8"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -113,12 +113,8 @@ function DiagramNode({
         </span>
       ) : (
         <span
-          className="shrink-0 rounded-[9px] flex items-center justify-center"
-          style={{
-            width: engine ? 34 : 30,
-            height: engine ? 34 : 30,
-            background: "var(--accent-bg)",
-          }}
+          className="mark shrink-0 rounded-[9px] flex items-center justify-center"
+          style={{ width: engine ? 34 : 30, height: engine ? 34 : 30 }}
         >
           <NodeIcon kind={kind ?? "tasks"} size={engine ? 34 : 30} />
         </span>

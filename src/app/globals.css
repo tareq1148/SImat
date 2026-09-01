@@ -17,62 +17,71 @@
 /* ===== نظام التصميم v2 — حياد منضبط ولون واحد =====
    داكن افتراضيًا؛ الفاتح عبر html.light. كل الألوان من هذه الرموز فقط. */
 
+/* لوحة «وَتيرة» — مستوحاة من تصميم المستخدم: أخضر ليموني حيوي وظلال ناعمة */
 :root {
   color-scheme: dark;
-  --bg: #070a12;
-  --glow1: rgba(34, 211, 238, 0.13);
-  --glow2: rgba(139, 92, 246, 0.11);
-  --text: #eaedf4;
-  --text-soft: #97a1b5;
-  --panel: rgba(10, 14, 22, 0.72);
-  --panel-solid: #0a0e16;
-  --surface: rgba(17, 22, 32, 0.72);
-  --line: #232b3d;
-  --line-soft: #1a2130;
-  --well: rgba(28, 35, 50, 0.6);
-  --edge: #3d4761;
-  --accent: #3fd2ec;
-  --accent-bg: #0891b2;
-  --accent-bg-hover: #0aa5c9;
-  --accent-soft: rgba(34, 211, 238, 0.1);
-  --ok: #34d399;
+  --bg: #0b0f0a;
+  --glow1: rgba(162, 222, 27, 0.14);
+  --glow2: rgba(56, 189, 248, 0.07);
+  --text: #edf1e8;
+  --text-soft: #9aa295;
+  --panel: rgba(14, 19, 13, 0.74);
+  --panel-solid: #0e130d;
+  --surface: rgba(22, 28, 20, 0.74);
+  --line: #2a3326;
+  --line-soft: #1f271c;
+  --well: rgba(34, 43, 30, 0.6);
+  --edge: #4a5741;
+  --accent: #b6ea3a;
+  --accent-bg: #5da918;
+  --accent-bg-hover: #6cbf16;
+  --accent-soft: rgba(162, 222, 27, 0.12);
+  --lime: #dcf921;
+  --lime-deep: #29480d;
+  --grad-accent: linear-gradient(145deg, #8ed91d, #4f9b1a);
+  --grad-mark: linear-gradient(145deg, #dcf921, #72cb15);
+  --ok: #72cb15;
   --warn: #fbbf24;
   --bad: #f87171;
-  --card-shadow: 0 0 0 1px rgba(34, 211, 238, 0.02), 0 8px 32px rgba(0, 0, 0, 0.35);
+  --card-shadow: 0 0 0 1px rgba(162, 222, 27, 0.03), 0 9px 28px rgba(0, 0, 0, 0.38);
   --ghost-bg: rgba(255, 255, 255, 0.03);
   --ghost-bg-hover: rgba(255, 255, 255, 0.07);
-  --ghost-text: #b6bdc9;
-  --input-bg: rgba(13, 18, 27, 0.8);
-  --scrollbar: #283149;
+  --ghost-text: #c2c9bb;
+  --input-bg: rgba(17, 23, 15, 0.8);
+  --scrollbar: #2f3a29;
 }
 
 html.light {
   color-scheme: light;
-  --bg: #f7f8fa;
-  --glow1: rgba(8, 145, 178, 0.04);
-  --glow2: rgba(8, 145, 178, 0.02);
-  --text: #171a20;
-  --text-soft: #5f6776;
-  --panel: rgba(255, 255, 255, 0.86);
+  --bg: #fbfdf7;
+  --glow1: rgba(162, 222, 27, 0.16);
+  --glow2: rgba(56, 189, 248, 0.05);
+  --text: #20212a;
+  --text-soft: #7b7d88;
+  --panel: rgba(255, 255, 255, 0.9);
   --panel-solid: #ffffff;
   --surface: #ffffff;
-  --line: #e5e8ee;
-  --line-soft: #eceff4;
-  --well: #f1f3f7;
-  --edge: #b9c0cd;
-  --accent: #0e7490;
-  --accent-bg: #0891b2;
-  --accent-bg-hover: #0e7490;
-  --accent-soft: rgba(8, 145, 178, 0.07);
-  --ok: #059669;
+  --line: #e5e6eb;
+  --line-soft: #eef0f2;
+  --well: #f4f7ed;
+  --edge: #c2c9b8;
+  --accent: #4f8f14;
+  --accent-bg: #5da918;
+  --accent-bg-hover: #4f9b1a;
+  --accent-soft: rgba(162, 222, 27, 0.14);
+  --lime: #dcf921;
+  --lime-deep: #29480d;
+  --grad-accent: linear-gradient(145deg, #8ed91d, #4f9b1a);
+  --grad-mark: linear-gradient(145deg, #dcf921, #72cb15);
+  --ok: #5da918;
   --warn: #b45309;
-  --bad: #dc2626;
-  --card-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --bad: #c06a74;
+  --card-shadow: 0 5px 14px rgba(38, 40, 58, 0.045);
   --ghost-bg: transparent;
-  --ghost-bg-hover: #f1f3f7;
+  --ghost-bg-hover: #f4f7ed;
   --ghost-text: #3f4754;
   --input-bg: #ffffff;
-  --scrollbar: #ccd2dd;
+  --scrollbar: #d3dac9;
 }
 
 body {
@@ -91,10 +100,14 @@ body::before {
   inset: -20%;
   z-index: -1;
   pointer-events: none;
+  /* توهج ليموني مركزي كما في تصميم الواجهات */
   background:
-    radial-gradient(46% 38% at 82% 8%, var(--glow1), transparent 70%),
-    radial-gradient(42% 36% at 12% 92%, var(--glow2), transparent 70%);
+    radial-gradient(38% 30% at 50% 42%, var(--glow1), transparent 62%),
+    radial-gradient(40% 34% at 88% 6%, var(--glow2), transparent 70%);
   animation: glowdrift 16s ease-in-out infinite alternate;
+}
+html.light body {
+  background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
 }
 @keyframes glowdrift {
   0% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.9; }
@@ -116,8 +129,8 @@ body::before {
 
 /* توهج خطوط المسار في الداكن */
 html:not(.light) .react-flow__edge-path {
-  filter: drop-shadow(0 0 5px rgba(34, 211, 238, 0.45));
-  stroke: #22d3ee !important;
+  filter: drop-shadow(0 0 5px rgba(162, 222, 27, 0.4));
+  stroke: #8ed91d !important;
 }
 html:not(.light) .card {
   backdrop-filter: blur(14px);
@@ -158,11 +171,23 @@ h2, h3 { letter-spacing: -0.01em; }
   cursor: not-allowed;
 }
 .btn-primary {
-  background: var(--accent-bg);
+  background: var(--grad-accent);
   color: #ffffff;
+  box-shadow: 0 6px 16px rgba(114, 203, 21, 0.22);
 }
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent-bg-hover);
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(0.985);
+}
+
+/* العلامة المميزة: مربع متدرج ليموني بنص أخضر داكن — قلب هوية التصميم */
+.mark {
+  background: var(--grad-mark);
+  color: var(--lime-deep);
+  box-shadow: 0 5px 14px rgba(114, 203, 21, 0.24);
 }
 .btn-ghost {
   background: var(--ghost-bg);
@@ -393,10 +418,10 @@ html.light .bg-cyan-400\/10 { background-color: rgba(8, 145, 178, 0.08); }
   animation: nodepulse 1.7s ease-in-out infinite;
 }
 html:not(.light) .nn-node {
-  filter: drop-shadow(0 0 3px rgba(34, 211, 238, 0.6));
+  filter: drop-shadow(0 0 3px rgba(162, 222, 27, 0.55));
 }
 html:not(.light) .arch-edge {
-  filter: drop-shadow(0 0 4px rgba(34, 211, 238, 0.45));
+  filter: drop-shadow(0 0 4px rgba(162, 222, 27, 0.42));
 }
 
 @keyframes pulse-dot {

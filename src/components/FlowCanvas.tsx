@@ -66,7 +66,7 @@ function Glyph({ ir }: { ir: IRNode }) {
     tiktok: <path d="M14 4v9.5a3.8 3.8 0 1 1-3.8-3.8M14 4c.4 2.6 2 4.2 4.5 4.5" />,
   };
   return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       {paths[key] ?? paths.logic}
     </svg>
   );
@@ -76,7 +76,6 @@ function AppNode({ data }: NodeProps<Node<NodeData>>) {
   const { ir, connected } = data;
   const needsConn = ir.provider !== null && !connected;
   const isApproval = ir.type === "approval";
-  const iconBg = isApproval ? "#d97706" : "var(--accent-bg)";
 
   return (
     <div
@@ -96,8 +95,12 @@ function AppNode({ data }: NodeProps<Node<NodeData>>) {
       )}
       <div className="flex items-center gap-2.5">
         <span
-          className="shrink-0 w-[30px] h-[30px] rounded-[9px] flex items-center justify-center"
-          style={{ background: iconBg }}
+          className={`${isApproval ? "" : "mark"} shrink-0 w-[30px] h-[30px] rounded-[9px] flex items-center justify-center`}
+          style={
+            isApproval
+              ? { background: "linear-gradient(145deg,#fcd34d,#d97706)", color: "#4a2a02" }
+              : undefined
+          }
         >
           <Glyph ir={ir} />
         </span>

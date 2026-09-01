@@ -95,8 +95,7 @@ export default function Sidebar({ email }: { email: string | null }) {
         <Link
           href="/chat"
           title={t("brand")}
-          className="w-10 h-10 rounded-xl text-white text-base font-bold flex items-center justify-center mb-4"
-          style={{ background: "var(--accent-bg)", boxShadow: "0 0 18px rgba(34,211,238,0.35)" }}
+          className="mark w-10 h-10 rounded-xl text-base font-bold flex items-center justify-center mb-4"
         >
           و
         </Link>
@@ -141,10 +140,7 @@ export default function Sidebar({ email }: { email: string | null }) {
       <div className="md:hidden border-b border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 h-13 py-2">
           <Link href="/chat" className="flex items-center gap-2 font-bold">
-            <span
-              className="w-8 h-8 rounded-lg text-white text-sm font-bold flex items-center justify-center"
-              style={{ background: "var(--accent-bg)" }}
-            >
+            <span className="mark w-8 h-8 rounded-lg text-sm font-bold flex items-center justify-center">
               و
             </span>
             {t("brand")}

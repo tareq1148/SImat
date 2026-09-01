@@ -36,10 +36,7 @@ export default async function Landing() {
     <main className="flex-1 flex flex-col">
       <header className="max-w-5xl mx-auto w-full px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <span
-            className="w-8 h-8 rounded-[10px] text-white text-[0.95rem] font-bold flex items-center justify-center"
-            style={{ background: "var(--accent-bg)" }}
-          >
+          <span className="mark w-8 h-8 rounded-[10px] text-[0.95rem] font-bold flex items-center justify-center">
             و
           </span>
           <span className="text-[1.05rem] font-bold">وَتيرة</span>

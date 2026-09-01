@@ -272,10 +272,7 @@ export default function ChatPage() {
         <div className="flex-1 space-y-9 pt-10 pb-6">
           <div className="rise text-center">
             <div className="flex items-center justify-center gap-2.5 mb-6">
-              <span
-                className="w-10 h-10 rounded-xl text-white text-lg font-bold flex items-center justify-center"
-                style={{ background: "var(--accent-bg)", boxShadow: "0 0 18px rgba(34,211,238,0.3)" }}
-              >
+              <span className="mark w-10 h-10 rounded-xl text-lg font-bold flex items-center justify-center">
                 و
               </span>
               <span className="text-[1.5rem] font-bold">{t("brand")}</span>
