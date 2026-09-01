@@ -1050,3 +1050,22 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   background: var(--warn);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 22%, transparent);
 }
+
+/* ===== هيكل الانتظار ===== */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--well) 25%,
+    color-mix(in srgb, var(--well) 55%, var(--line)) 37%,
+    var(--well) 63%
+  );
+  background-size: 400% 100%;
+  animation: shimmer 1.3s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton { animation: none; }
+}

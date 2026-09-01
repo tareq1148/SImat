@@ -5,15 +5,16 @@ import type { FlowStatus } from "@/lib/types";
 
 export default async function WorkflowsPage() {
   const supabase = await supabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: flows } = await supabase
-    .from("flows")
-    .select("id, name, status")
-    .order("updated_at", { ascending: false });
+  // متوازيان لا متتاليان: التحقق من الجلسة وجلب المسارات كانا رحلتين متعاقبتين
+  // إلى Supabase، وهذا وحده كان يضاعف زمن فتح الصفحة
+  const [{ data: auth }, { data: flows }] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase
+      .from("flows")
+      .select("id, name, status")
+      .order("updated_at", { ascending: false }),
+  ]);
+  if (!auth.user) redirect("/login");
 
   return (
     <WorkflowsView
