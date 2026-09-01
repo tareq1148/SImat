@@ -90,22 +90,13 @@ export function buildUiSummary(
     connections.filter((c) => c.status === "connected").map((c) => c.provider)
   );
 
-  // التكاملات المطلوبة من الرسم (المصدر الحقيقي للتنفيذ)
+  // التكاملات المطلوبة من الرسم (المصدر الحقيقي للتنفيذ).
+  // OpenAI مستثنى: المنصة توفّره لكل مسار عبر N8N_CRED_OPENAI، فلا يُعرض
+  // كبطاقة ربط ولا يُحتسب ناقصًا — مطالبة المستخدم به تحجب مسارًا جاهزًا.
   const needed = new Set<Provider>();
   ir?.nodes.forEach((n) => {
-    if (n.provider) needed.add(n.provider);
+    if (n.provider && n.provider !== "openai") needed.add(n.provider);
   });
-  if (
-    ir?.nodes.some(
-      (n) =>
-        n.type === "openai" ||
-        n.type === "condition" ||
-        n.provider === "gmail" ||
-        n.provider === "google_sheets"
-    )
-  ) {
-    needed.add("openai");
-  }
 
   const required_integrations: UiIntegration[] = [...needed].map((p) => ({
     id: p,
