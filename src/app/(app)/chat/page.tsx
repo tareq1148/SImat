@@ -272,10 +272,14 @@ export default function ChatPage() {
       {messages.length === 0 && (
         <div className="flex-1 space-y-9 pt-10 pb-6">
           <div className="rise text-center">
-            <div className="flex items-center justify-center gap-2.5 mb-6">
+            <Link
+              href="/"
+              title={t("brand")}
+              className="flex items-center justify-center gap-2.5 mb-6 hover:opacity-80 transition-opacity"
+            >
               <Logo size={40} id="wLogoHero" />
               <span className="text-[1.5rem] font-bold">{t("brand")}</span>
-            </div>
+            </Link>
             <h1 className="text-[2.1rem] md:text-[2.9rem] font-bold leading-snug mb-3 tracking-tight">
               {t("home.w1")}.{" "}
               {t("home.w2")}.{" "}

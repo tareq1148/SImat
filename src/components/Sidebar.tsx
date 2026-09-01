@@ -94,7 +94,7 @@ export default function Sidebar({ email }: { email: string | null }) {
       {/* سطح المكتب: شريط أيقونات نحيف على اليمين */}
       <aside className="hidden md:flex flex-col items-center w-16 shrink-0 border-e border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 h-screen py-5 gap-2">
         <Link
-          href="/chat"
+          href="/"
           title={t("brand")}
           className="w-10 h-10 rounded-xl border border-[var(--line)] bg-[var(--panel-solid)] flex items-center justify-center mb-4 shadow-sm hover:scale-105 transition-transform"
         >
@@ -140,7 +140,7 @@ export default function Sidebar({ email }: { email: string | null }) {
       {/* الجوال: شريط علوي مضغوط */}
       <div className="md:hidden border-b border-[var(--line-soft)] bg-[var(--panel)] backdrop-blur sticky top-0 z-40">
         <div className="flex items-center justify-between px-4 h-13 py-2">
-          <Link href="/chat" className="flex items-center gap-2 font-bold">
+          <Link href="/" className="flex items-center gap-2 font-bold">
             <span className="w-8 h-8 rounded-lg border border-[var(--line)] bg-[var(--panel-solid)] flex items-center justify-center">
               <Logo size={22} id="wLogoMob" />
             </span>
