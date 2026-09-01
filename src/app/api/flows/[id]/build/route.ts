@@ -76,6 +76,19 @@ export async function POST(
   if (!credMap.openai && process.env.N8N_CRED_OPENAI) {
     credMap.openai = { id: process.env.N8N_CRED_OPENAI, name: "OpenAI (المنصة)" };
   }
+  // OpenAI أُخفي من واجهة الاتصالات لأن المنصة توفّره — فلو غاب اعتماده صار المسار
+  // عالقًا بلا زرّ يحلّه. نرد خطأ إداريًا صريحًا بدل «اربط OpenAI» الذي لا يملك
+  // المستخدم فعله.
+  if (!credMap.openai && missingProviders(ir, credMap).includes("openai")) {
+    return Response.json(
+      {
+        error:
+          "اعتماد OpenAI غير مضبوط على المنصة (N8N_CRED_OPENAI في .env.local) — " +
+          "المسار يحتاجه لتأليف النصوص. أنشئ اعتماد openAiApi في n8n وضع معرّفه هناك.",
+      },
+      { status: 500 }
+    );
+  }
 
   // فحص حتمي: أي عقدة تنقصها حقول؟ (بعد الحقن التلقائي لـchat_id)
   const blocking = validateIR(ir);
