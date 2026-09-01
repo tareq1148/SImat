@@ -110,10 +110,15 @@ export default function TopBar({ email }: { email: string | null }) {
           >
             {lang === "ar" ? "EN" : "ع"}
           </button>
-          <Link href="/progress" className={toolBtn} title={t("nav.progress")}>
+          {/* على الشاشات الكبيرة يتكفّل الشريط الجانبي بهذين */}
+          <Link href="/progress" className={`${toolBtn} md:hidden`} title={t("nav.progress")}>
             <Icon name="progress" />
           </Link>
-          <button onClick={() => setDrawer(true)} className={toolBtn} title={t("nav.settings")}>
+          <button
+            onClick={() => setDrawer(true)}
+            className={`${toolBtn} md:hidden`}
+            title={t("nav.settings")}
+          >
             <Icon name="settings" />
           </button>
           <button
