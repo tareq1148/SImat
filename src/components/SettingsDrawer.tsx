@@ -99,7 +99,10 @@ export default function SettingsDrawer({ onClose }: { onClose: () => void }) {
     router.refresh();
   }
 
-  const providers = Object.keys(PROVIDER_LABELS) as Provider[];
+  // OpenAI مستثنى: المنصة توفّره لكل المسارات تلقائيًا، فلا يُطلب من المستخدم ربطه
+  const providers = (Object.keys(PROVIDER_LABELS) as Provider[]).filter(
+    (p) => p !== "openai"
+  );
 
   return (
     <div className="fixed inset-0 z-50">

@@ -69,6 +69,13 @@ export async function POST(
     }
   });
 
+  // OpenAI بنية تحتية تقدّمها المنصة، لا حساب شخصي: كل سلسلة تأليف نص تحتاجه،
+  // فلا معنى لمطالبة المستخدم بربطه. نسقط على اعتماد المنصة تلقائيًا عند غيابه.
+  // (بقية المزوّدين لا يسقطون: Gmail وتيليجرام وسلاك حسابات المستخدم نفسه.)
+  if (!credMap.openai && process.env.N8N_CRED_OPENAI) {
+    credMap.openai = { id: process.env.N8N_CRED_OPENAI, name: "OpenAI (المنصة)" };
+  }
+
   // فحص حتمي: أي عقدة تنقصها حقول؟ (بعد الحقن التلقائي لـchat_id)
   const blocking = validateIR(ir);
   if (blocking.length > 0) {
