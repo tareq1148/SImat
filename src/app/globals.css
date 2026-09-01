@@ -229,41 +229,46 @@ h2, h3 { letter-spacing: -0.01em; }
   transition: transform 0.22s ease, box-shadow 0.22s ease;
   animation: orbpulse 3.4s ease-in-out infinite;
 }
-/* حلقة بألوان الهوية تدور خلف الكرة */
+/* هالة ناعمة تتنفس — لون واحد متدرج بلا دوران */
 .start-orb::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: -16px;
+  inset: -18px;
   border-radius: 999px;
-  background: conic-gradient(
-    from 0deg,
-    #cfff00,
-    #58ed32,
-    #20cbd0,
-    #2874f0,
-    #58ed32,
-    #cfff00
+  background: radial-gradient(
+    circle,
+    rgba(162, 222, 27, 0.5) 0%,
+    rgba(32, 203, 208, 0.16) 58%,
+    transparent 74%
   );
-  filter: blur(13px);
-  opacity: 0.55;
-  animation: orbspin 7s linear infinite;
+  filter: blur(16px);
+  animation: orbbreath 5.5s ease-in-out infinite;
   pointer-events: none;
 }
-/* لمعة تسري على سطح الكرة */
+/* موجة ضوء تمرّ على السطح ذهابًا وإيابًا — هادئة ومنتظمة */
 .start-orb::after {
   content: "";
   position: absolute;
-  inset: 2px;
+  inset: 1px;
   border-radius: 999px;
-  background: conic-gradient(
-    from 180deg,
-    transparent 0 62%,
-    rgba(255, 255, 255, 0.55) 78%,
-    transparent 92%
+  background: linear-gradient(
+    115deg,
+    transparent 34%,
+    rgba(255, 255, 255, 0.32) 50%,
+    transparent 66%
   );
-  animation: orbspin 4.5s linear infinite reverse;
+  background-size: 240% 240%;
+  animation: orbwave 6.5s ease-in-out infinite;
   pointer-events: none;
+}
+@keyframes orbbreath {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.04); }
+}
+@keyframes orbwave {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 .orb-label {
   position: relative;
@@ -276,24 +281,16 @@ h2, h3 { letter-spacing: -0.01em; }
   transition: transform 0.2s ease;
 }
 .start-orb:hover {
-  transform: scale(1.055);
-  box-shadow: 0 26px 62px rgba(114, 203, 21, 0.5);
-}
-.start-orb:hover::before {
-  opacity: 0.85;
-  animation-duration: 2.6s;
-}
-.start-orb:hover::after {
-  animation-duration: 2s;
+  transform: scale(1.04);
+  box-shadow: 0 24px 58px rgba(114, 203, 21, 0.44);
 }
 .start-orb:hover .orb-label svg {
   transform: translateX(2px);
 }
+/* الضغط: انكماش لطيف فقط — بلا وميض ألوان */
 .start-orb:active {
-  transform: scale(0.97);
-}
-@keyframes orbspin {
-  to { transform: rotate(360deg); }
+  transform: scale(0.975);
+  box-shadow: 0 12px 30px rgba(114, 203, 21, 0.34);
 }
 @media (prefers-reduced-motion: reduce) {
   .start-orb,
