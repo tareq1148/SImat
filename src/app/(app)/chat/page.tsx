@@ -7,6 +7,7 @@ import AutomationSummaryCard from "@/components/AutomationSummaryCard";
 import Logo from "@/components/Logo";
 import NeuralThinking from "@/components/NeuralThinking";
 import OverviewStats from "@/components/OverviewStats";
+import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { useLang } from "@/lib/i18n";
@@ -479,73 +480,72 @@ export default function ChatPage() {
         </div>
       )}
 
-      <form
-        onSubmit={send}
-        className="w-full max-w-3xl mx-auto sticky bottom-0 pt-2 pb-5 flex gap-2 items-center bg-[var(--bg)]"
-      >
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={busy || uploading || attachments.length >= 3}
-          title="أرفق ملفات (صور، PDF، بيانات) — حتى 3 ملفات"
-          className={`tool-btn ${uploading ? "animate-pulse" : ""}`}
-        >
-          <ToolIcon kind="clip" />
-        </button>
-        {voice.mode !== "none" && (
+      <div className="w-full max-w-3xl mx-auto sticky bottom-0 pt-2 pb-5 bg-[var(--bg)]">
+        <form onSubmit={send} className="composer">
+          {/* + المرفقات */}
           <button
             type="button"
-            onClick={voice.recording ? voice.stopRecording : voice.startRecording}
-            disabled={busy || voice.transcribing}
-            title={
-              voice.recording
-                ? "أوقف التسجيل"
-                : voice.mode === "voicestudio"
-                  ? "تكلّم — التفريغ محلي عبر VoiceStudio"
-                  : "تكلّم — عبر مايك المتصفح"
-            }
-            className={`tool-btn ${
-              voice.recording
-                ? "!border-[var(--bad)] !text-[var(--bad)] animate-pulse"
-                : voice.transcribing
-                  ? "animate-pulse"
-                  : ""
-            }`}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={busy || uploading || attachments.length >= 3}
+            title={t("input.attach")}
+            className={`composer-plus ${uploading ? "animate-pulse" : ""}`}
           >
-            <ToolIcon kind={voice.recording ? "stop" : "mic"} />
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
           </button>
-        )}
-        {voice.mode !== "none" && (
+
+          {/* حقل الكتابة — أو موجة الصوت أثناء التسجيل */}
+          {voice.recording ? (
+            <div className="flex-1 flex items-center gap-3 min-w-0 px-1">
+              <span className="status-dot animate-pulse shrink-0" style={{ background: "var(--bad)" }} />
+              <VoiceWave mode="mic" height={28} />
+            </div>
+          ) : (
+            <input
+              ref={textInputRef}
+              className="composer-input"
+              placeholder={t("input.placeholder")}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={busy}
+            />
+          )}
+
+          {/* كرة الصوت */}
+          {voice.mode !== "none" && (
+            <button
+              type="button"
+              onClick={voice.recording ? voice.stopRecording : voice.startRecording}
+              disabled={busy || voice.transcribing}
+              title={voice.recording ? t("input.stopVoice") : t("input.talk")}
+              className="shrink-0"
+            >
+              <VoiceOrb
+                size={40}
+                state={
+                  voice.recording
+                    ? "listening"
+                    : voice.speaking || voice.transcribing
+                      ? "speaking"
+                      : "idle"
+                }
+              />
+            </button>
+          )}
+
+          {/* إرسال */}
           <button
-            type="button"
-            onClick={voice.toggleSpeak}
-            title={voice.speakEnabled ? "أوقف نطق الردود" : "اسمع الردود صوتيًا"}
-            className={`tool-btn ${
-              voice.speakEnabled ? "!border-[var(--accent-bg)] !text-[var(--accent)]" : ""
-            }`}
+            className="composer-send"
+            disabled={busy || (!input.trim() && attachments.length === 0)}
+            title={t("input.send")}
           >
-            <ToolIcon kind="speaker" />
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
           </button>
-        )}
-        {voice.recording ? (
-          <div className="input flex-1 flex items-center gap-3 !py-1.5">
-            <span className="status-dot animate-pulse shrink-0" style={{ background: "var(--bad)" }} />
-            <VoiceWave mode="mic" height={30} />
-          </div>
-        ) : (
-          <input
-            ref={textInputRef}
-            className="input flex-1"
-            placeholder={t("input.placeholder")}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={busy}
-          />
-        )}
-        <button className="btn btn-primary" disabled={busy || !input.trim()}>
-          {t("input.send")}
-        </button>
-      </form>
+        </form>
+      </div>
     </main>
   );
 }

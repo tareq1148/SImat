@@ -437,6 +437,111 @@ h2, h3 { letter-spacing: -0.01em; }
   color: color-mix(in srgb, var(--text-soft) 75%, transparent);
 }
 
+/* ===== شريط الكتابة (Composer) ===== */
+.composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 64px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel-solid);
+  box-shadow: 0 9px 28px rgba(42, 45, 70, 0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.composer:focus-within {
+  border-color: var(--accent-bg);
+  box-shadow: 0 10px 32px rgba(114, 203, 21, 0.16);
+}
+.composer-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  padding-inline: 6px;
+}
+.composer-input::placeholder {
+  color: color-mix(in srgb, var(--text-soft) 80%, transparent);
+}
+/* زر + للمرفقات (بأسلوب Gemini) */
+.composer-plus {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-soft);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.composer-plus:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent-bg);
+  background: var(--accent-soft);
+}
+.composer-plus:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+/* زر الإرسال */
+.composer-send {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 0;
+  background: var(--grad-accent);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.12s, opacity 0.15s;
+}
+.composer-send:hover:not(:disabled) {
+  filter: brightness(1.07);
+}
+.composer-send:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.composer-send:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* كرة الصوت المصغّرة */
+.voice-orb {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-block;
+  border-radius: 999px;
+  overflow: hidden;
+  background: radial-gradient(circle at 38% 30%, #dcf98a 0%, #7ec81f 58%, #3f8f4a 100%);
+  box-shadow: 0 4px 12px rgba(114, 203, 21, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.voice-orb:hover {
+  transform: scale(1.06);
+}
+.orb-sm .orb-blob {
+  filter: blur(9px);
+}
+.voice-orb.is-active {
+  box-shadow: 0 0 0 3px rgba(162, 222, 27, 0.3), 0 6px 18px rgba(114, 203, 21, 0.4);
+}
+.voice-orb.is-listening {
+  animation: orbpulse 1.4s ease-in-out infinite;
+}
+
 /* أيقونة دائرية لأزرار الأدوات (مرفقات/مايك) */
 .tool-btn {
   flex-shrink: 0;
