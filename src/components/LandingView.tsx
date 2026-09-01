@@ -1,6 +1,6 @@
 "use client";
 
-// نقطة البداية — بروح تصميم المستخدم: شعار وَتيرة، عبارة متدرجة، شبكة عصبية حية، وكرة «ابدأ»
+// نقطة البداية — الكلام في جهة القراءة الأولى والشبكة العصبية الحية في الجهة المقابلة
 
 import Link from "next/link";
 import { toggleLang, useLang } from "@/lib/i18n";
@@ -18,24 +18,25 @@ export default function LandingView({ authed }: { authed: boolean }) {
         {/* زر اللغة */}
         <button
           onClick={() => toggleLang()}
-          className="absolute top-5 inline-start-5 z-10 w-11 h-9 rounded-full border border-[var(--line)] bg-[var(--panel-solid)] text-[0.72rem] font-bold text-[var(--text-soft)] hover:text-[var(--text)] transition-colors"
-          style={{ insetInlineStart: "1.25rem" }}
+          className="absolute top-5 z-10 w-11 h-9 rounded-full border border-[var(--line)] bg-[var(--panel-solid)] text-[0.72rem] font-bold text-[var(--text-soft)] hover:text-[var(--text)] hover:border-[var(--accent-bg)] transition-colors"
+          style={{ insetInlineEnd: "1.25rem" }}
           title={ar ? "English" : "العربية"}
         >
           {ar ? "EN" : "ع"}
         </button>
 
-        <div className="grid md:grid-cols-2 items-center gap-6 px-6 sm:px-10 py-12 md:py-16">
-          {/* يمين: الشعار + العبارة + الكرة */}
-          <div className="order-1 md:order-2 text-center md:text-start">
-            <div className="flex items-center justify-center md:justify-start gap-3 mb-9">
-              <Logo size={44} />
-              <span className="text-[1.7rem] font-bold tracking-tight">
-                {ar ? "وَتيرة" : "وَتيرة"}
-              </span>
-            </div>
+        <div className="grid md:grid-cols-[1.05fr_1fr] items-center gap-8 md:gap-4 px-7 sm:px-12 py-14 md:py-20">
+          {/* النص — أول عمود (يمين في العربية) */}
+          <div className="text-center md:text-start">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-3 mb-8 hover:opacity-85 transition-opacity"
+            >
+              <Logo size={46} id="wLogoLanding" />
+              <span className="text-[1.75rem] font-bold tracking-tight">{t("brand")}</span>
+            </Link>
 
-            <h1 className="text-[2rem] sm:text-[2.6rem] font-bold leading-[1.25] mb-4">
+            <h1 className="text-[2.1rem] sm:text-[2.85rem] font-bold leading-[1.24] mb-5 rise-1">
               {ar ? (
                 <>
                   حوّل فكرتك إلى{" "}
@@ -49,24 +50,46 @@ export default function LandingView({ authed }: { authed: boolean }) {
               )}
             </h1>
 
-            {/* شعار المنصة النصي */}
-            <p className="text-[1.05rem] sm:text-[1.2rem] font-semibold text-[var(--text-soft)] mb-10 tracking-tight">
+            <p className="text-[1.1rem] sm:text-[1.25rem] font-semibold text-[var(--text-soft)] mb-3 tracking-tight rise-2">
               <span className="tag-word">{t("home.w1")}.</span>{" "}
               <span className="tag-word">{t("home.w2")}.</span>{" "}
               <span className="tag-word text-[var(--accent)]">{t("home.w3")}.</span>
             </p>
 
-            <div className="flex justify-center md:justify-start">
+            <p className="text-[0.85rem] text-[var(--text-soft)] opacity-80 mb-10 max-w-sm mx-auto md:mx-0 leading-relaxed rise-2">
+              {ar
+                ? "صف مهمتك المتكررة بجملة واحدة — ووَتيرة يبنيها أتمتة تعمل عنك."
+                : "Describe your recurring task in one line — Wateera builds the automation for you."}
+            </p>
+
+            <div className="flex justify-center md:justify-start rise-3">
               <Link href={startHref} className="start-orb" aria-label={ar ? "ابدأ" : "Start"}>
-                {ar ? "ابدأ" : "Start"}
+                <span className="orb-label">
+                  {ar ? "ابدأ" : "Start"}
+                  <svg
+                    width="17"
+                    height="17"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.1"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={ar ? "rotate-180" : ""}
+                  >
+                    <path d="M5 12h13M12 5l7 7-7 7" />
+                  </svg>
+                </span>
               </Link>
             </div>
           </div>
 
-          {/* يسار: الشبكة العصبية الحية والتفاعلية */}
-          <div className="order-2 md:order-1">
-            <NeuralField height={380} />
-            <p className="text-center text-[0.72rem] text-[var(--text-soft)] mt-1">
+          {/* الشبكة العصبية — العمود الثاني (يسار في العربية) */}
+          <div className="relative">
+            <div className="neural-mask">
+              <NeuralField height={420} />
+            </div>
+            <p className="text-center text-[0.7rem] text-[var(--text-soft)] opacity-60 -mt-2">
               {ar ? "مرّر مؤشرك فوق الشبكة" : "Move your pointer over the network"}
             </p>
           </div>
