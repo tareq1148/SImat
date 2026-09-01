@@ -4,7 +4,7 @@
 // لا سحب ولا إضافة ولا حذف ولا توصيل: تحريك اللوحة والتقريب والملاءمة فقط.
 // يقبل IR حقيقيًا، وإن لم يُعطَ يعرض مسار العرض: محفّز ← وكيل ← Gmail.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -18,6 +18,7 @@ import {
   type EdgeProps,
   type Node,
   type NodeProps,
+  type ReactFlowInstance,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { IRNode, WorkflowIR } from "@/lib/types";
@@ -244,13 +245,32 @@ export default function ExecutionGraph({
 }: {
   /** رسم حقيقي؛ بدونه يُعرض مسار المعمارية */
   ir?: WorkflowIR | null;
-  height?: number;
+  height?: number | string;
   /** حالات حيّة تصل من المحرك (drive/sheets/slides/calendar/docs) */
   serviceStates?: Record<string, RunState>;
 }) {
 
   // التحديد يُدار هنا: React Flow لا يضيف صنف selected بالنقر ما دام السحب معطّلًا
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const rfRef = useRef<ReactFlowInstance<Node<NodeData>, Edge> | null>(null);
+
+  // الملاءمة تُحسب عند التركيب، وقد تتمدّد الحاوية بعدها (انتقال مساحة العمل)
+  // فتخرج العقد عن الإطار — نراقب المقاس ونعيد الملاءمة حتى يستقر.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    let raf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => rfRef.current?.fitView({ padding: 0.28 }));
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, []);
 
   const { nodes, edges } = useMemo(() => {
     const base = ir ? irToGraph(ir) : demoGraph(serviceStates ?? {});
@@ -259,7 +279,7 @@ export default function ExecutionGraph({
   }, [ir, serviceStates, selectedId]);
 
   return (
-    <div className="xg-canvas" style={{ height }}>
+    <div className="xg-canvas" style={{ height }} ref={wrapRef}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -267,6 +287,9 @@ export default function ExecutionGraph({
         edgeTypes={edgeTypes}
         fitView
         fitViewOptions={{ padding: 0.28 }}
+        onInit={(inst) => {
+          rfRef.current = inst;
+        }}
         proOptions={{ hideAttribution: true }}
         /* وضع القراءة: لا سحب ولا توصيل ولا حذف — التحديد فقط للاستكشاف */
         nodesDraggable={false}

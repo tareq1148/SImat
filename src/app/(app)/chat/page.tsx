@@ -8,6 +8,7 @@ import NeuralThinking from "@/components/NeuralThinking";
 import VoiceExperience from "@/components/VoiceExperience";
 import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
+import WorkspaceCanvas from "@/components/WorkspaceCanvas";
 import { useLang } from "@/lib/i18n";
 import { useVoice } from "@/lib/useVoice";
 
@@ -238,9 +239,24 @@ export default function ChatPage() {
     }
   }
 
+  // انتقال مساحة العمل: بمجرد ولادة المسار ترسو المحادثة جانبًا وتتمدّد اللوحة
+  const split = !!flowId;
+
   return (
-    <main className="flex-1 flex flex-col max-w-5xl mx-auto w-full px-6">
-      {messages.length === 0 && (
+    <main className={`ws-root ${split ? "is-split" : ""}`}>
+      {split && (
+        <section className="ws-canvas" aria-label="لوحة سير العمل">
+          <WorkspaceCanvas
+            flowId={flowId}
+            building={building}
+            onDeploy={buildFromChat}
+            onOpenFull={() => router.push(`/flow/${flowId}`)}
+          />
+        </section>
+      )}
+
+      <section className="ws-chat">
+      {messages.length === 0 && !split && (
         <div className="flex-1 flex flex-col items-center justify-start pt-16 sm:pt-24 pb-4">
           <div className="rise text-center">
             <h1 className="text-[2.1rem] md:text-[2.9rem] font-bold leading-snug mb-3 tracking-tight">
@@ -313,20 +329,15 @@ export default function ChatPage() {
         </div>
       )}
 
-      {flowId && (
+      {/* اللوحة تتكفّل بالاسم والحالة وزر التشغيل — فيبقى هنا ما يحتاج تدخّل المستخدم */}
+      {flowId && !building && (
         <div className="w-full max-w-3xl mx-auto mb-3">
-          {building ? (
-            <div className="card px-5 py-4">
-              <NeuralThinking phase="building" />
-            </div>
-          ) : (
-            <AutomationSummaryCard
-              flowId={flowId}
-              variant="full"
-              onOpenFlow={() => router.push(`/flow/${flowId}`)}
-              onBuild={buildFromChat}
-            />
-          )}
+          <AutomationSummaryCard
+            flowId={flowId}
+            variant="connections"
+            onOpenFlow={() => router.push(`/flow/${flowId}`)}
+            onBuild={buildFromChat}
+          />
         </div>
       )}
 
@@ -497,6 +508,7 @@ export default function ChatPage() {
           </button>
         )}
       </div>
+      </section>
 
       {voiceMode && (
         <VoiceExperience

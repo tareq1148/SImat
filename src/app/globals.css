@@ -1171,3 +1171,110 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   .xg-badge.is-running .xg-dot { animation: none; }
   .xg-particle { display: none; }
 }
+
+/* ═══ مساحة العمل بعد التوليد — رسوّ المحادثة وتمدّد اللوحة ═══
+   قبل التوليد: المحادثة وحدها تملأ العرض (أبناؤها يتوسّطون بأنفسهم).
+   بعده: تنكمش قاعدتها من 100% إلى 25% فتنساب اللوحة في الفراغ المتروك. */
+
+.ws-root {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-height: 0;
+}
+
+.ws-chat {
+  flex: 0 0 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding-inline: 1.5rem;
+  transition: flex-basis 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    padding-inline 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ws-root.is-split {
+  /* ارتفاع محدّد حتى تتقيّد اللوحة بالشاشة بدل أن تمطّ الصفحة.
+     لا بدّ من إلغاء flex:1 — فهو في حاوية عمودية يتقدّم على height ويمطّ العنصر. */
+  flex: 0 0 auto;
+  height: calc(100dvh - 74px);
+  overflow: hidden;
+}
+
+.is-split .ws-chat {
+  flex-basis: 25%;
+  padding-inline: 0.9rem;
+  border-inline-start: 1px solid var(--line);
+}
+
+/* اللوحة تشغل ما تبقّى — 75% — وتدخل بتلاشٍ وانزلاق خفيف */
+.ws-canvas {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  padding: 0.85rem;
+  padding-inline-end: 0.5rem;
+  animation: wsCanvasIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes wsCanvasIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.ws-canvas-inner {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--panel);
+  overflow: hidden;
+}
+
+.ws-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0.85rem;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--panel-solid);
+}
+
+/* شاشات ضيقة: لا مجال لـ75/25 — تُكدَّس اللوحة فوق المحادثة */
+@media (max-width: 1023px) {
+  .ws-root.is-split {
+    flex: 1;
+    flex-direction: column;
+    height: auto;
+    overflow: visible;
+  }
+  .is-split .ws-chat {
+    flex: 1 1 auto;
+    padding-inline: 1.25rem;
+    border-inline-start: 0;
+  }
+  .ws-canvas {
+    flex: 0 0 340px;
+    padding-inline-end: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-chat {
+    transition: none;
+  }
+  .ws-canvas {
+    animation: none;
+  }
+}
