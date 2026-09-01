@@ -16,7 +16,11 @@ interface Dot {
   c: string;
 }
 
-export default function NeuralField({ height = 420 }: { height?: number }) {
+export default function NeuralField({
+  height = 420,
+}: {
+  height?: number | string;
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -26,7 +30,7 @@ export default function NeuralField({ height = 420 }: { height?: number }) {
     if (!g) return;
 
     let w = 0;
-    let h = height;
+    let h = typeof height === "number" ? height : 420;
     let raf = 0;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const pointer = { x: -999, y: -999 };
@@ -36,7 +40,7 @@ export default function NeuralField({ height = 420 }: { height?: number }) {
 
     const seed = () => {
       w = canvas.clientWidth;
-      h = canvas.clientHeight || height;
+      h = canvas.clientHeight || (typeof height === "number" ? height : 420);
       canvas.width = w * dpr;
       canvas.height = h * dpr;
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
