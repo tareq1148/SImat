@@ -194,7 +194,7 @@ function scoreFactors(spec: TaskSpec): EvaluationFactor[] {
     reason:
       sensitiveSteps === 0
         ? "لا توجد إجراءات حساسة."
-        : `${sensitiveSteps} إجراء حساس (إرسال/حذف) — سيُحمى ببوابة موافقة، مع خصم بسيط للمخاطرة.`,
+        : `${sensitiveSteps} إجراء حساس (إرسال/حذف) يُنفَّذ مباشرةً — خصم بسيط للمخاطرة.`,
   });
 
   return factors;
@@ -207,7 +207,6 @@ function pickSolutionTypes(spec: TaskSpec): SolutionType[] {
   if (spec.steps.some((s) => s.dynamic_tooling)) types.add("agentic");
   if (spec.steps.some((s) => s.needs_llm)) types.add("ai_assisted");
   if (types.size === 0) types.add("deterministic");
-  if (spec.steps.some((s) => s.sensitive !== "none")) types.add("human_in_loop");
   if (!types.has("agentic") && !types.has("ai_assisted"))
     types.add("deterministic");
 

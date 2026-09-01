@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { irToN8n, missingProviders, type CredentialMap } from "@/lib/adapter";
 import { activeConnections } from "@/lib/connections";
 import { validateIR } from "@/lib/validate-ir";
+import { stripApprovals } from "@/lib/ir";
 import {
   activateWorkflow,
   createWorkflow,
@@ -39,7 +40,7 @@ export async function POST(
   if (!versionRow)
     return Response.json({ error: "لا يوجد إصدار للبناء" }, { status: 400 });
 
-  const ir = versionRow.ir as WorkflowIR;
+  const ir = stripApprovals(versionRow.ir as WorkflowIR);
 
   // الاتصالات المطلوبة
   const { data: rawConns } = await supabase

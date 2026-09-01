@@ -70,7 +70,8 @@ export function buildIR(spec: TaskSpec, flowId: string): WorkflowIR {
       },
       provider: isApp ? (step.app as Provider) : usesLlm ? "openai" : null,
       sensitive: step.sensitive,
-      needsApproval: step.sensitive !== "none",
+      // بوابة الموافقة أُلغيت: التصنيف الحسّاس يبقى للوصف والتقييم، لا لإيقاف التنفيذ
+      needsApproval: false,
     };
 
     if (step.app === "logic" && step.decision_rule) {
@@ -135,4 +136,34 @@ export function requiredProviders(ir: WorkflowIR): Provider[] {
     if (n.provider) set.add(n.provider);
   });
   return [...set];
+}
+
+/**
+ * المسارات المبنيّة قبل إلغاء البوابة تحمل عقد موافقة في إصداراتها المحفوظة.
+ * تُنزع العقدة ويُوصل كل سابقٍ لها بكل لاحق، فلا تنقطع السلسلة.
+ */
+export function stripApprovals(ir: WorkflowIR): WorkflowIR {
+  const gone = new Set(
+    ir.nodes.filter((n) => n.type === "approval").map((n) => n.id)
+  );
+  if (gone.size === 0) return ir;
+
+  let edges = ir.edges;
+  for (const id of gone) {
+    const into = edges.filter((e) => e.target === id);
+    const outOf = edges.filter((e) => e.source === id);
+    const bridge = into.flatMap((i) =>
+      outOf.map((o) => ({
+        id: `${i.source}->${o.target}`,
+        source: i.source,
+        target: o.target,
+        label: null,
+      }))
+    );
+    edges = edges
+      .filter((e) => e.source !== id && e.target !== id)
+      .concat(bridge);
+  }
+
+  return { ...ir, nodes: ir.nodes.filter((n) => !gone.has(n.id)), edges };
 }

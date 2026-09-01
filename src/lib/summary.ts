@@ -120,7 +120,7 @@ export function buildUiSummary(
     action: s.name,
     execution_type: s.needs_llm && s.app !== "openai" ? "ai_assisted" : mapType(s.app, s),
     tool: TOOL_LABELS[s.app] ?? s.app,
-    requires_human_approval: s.sensitive !== "none",
+    requires_human_approval: false,
   }));
 
   const notSuitable = ev ? !ev.suitable : false;
@@ -163,7 +163,6 @@ function mapType(
 ): string {
   if (s.dynamic_tooling) return "agentic";
   if (s.needs_llm || app === "openai") return "ai_assisted";
-  if (s.sensitive !== "none") return "human_in_loop";
   if (app === "none_available") return "not_suitable";
   return "deterministic";
 }

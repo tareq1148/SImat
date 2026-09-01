@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 import type { WorkflowIR } from "@/lib/types";
+import { stripApprovals } from "@/lib/ir";
 
 // رسم المسار الحالي — لعرضه في شاشة «سير العمل»
 export async function GET(
@@ -32,6 +33,6 @@ export async function GET(
     id: flow.id,
     name: flow.name,
     status: flow.status,
-    ir: (versionRow?.ir as WorkflowIR) ?? null,
+    ir: versionRow?.ir ? stripApprovals(versionRow.ir as WorkflowIR) : null,
   });
 }
