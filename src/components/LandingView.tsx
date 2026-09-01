@@ -7,9 +7,10 @@ import { toggleLang, useLang } from "@/lib/i18n";
 import Logo from "./Logo";
 import NeuralField from "./NeuralField";
 
-export default function LandingView() {
-  const { lang } = useLang();
+export default function LandingView({ authed }: { authed: boolean }) {
+  const { lang, t } = useLang();
   const ar = lang === "ar";
+  const startHref = authed ? "/chat" : "/login";
 
   return (
     <main className="flex-1 flex items-center justify-center px-4 py-6">
@@ -34,7 +35,7 @@ export default function LandingView() {
               </span>
             </div>
 
-            <h1 className="text-[2rem] sm:text-[2.6rem] font-bold leading-[1.25] mb-10">
+            <h1 className="text-[2rem] sm:text-[2.6rem] font-bold leading-[1.25] mb-4">
               {ar ? (
                 <>
                   حوّل فكرتك إلى{" "}
@@ -48,8 +49,15 @@ export default function LandingView() {
               )}
             </h1>
 
+            {/* شعار المنصة النصي */}
+            <p className="text-[1.05rem] sm:text-[1.2rem] font-semibold text-[var(--text-soft)] mb-10 tracking-tight">
+              <span className="tag-word">{t("home.w1")}.</span>{" "}
+              <span className="tag-word">{t("home.w2")}.</span>{" "}
+              <span className="tag-word text-[var(--accent)]">{t("home.w3")}.</span>
+            </p>
+
             <div className="flex justify-center md:justify-start">
-              <Link href="/login" className="start-orb" aria-label={ar ? "ابدأ" : "Start"}>
+              <Link href={startHref} className="start-orb" aria-label={ar ? "ابدأ" : "Start"}>
                 {ar ? "ابدأ" : "Start"}
               </Link>
             </div>

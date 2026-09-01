@@ -191,6 +191,21 @@ h2, h3 { letter-spacing: -0.01em; }
   color: transparent;
 }
 
+/* شعار «تحدث. اربط. أتمت.» — ظهور متتابع */
+.tag-word {
+  display: inline-block;
+  animation: tagin 0.6s ease both;
+}
+.tag-word:nth-child(2) { animation-delay: 0.14s; }
+.tag-word:nth-child(3) { animation-delay: 0.28s; }
+@keyframes tagin {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tag-word { animation: none; }
+}
+
 /* كرة «ابدأ» — نبض هادئ وتوهج عند اللمس */
 .start-orb {
   display: grid;
