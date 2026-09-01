@@ -36,6 +36,7 @@ export async function proxy(request: NextRequest) {
     path.startsWith("/chat") ||
     path.startsWith("/flow") ||
     path.startsWith("/progress") ||
+    path.startsWith("/workflows") ||
     path.startsWith("/connections") ||
     path.startsWith("/settings");
 

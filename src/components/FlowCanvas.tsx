@@ -21,25 +21,25 @@ interface NodeData extends Record<string, unknown> {
   onSelect: (n: IRNode) => void;
 }
 
-// تصنيف لاتيني صغير فوق العنوان — أسلوب لوحات الأتمتة العالمية
-function category(ir: IRNode): string {
+// تصنيف صغير فوق العنوان — بلغة الواجهة
+function category(ir: IRNode, ar: boolean): string {
   if (ir.provider) {
-    const map: Record<Provider, string> = {
-      gmail: "GMAIL",
-      google_sheets: "SHEETS",
-      google_drive: "DRIVE",
-      openai: "AI",
-      telegram: "TELEGRAM",
-      slack: "SLACK",
-      instagram: "INSTAGRAM",
-      tiktok: "TIKTOK",
+    const map: Record<Provider, [string, string]> = {
+      gmail: ["البريد", "GMAIL"],
+      google_sheets: ["الجداول", "SHEETS"],
+      google_drive: ["الملفات", "DRIVE"],
+      openai: ["الوكيل", "AI"],
+      telegram: ["تيليجرام", "TELEGRAM"],
+      slack: ["سلاك", "SLACK"],
+      instagram: ["إنستقرام", "INSTAGRAM"],
+      tiktok: ["تيك توك", "TIKTOK"],
     };
-    return map[ir.provider];
+    return map[ir.provider][ar ? 0 : 1];
   }
-  if (ir.type === "trigger") return "TRIGGER";
-  if (ir.type === "approval") return "APPROVAL";
-  if (ir.type === "output") return "OUTPUT";
-  return "LOGIC";
+  if (ir.type === "trigger") return ar ? "المشغّل" : "TRIGGER";
+  if (ir.type === "approval") return ar ? "موافقة" : "APPROVAL";
+  if (ir.type === "output") return ar ? "النتيجة" : "OUTPUT";
+  return ar ? "شرط" : "LOGIC";
 }
 
 // رمز أبيض داخل المربع الملون
@@ -74,6 +74,8 @@ function Glyph({ ir }: { ir: IRNode }) {
 
 function AppNode({ data }: NodeProps<Node<NodeData>>) {
   const { ir, connected } = data;
+  const ar =
+    typeof document === "undefined" || document.documentElement.lang !== "en";
   const needsConn = ir.provider !== null && !connected;
   const isApproval = ir.type === "approval";
 
@@ -109,7 +111,7 @@ function AppNode({ data }: NodeProps<Node<NodeData>>) {
             dir="ltr"
             className="block text-[0.55rem] font-semibold tracking-[0.08em] text-[var(--text-soft)] leading-none mb-1 text-right"
           >
-            {category(ir)}
+            {category(ir, ar)}
           </span>
           <span className="block text-[0.8rem] font-semibold leading-tight truncate">
             {ir.label}
