@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { supabaseService } from "@/lib/supabase/server";
+import { diagnoseFailure } from "@/lib/diagnose";
 
 // يستقبل أحداث محرك التنفيذ (بدء / طلب موافقة / انتهاء) — محمي بسر مشترك
 export async function POST(req: NextRequest) {
@@ -26,28 +27,54 @@ export async function POST(req: NextRequest) {
   if (event.event === "execution_failed" && event.execution_id) {
     const db2 = supabaseService();
     const failMsg = `فشل عند العقدة «${event.failed_node ?? "غير معروفة"}»: ${event.error_message ?? ""}`.slice(0, 500);
+    // اسم المسار يدخل التشخيص ليخاطب المستخدم بمهمته لا بمعرّف
+    const flowNameOf = async (flowId: string) => {
+      const { data } = await db2.from("flows").select("name").eq("id", flowId).maybeSingle();
+      return data?.name ?? "مسارك";
+    };
+
     const { data: tr } = await db2
       .from("test_runs")
       .select("id, flow_id")
       .eq("n8n_execution_id", event.execution_id)
       .maybeSingle();
     if (tr) {
+      const diagnosis = await diagnoseFailure({
+        flowName: await flowNameOf(tr.flow_id),
+        node: event.failed_node ?? null,
+        rawError: event.error_message ?? "",
+      });
       await db2
         .from("test_runs")
-        .update({ passed: false, failure_node: event.failed_node ?? null, error: failMsg })
+        .update({
+          passed: false,
+          failure_node: event.failed_node ?? null,
+          error: failMsg,
+          diagnosis,
+        })
         .eq("id", tr.id);
       await db2.from("flows").update({ status: "NeedsRepair" }).eq("id", tr.flow_id);
       return Response.json({ ok: true, matched: "test_run" });
     }
     const { data: rn } = await db2
       .from("runs")
-      .select("id")
+      .select("id, flow_id")
       .eq("n8n_execution_id", event.execution_id)
       .maybeSingle();
     if (rn) {
+      const diagnosis = await diagnoseFailure({
+        flowName: await flowNameOf(rn.flow_id),
+        node: event.failed_node ?? null,
+        rawError: event.error_message ?? "",
+      });
       await db2
         .from("runs")
-        .update({ status: "error", error: failMsg, finished_at: new Date().toISOString() })
+        .update({
+          status: "error",
+          error: failMsg,
+          diagnosis,
+          finished_at: new Date().toISOString(),
+        })
         .eq("id", rn.id);
       return Response.json({ ok: true, matched: "run" });
     }

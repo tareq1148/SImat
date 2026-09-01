@@ -32,6 +32,158 @@ interface ProgressData {
     progress: number;
   };
   plan: { icon: string; title: string; why: string; cta: { label: string; href: string } }[];
+  health: {
+    score: number;
+    runs: { ok: number; failed: number; settled: number };
+    needs_attention: { id: string; name: string; status: string }[];
+    incidents: {
+      run_id: string;
+      flow_id: string;
+      flow_name: string;
+      at: string;
+      message: string;
+      message_en: string;
+      action: string;
+      action_label: string;
+      severity: "blocking" | "transient";
+      provider: string | null;
+      href: string;
+    }[];
+  };
+}
+
+/* ===== سلامة التشغيل: نسبة واحدة + الأعطال مشروحة بلغة صاحب المهمة ===== */
+
+function HealthCard({ health }: { health: ProgressData["health"] }) {
+  const { lang } = useLang();
+  const ar = lang === "ar";
+  const { score, runs, needs_attention: attention, incidents } = health;
+
+  // أخضر فوق 95، كهرماني 80-95، أحمر تحت 80 — العتبات نفسها لنقطة الحالة والحلقة
+  const tone =
+    score >= 95 ? "var(--ok)" : score >= 80 ? "var(--warn)" : "var(--bad)";
+  const clean = incidents.length === 0 && attention.length === 0;
+
+  return (
+    <div className="card p-6 rise-1">
+      <div className="flex items-start justify-between flex-wrap gap-4 mb-4">
+        <div>
+          <h2 className="font-semibold text-[0.95rem]">
+            {ar ? "سلامة التشغيل" : "System health"}
+          </h2>
+          <p className="text-[0.76rem] text-[var(--text-soft)] mt-1">
+            {runs.settled === 0
+              ? ar
+                ? "لا توجد تشغيلات محسومة بعد"
+                : "No settled runs yet"
+              : ar
+                ? `${runs.ok} من ${runs.settled} تشغيلة نجحت خلال ٣٠ يومًا`
+                : `${runs.ok} of ${runs.settled} runs succeeded in 30 days`}
+          </p>
+        </div>
+
+        {/* حلقة النسبة */}
+        <div className="relative shrink-0 w-[74px] h-[74px]">
+          <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+            <circle
+              cx="18"
+              cy="18"
+              r="15.5"
+              fill="none"
+              stroke="var(--line)"
+              strokeWidth="3"
+            />
+            <circle
+              cx="18"
+              cy="18"
+              r="15.5"
+              fill="none"
+              stroke={tone}
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={`${(score / 100) * 97.4} 97.4`}
+            />
+          </svg>
+          <span
+            className="absolute inset-0 flex items-center justify-center text-[1.05rem] font-bold tabular-nums"
+            style={{ color: tone }}
+          >
+            {score}%
+          </span>
+        </div>
+      </div>
+
+      {clean ? (
+        <p className="text-[0.82rem] text-[var(--text-soft)] flex items-center gap-2">
+          <span className="status-dot" style={{ background: "var(--ok)" }} />
+          {ar
+            ? "كل مساراتك سليمة — لا أعطال مسجّلة."
+            : "All flows are healthy — no incidents recorded."}
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {incidents.map((inc) => (
+            <div
+              key={inc.run_id}
+              className="rounded-xl border p-3.5"
+              style={{
+                borderColor:
+                  inc.severity === "transient" ? "var(--line)" : "var(--accent-bg)",
+                background: "var(--well)",
+              }}
+            >
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span
+                  className="status-dot shrink-0"
+                  style={{
+                    background:
+                      inc.severity === "transient" ? "var(--warn)" : "var(--bad)",
+                  }}
+                />
+                <span className="text-[0.78rem] font-semibold">{inc.flow_name}</span>
+                <span className="text-[0.66rem] text-[var(--text-soft)]">
+                  {new Date(inc.at).toLocaleDateString(ar ? "ar-SA" : "en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                  })}
+                </span>
+                {inc.severity === "transient" && (
+                  <span className="chip text-[0.62rem] py-0.5">
+                    {ar ? "عارض" : "Transient"}
+                  </span>
+                )}
+              </div>
+              <p className="text-[0.8rem] leading-relaxed text-[var(--text)] mb-2.5">
+                {ar ? inc.message : inc.message_en}
+              </p>
+              <Link
+                href={inc.href}
+                className="btn btn-primary text-[0.72rem] py-1.5 px-3.5"
+              >
+                {inc.action_label}
+              </Link>
+            </div>
+          ))}
+
+          {attention.length > 0 && (
+            <p className="text-[0.75rem] text-[var(--text-soft)] pt-1">
+              {ar
+                ? `${attention.length} مسار يحتاج انتباهك: `
+                : `${attention.length} flow(s) need attention: `}
+              {attention.map((f, i) => (
+                <span key={f.id}>
+                  {i > 0 && "، "}
+                  <Link href={`/flow/${f.id}`} className="text-[var(--accent)]">
+                    {f.name}
+                  </Link>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ===== المخطط المعماري: نفس لغة عقد لوحة الرسم ===== */
@@ -309,7 +461,7 @@ export default function ProgressView() {
       </div>
     );
 
-  const { headline, weeks, level, plan } = data;
+  const { headline, weeks, level, plan, health } = data;
   const hours = Math.round((headline.minutes_saved_this_week / 60) * 10) / 10;
   const chartWeeks = weeks.map((w) => ({
     ...w,
@@ -354,6 +506,8 @@ export default function ProgressView() {
           providers={providers}
         />
       </div>
+
+      <HealthCard health={health} />
 
       <div className="card p-6 rise-1">
         <h2 className="font-semibold text-[0.95rem] mb-4">{t("prog.chart")}</h2>

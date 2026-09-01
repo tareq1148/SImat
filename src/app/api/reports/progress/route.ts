@@ -1,4 +1,5 @@
 import { supabaseServer } from "@/lib/supabase/server";
+import { quickDiagnosis, type Diagnosis } from "@/lib/diagnose";
 
 // شاشة الإنجاز: أسابيع مقفلة المهام + كفاءة أسبوع-بأسبوع + مستوى + خطة تقدم مدروسة (قواعد مُفسَّرة)
 
@@ -29,7 +30,9 @@ export async function GET() {
       supabase
         .from("flows")
         .select("id, name, status, manual_minutes_per_run"),
-      supabase.from("runs").select("flow_id, status, started_at"),
+      supabase
+        .from("runs")
+        .select("id, flow_id, status, started_at, error, diagnosis"),
       supabase.from("approvals").select("id, flow_id").eq("status", "pending"),
     ]);
 
@@ -88,9 +91,11 @@ export async function GET() {
   const level = LEVELS[levelIdx];
   const next = LEVELS[levelIdx + 1] ?? null;
 
+  const fl0 = flows ?? [];
+
   // خطة التقدم — قواعد مرتبة بالأولوية، مبنية من بياناته الفعلية
   const plan: PlanItem[] = [];
-  const fl = flows ?? [];
+  const fl = fl0;
 
   if ((approvals ?? []).length > 0) {
     const a = approvals![0];
@@ -153,7 +158,52 @@ export async function GET() {
       cta: { label: "افتح مساراتك", href: "/chat" },
     });
   }
+  // ===== سلامة التشغيل =====
+  // النسبة = التشغيلات الناجحة من إجمالي المحسوم آخر ٣٠ يومًا. المعلّقة على موافقة
+  // لا تُحسب: هي بانتظار المستخدم لا عطل. بلا تشغيلات محسومة النسبة 100% لأنه لم يفشل شيء.
+  const MONTH = 30 * DAY;
+  const recent = (runs ?? []).filter(
+    (r) => new Date(r.started_at).getTime() >= now - MONTH
+  );
+  const settled = recent.filter((r) => r.status === "success" || r.status === "error");
+  const okCount = settled.filter((r) => r.status === "success").length;
+  const failedRuns = settled.filter((r) => r.status === "error");
+  const score = settled.length === 0 ? 100 : Math.round((okCount / settled.length) * 100);
+
+  const ATTENTION = ["NeedsRepair", "NeedsConnections", "NeedsInformation", "NotSuitable"];
+  const needsAttention = fl0
+    .filter((f) => ATTENTION.includes(f.status))
+    .map((f) => ({ id: f.id, name: f.name, status: f.status }));
+
+  // آخر ثلاثة أعطال بتشخيصها المخزَّن؛ والصفوف الأقدم من الميزة تُشخَّص بالقواعد فورًا
+  const incidents = failedRuns
+    .sort((a, b) => new Date(b.started_at).getTime() - new Date(a.started_at).getTime())
+    .slice(0, 3)
+    .map((r) => {
+      const d = (r.diagnosis as Diagnosis | null) ?? quickDiagnosis(r.error ?? "", null);
+      const flow = fl0.find((f) => f.id === r.flow_id);
+      return {
+        run_id: r.id,
+        flow_id: r.flow_id,
+        flow_name: flow?.name ?? "مسار محذوف",
+        at: r.started_at,
+        message: d.message,
+        message_en: d.message_en,
+        action: d.action,
+        action_label: d.action_label,
+        severity: d.severity,
+        provider: d.provider,
+        href: r.flow_id ? `/flow/${r.flow_id}?tab=run` : "/workflows",
+      };
+    });
+
   return Response.json({
+    health: {
+      score,
+      runs: { ok: okCount, failed: failedRuns.length, settled: settled.length },
+      needs_attention: needsAttention,
+      incidents,
+    },
     headline: {
       closed_this_week: thisWeek.closed,
       minutes_saved_this_week: thisWeek.minutes_saved,
