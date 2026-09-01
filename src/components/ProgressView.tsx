@@ -293,6 +293,7 @@ function DiagramNode({
 
 const PROVIDER_CATEGORY: Record<Provider, string> = {
   gmail: "GMAIL",
+  removebg: "REMOVE.BG",
   google_sheets: "SHEETS",
   google_drive: "DRIVE",
   google_slides: "SLIDES",

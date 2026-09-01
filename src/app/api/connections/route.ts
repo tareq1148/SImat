@@ -14,6 +14,8 @@ const PLATFORM_CREDS: Record<Provider, string | undefined> = {
   google_slides: undefined,
   google_calendar: undefined,
   google_docs: undefined,
+  // تقدّمها المنصّة بمفتاح في البيئة — لا يربطها المستخدم
+  removebg: undefined,
   openai: process.env.N8N_CRED_OPENAI,
   telegram: process.env.N8N_CRED_TELEGRAM,
   slack: process.env.N8N_CRED_SLACK,

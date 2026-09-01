@@ -11,7 +11,8 @@ export type Provider =
   | "telegram"
   | "slack"
   | "instagram"
-  | "tiktok";
+  | "tiktok"
+  | "removebg";
 
 export type StepApp = Provider | "logic" | "none_available";
 
@@ -95,6 +96,7 @@ export type IRNodeType =
   | "slack"
   | "instagram"
   | "tiktok"
+  | "removebg"
   | "condition"
   | "approval"
   | "output";
@@ -174,6 +176,7 @@ export const PROVIDER_LABELS: Record<Provider, string> = {
   slack: "Slack",
   instagram: "Instagram",
   tiktok: "TikTok",
+  removebg: "remove.bg",
 };
 
 export const STATUS_LABELS: Record<FlowStatus, string> = {

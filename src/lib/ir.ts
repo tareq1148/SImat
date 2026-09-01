@@ -58,7 +58,8 @@ export function buildIR(spec: TaskSpec, flowId: string): WorkflowIR {
       step.app === "telegram" ||
       step.app === "slack" ||
       step.app === "instagram" ||
-      step.app === "tiktok";
+      step.app === "tiktok" ||
+      step.app === "removebg";
     const usesLlm = step.needs_llm || step.dynamic_tooling || step.app === "openai";
 
     const node: IRNode = {

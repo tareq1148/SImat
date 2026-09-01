@@ -16,6 +16,8 @@ export interface CredentialMap {
   slack?: { id: string; name: string };
   instagram?: { id: string; name: string };
   tiktok?: { id: string; name: string };
+  // remove.bg خدمة منصّة بمفتاح في البيئة — لا اعتماد لكل مستخدم
+  removebg?: { id: string; name: string };
 }
 
 interface N8nNode {
@@ -1056,6 +1058,49 @@ export function irToN8n(
       continue;
     }
 
+    // remove.bg: لا عقدة لها في n8n، فتُنادى واجهتها مباشرةً. المفتاح من بيئة
+    // المنصّة — المستخدم لا يربط شيئًا ولا يرى المفتاح. الخرج ملفّ ثنائي،
+    // فتقدر عقدة Drive بعدها أن ترفعه كما هو.
+    if (irNode.provider === "removebg") {
+      const imageRef = irNode.params.image_url
+        ? JSON.stringify(String(irNode.params.image_url))
+        : "($json.image_url || $json.url || $json.webContentLink)";
+      const rbNode: N8nNode = {
+        id: irNode.id,
+        name: nodeName,
+        type: "n8n-nodes-base.httpRequest",
+        typeVersion: 4.2,
+        position: [xPos, Y],
+        parameters: {
+          method: "POST",
+          url: "https://api.remove.bg/v1.0/removebg",
+          sendHeaders: true,
+          headerParameters: {
+            parameters: [
+              { name: "X-Api-Key", value: process.env.REMOVEBG_API_KEY ?? "" },
+            ],
+          },
+          sendBody: true,
+          specifyBody: "json",
+          jsonBody:
+            "={{ JSON.stringify({ image_url: " +
+            imageRef +
+            ", size: " +
+            JSON.stringify(String(irNode.params.size ?? "auto")) +
+            " }) }}",
+          options: {
+            response: {
+              response: { responseFormat: "file", outputPropertyName: "data" },
+            },
+          },
+        },
+      };
+      nodes.push(rbNode);
+      connectPrev(nodeName);
+      prev = nodeName;
+      continue;
+    }
+
     // احتياط: خطوة غير مصنفة → Set توثيقي
     nodes.push({
       id: irNode.id,
@@ -1152,5 +1197,7 @@ export function missingProviders(
   ) {
     needed.add("openai");
   }
+  // remove.bg مفتاحها في بيئة المنصّة لا في حساب المستخدم — لا تُطلب منه
+  needed.delete("removebg");
   return [...needed].filter((p) => !creds[p]);
 }

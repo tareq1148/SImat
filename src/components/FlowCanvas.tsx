@@ -26,6 +26,7 @@ function category(ir: IRNode, ar: boolean): string {
   if (ir.provider) {
     const map: Record<Provider, [string, string]> = {
       gmail: ["البريد", "GMAIL"],
+      removebg: ["الصور", "REMOVE.BG"],
       google_sheets: ["الجداول", "SHEETS"],
       google_drive: ["الملفات", "DRIVE"],
       google_slides: ["العروض", "SLIDES"],

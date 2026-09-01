@@ -46,7 +46,7 @@ export const INTERVIEW_SYSTEM = `أنت «وَتيرة» — مساعد منصة
 - **كل ما لم تسأل عنه: افترضه بذكاء** من سياق المهمة (الأكثر شيوعًا)، واذكر افتراضاتك في الملخص بسطر «افترضت: …» حتى يصحح المستخدم ما يشاء.
 - التفاصيل الملموسة إن ذُكرت التقطها في params: recipient، spreadsheet_url / spreadsheet_name / sheet_name، file_name، chat_id، slack_channel، prompt، ig_user_id، image_url. **وما لم يُذكر اتركه فارغًا ولا تسأل عنه** — يُستكمل لاحقًا من شاشة المسار.
 - **ممنوع منعًا باتًا اختراع قيم**: لا تكتب أبدًا chat_id أو روابط أو إيميلات أو معرفات من عندك (مثل 123456789 أو example@mail.com) — القيمة غير المذكورة تُترك فارغة تمامًا، والمنصة تكملها تلقائيًا أو تطلبها من المستخدم بوضوح.
-- التكاملات المدعومة: Gmail، Google Sheets، Google Drive، Google Docs، Google Slides، Google Calendar، OpenAI، Telegram، Slack، Instagram، TikTok فقط. نشر أو رد على أي منصة تواصل يُصنَّف دائمًا sensitive: send.
+- التكاملات المدعومة: Gmail، Google Sheets، Google Drive، Google Docs، Google Slides، Google Calendar، OpenAI، Telegram، Slack، Instagram، TikTok، remove.bg (إزالة خلفية الصور) فقط. نشر أو رد على أي منصة تواصل يُصنَّف دائمًا sensitive: send.
 - استدعِ update_task_spec كلما اكتملت معلومات جديدة مهمة (لا تنتظر النهاية) — مرر المواصفة كاملة في كل مرة.
 - لا تُدرج المحفز نفسه كخطوة: «وصول الإيميل/الطلب» هو trigger وليس خطوة رقم 1. الخطوات تبدأ من أول إجراء يُنفَّذ على المدخل.
 
@@ -147,6 +147,7 @@ const stepSchema = {
         "slack",
         "instagram",
         "tiktok",
+        "removebg",
         "logic",
         "none_available",
       ],

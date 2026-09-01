@@ -187,6 +187,23 @@ export function CalendarIcon({ size = 22 }: { size?: number }) {
   );
 }
 
+export function RemoveBgIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <defs>
+        <pattern id="rbCheck" width="6" height="6" patternUnits="userSpaceOnUse">
+          <rect width="6" height="6" fill="#fff" />
+          <rect width="3" height="3" fill="#D7DBE0" />
+          <rect x="3" y="3" width="3" height="3" fill="#D7DBE0" />
+        </pattern>
+      </defs>
+      <rect x="2.5" y="2.5" width="19" height="19" rx="4" fill="url(#rbCheck)" stroke="#C2C7CE" />
+      <circle cx="12" cy="9.6" r="3.1" fill="#54B583" />
+      <path d="M5.8 19c1.2-3.4 3.5-5.1 6.2-5.1s5 1.7 6.2 5.1H5.8z" fill="#54B583" />
+    </svg>
+  );
+}
+
 export function providerIcon(type: string, size = 22) {
   switch (type) {
     case "gmail":
@@ -211,6 +228,8 @@ export function providerIcon(type: string, size = 22) {
       return <InstagramIcon size={size} />;
     case "tiktok":
       return <TikTokIcon size={size} />;
+    case "removebg":
+      return <RemoveBgIcon size={size} />;
     case "condition":
       return <LogicIcon size={size} />;
     case "approval":

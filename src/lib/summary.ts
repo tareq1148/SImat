@@ -59,6 +59,7 @@ const SERVICE_TYPES: Record<Provider, "oauth2" | "api_key"> = {
   slack: "oauth2",
   instagram: "oauth2",
   tiktok: "oauth2",
+  removebg: "api_key",
 };
 
 const TOOL_LABELS: Record<string, string> = {
@@ -73,6 +74,7 @@ const TOOL_LABELS: Record<string, string> = {
   slack: "Slack API / n8n",
   instagram: "Instagram Graph API / n8n",
   tiktok: "TikTok Content API / n8n",
+  removebg: "remove.bg API / n8n",
   logic: "n8n IF/Switch",
   none_available: "غير متوفر",
 };

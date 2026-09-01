@@ -91,6 +91,22 @@ export async function POST(
     );
   }
 
+  // remove.bg تقدّمها المنصّة بمفتاح في البيئة. لو غاب المفتاح فالمستخدم لا
+  // يملك حلًّا — نردّ خطأً إداريًا صريحًا بدل بناء مسار يفشل بـ403 عند التنفيذ.
+  if (
+    !process.env.REMOVEBG_API_KEY &&
+    ir.nodes.some((n) => n.provider === "removebg")
+  ) {
+    return Response.json(
+      {
+        error:
+          "مفتاح remove.bg غير مضبوط على المنصة (REMOVEBG_API_KEY في .env.local) — " +
+          "المسار يحتاجه لإزالة خلفية الصور.",
+      },
+      { status: 500 }
+    );
+  }
+
   // فحص حتمي: أي عقدة تنقصها حقول؟ (بعد الحقن التلقائي لـchat_id)
   const blocking = validateIR(ir);
   if (blocking.length > 0) {

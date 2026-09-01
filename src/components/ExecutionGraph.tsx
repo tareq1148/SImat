@@ -53,6 +53,7 @@ const BRANDED = new Set([
   "slack",
   "instagram",
   "tiktok",
+  "removebg",
 ]);
 
 function Glyph({ name }: { name: string }) {
