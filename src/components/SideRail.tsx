@@ -355,17 +355,12 @@ export default function SideRail() {
             : "sticky top-0 bg-[var(--panel)]"
         } ${open ? "w-[248px]" : "w-[68px]"} ${docked && open ? "shadow-2xl" : ""}`}
       >
-        {/* الشعار في رأس الشريط بلا إطار — علامةٌ وحدها كما في الشرائط المشابهة */}
-        <Link
-          href="/"
-          title={t("brand")}
-          className={`flex items-center gap-2.5 h-11 mb-2 shrink-0 ${
-            open ? "px-2" : "justify-center"
-          }`}
-        >
-          <Logo size={28} id="wLogoRail" />
+        {/* الشعار في رأس الشريط بلا إطار. يأخذ هندسة عناصر التنقّل نفسها
+            (item) — لولا ذلك لاختلف حشوه وتزحزح مكانه عند فتح الشريط. */}
+        <Link href="/" title={t("brand")} className={`${item(false)} mb-1`}>
+          <Logo size={22} id="wLogoRail" />
           {open && (
-            <span className="text-[1.05rem] font-bold whitespace-nowrap">
+            <span className="text-[1.02rem] font-bold text-[var(--text)]">
               {t("brand")}
             </span>
           )}
