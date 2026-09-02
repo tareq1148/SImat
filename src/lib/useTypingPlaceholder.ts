@@ -93,7 +93,9 @@ export function useTypingPlaceholder(
     };
   }, [enabled, samples]);
 
-  if (!enabled || prefersReducedMotion()) return fallback;
+  // مع تقليل الحركة لا تبدّل — يُعرض أوّل مثال ثابتًا بدل خانة بلا دلالة
+  if (prefersReducedMotion()) return samples[0] ?? fallback;
+  if (!enabled) return fallback;
   // بين مثال وآخر تكون الخانة فارغة لحظة — النصّ الثابت يسدّها فلا تومض بيضاء
   return text || fallback;
 }

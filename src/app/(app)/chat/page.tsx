@@ -87,7 +87,7 @@ export default function ChatPage() {
   const typedPlaceholder = useTypingPlaceholder(
     lang === "en" ? PROMPT_SAMPLES_EN : PROMPT_SAMPLES_AR,
     !input && !busy && !voice.recording,
-    t("input.placeholder")
+    "" // لا نصّ ثابت — الأمثلة وحدها
   );
 
   useEffect(() => {
