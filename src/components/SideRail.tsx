@@ -368,7 +368,8 @@ export default function SideRail() {
       >
         {/* الشعار في رأس الشريط بلا إطار. يأخذ هندسة عناصر التنقّل نفسها
             (item) — لولا ذلك لاختلف حشوه وتزحزح مكانه عند فتح الشريط. */}
-        <Link href="/" title={t("brand")} className={`${item(false)} mb-1`}>
+        {/* إلى /chat لا إلى / — الجذر صفحة بداية تُخرج المستخدم من التطبيق */}
+        <Link href="/chat" title={t("brand")} className={`${item(false)} mb-1`}>
           <Logo size={22} id="wLogoRail" />
           {open && (
             <span className="text-[1.02rem] font-bold text-[var(--text)]">
