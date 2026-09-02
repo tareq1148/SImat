@@ -386,9 +386,13 @@ export default function SideRail() {
           </Link>
         ))}
 
-        {/* مساراتك — تظهر عند التوسعة */}
+        {/* مساراتك — تظهر عند التوسعة.
+            overflow-x-hidden ضروري: تعيين overflow-y وحده يجعل المحور الأفقي
+            auto، فيومض شريط سحب أفقي في أوّل إطار بعد الفتح — القائمة تظهر
+            والشريط ما زال عند 80px فيضيق العمود عن محتواه. الأسماء تُقصّ
+            أصلًا، فلا حاجة إلى سحب أفقي البتّة. */}
         {open && flows.length > 0 && (
-          <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
+          <div className="mt-4 min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
             <p className="text-[0.7rem] font-semibold text-[var(--text-soft)] px-3 mb-1.5">
               {t("wf.yours")}
             </p>
