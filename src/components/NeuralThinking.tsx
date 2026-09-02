@@ -34,6 +34,9 @@ export default function NeuralThinking({ phase }: { phase: Phase }) {
       aria-live="polite"
       data-phase={phase}
     >
+      <span className="text-[0.8rem] font-medium text-[var(--text-soft)] whitespace-nowrap">
+        {label}
+      </span>
       <svg
         width={W}
         height={H}
@@ -67,9 +70,6 @@ export default function NeuralThinking({ phase }: { phase: Phase }) {
           />
         ))}
       </svg>
-      <span className="text-[0.8rem] font-medium text-[var(--text-soft)] whitespace-nowrap">
-        {label}
-      </span>
     </div>
   );
 }
