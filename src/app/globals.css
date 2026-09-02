@@ -1350,3 +1350,29 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
     animation: none;
   }
 }
+
+/* مؤشّر التفكير: كلمة تتنفّس ضوءًا — بديل الشبكة العصبية المتحرّكة */
+.think-glow {
+  display: inline-block;
+  font-size: 0.86rem;
+  font-weight: 650;
+  color: var(--accent);
+  animation: thinkGlow 1.5s ease-in-out infinite;
+}
+@keyframes thinkGlow {
+  0%,
+  100% {
+    opacity: 0.45;
+    text-shadow: none;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 12px color-mix(in srgb, var(--accent-bg) 55%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .think-glow {
+    animation: none;
+    opacity: 0.85;
+  }
+}
