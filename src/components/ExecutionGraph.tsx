@@ -100,7 +100,7 @@ function GraphNode({ data }: NodeProps<Node<NodeData>>) {
       dir="rtl"
       className="xg-node"
       title={`${data.title} — ${data.action}`}
-      style={{ animationDelay: `${Math.max(0, data.idx) * 110}ms` }}
+      style={{ animationDelay: `${Math.max(0, data.idx) * 380}ms` }}
     >
       {/* المقابض مخفية: لا توصيل في وضع القراءة، لكن الحواف تحتاج نقاط ارتساء */}
       <Handle type="target" position={Position.Right} className="xg-handle" isConnectable={false} />
@@ -153,7 +153,8 @@ function GraphEdge({
         id={id}
         path={path}
         className="xg-edge"
-        style={{ animationDelay: `${Math.max(0, meta?.idx ?? 0) * 110 - 40}ms` }}
+        // الحافّة تُرسم بعد ظهور عقدتها المصدر، فتبدو ممتدّةً إليها
+        style={{ animationDelay: `${Math.max(0, (meta?.idx ?? 1) - 1) * 380 + 240}ms` }}
       />
       {live && (
         <circle r="3.2" className="xg-particle">

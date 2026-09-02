@@ -1197,21 +1197,26 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
     transform: none;
   }
 }
+/* الحافّة تُرسم امتدادًا لا تظهر دفعةً: طول وهمي كبير يكفي أطول وصلة،
+   والإزاحة تتناقص فيبدو الخطّ يمتدّ من عقدة إلى التي تليها */
 @keyframes xgEdgeIn {
   from {
-    opacity: 0;
+    opacity: 1;
+    stroke-dashoffset: 400;
   }
   to {
     opacity: 1;
+    stroke-dashoffset: 0;
   }
 }
 .xg-node {
-  animation: xgNodeIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: xgNodeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* الحواف: منحنية هادئة، وجزيء ضوء يسري عند التنفيذ */
 .xg-edge {
-  animation: xgEdgeIn 0.4s ease both;
+  stroke-dasharray: 400;
+  animation: xgEdgeIn 0.42s ease both;
   stroke: color-mix(in srgb, var(--text) 22%, transparent);
   stroke-width: 2;
   fill: none;
