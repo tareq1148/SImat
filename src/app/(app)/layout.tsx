@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
-import TopBar from "@/components/TopBar";
 import SideRail from "@/components/SideRail";
 import AccountMenu from "@/components/AccountMenu";
 
@@ -19,7 +18,6 @@ export default async function AppLayout({
 
   return (
     <div className="flex-1 flex flex-col min-h-screen">
-      <TopBar />
       <div className="flex-1 flex items-stretch">
         <SideRail />
         <div className="flex-1 flex flex-col min-w-0">{children}</div>

@@ -765,7 +765,7 @@ html:not(.light) .arch-edge {
 /* ===== شاشة المحادثة الصوتية (مأخوذة من تصميم المستخدم) ===== */
 .voice-exp {
   position: fixed;
-  inset: 74px 0 0 0;
+  inset: 0;
   z-index: 35;
   background: var(--bg);
   display: grid;
@@ -1213,9 +1213,10 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
 
 .ws-root.is-split {
   /* ارتفاع محدّد حتى تتقيّد اللوحة بالشاشة بدل أن تمطّ الصفحة.
-     لا بدّ من إلغاء flex:1 — فهو في حاوية عمودية يتقدّم على height ويمطّ العنصر. */
+     لا بدّ من إلغاء flex:1 — فهو في حاوية عمودية يتقدّم على height ويمطّ العنصر.
+     بلا ترويسة صار الارتفاع الشاشة كاملة. */
   flex: 0 0 auto;
-  height: calc(100dvh - 74px);
+  height: 100dvh;
   overflow: hidden;
 }
 

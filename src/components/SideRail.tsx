@@ -348,10 +348,10 @@ export default function SideRail() {
       {/* حاجز يحجز عرض الشريط المطويّ وحده — فيبقى المحتوى ثابتًا مهما اتّسع الشريط */}
       {docked && <div className="hidden md:block shrink-0 w-[68px]" aria-hidden />}
       <aside
-        className={`hidden md:flex flex-col shrink-0 gap-1.5 border-e border-[var(--line-soft)] backdrop-blur h-[calc(100vh-74px)] p-3 transition-[width] duration-200 ${
+        className={`hidden md:flex flex-col shrink-0 gap-1.5 border-e border-[var(--line-soft)] backdrop-blur h-screen p-3 transition-[width] duration-200 ${
           docked
-            ? "fixed top-[74px] start-0 z-40 bg-[var(--panel-solid)]"
-            : "sticky top-[74px] bg-[var(--panel)]"
+            ? "fixed top-0 start-0 z-40 bg-[var(--panel-solid)]"
+            : "sticky top-0 bg-[var(--panel)]"
         } ${open ? "w-[248px]" : "w-[68px]"} ${docked && open ? "shadow-2xl" : ""}`}
       >
         <button
