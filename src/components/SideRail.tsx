@@ -333,11 +333,11 @@ export default function SideRail() {
   }, []);
 
   const item = (active: boolean) =>
-    `flex items-center gap-3 rounded-xl h-11 px-3 text-[0.85rem] whitespace-nowrap overflow-hidden transition-colors ${
+    `flex items-center gap-3 rounded-xl h-11 px-4 text-[0.85rem] whitespace-nowrap overflow-hidden transition-colors ${
       active
         ? "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold"
         : "text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)]"
-    } ${open ? "" : "justify-center px-0 w-11"}`;
+    } ${open ? "" : "justify-center px-0"}`;
 
   const NAV = [
     { href: "/chat", key: "rail.new", icon: "edit", on: pathname.startsWith("/chat") },
@@ -347,13 +347,13 @@ export default function SideRail() {
   return (
     <>
       {/* حاجز يحجز عرض الشريط المطويّ وحده — فيبقى المحتوى ثابتًا مهما اتّسع الشريط */}
-      {docked && <div className="hidden md:block shrink-0 w-[68px]" aria-hidden />}
+      {docked && <div className="hidden md:block shrink-0 w-[76px]" aria-hidden />}
       <aside
         className={`hidden md:flex flex-col shrink-0 gap-1.5 border-e border-[var(--line-soft)] backdrop-blur h-screen p-3 transition-[width] duration-200 ${
           docked
             ? "fixed top-0 start-0 z-40 bg-[var(--panel-solid)]"
             : "sticky top-0 bg-[var(--panel)]"
-        } ${open ? "w-[248px]" : "w-[68px]"} ${docked && open ? "shadow-2xl" : ""}`}
+        } ${open ? "w-[288px]" : "w-[76px]"} ${docked && open ? "shadow-2xl" : ""}`}
       >
         {/* الشعار في رأس الشريط بلا إطار. يأخذ هندسة عناصر التنقّل نفسها
             (item) — لولا ذلك لاختلف حشوه وتزحزح مكانه عند فتح الشريط. */}
