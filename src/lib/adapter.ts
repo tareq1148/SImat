@@ -325,6 +325,23 @@ export function irToN8n(
             " — " +
             STRICT_JSON
           : STRICT_JSON + " أخرج النتيجة بمفتاح text داخل JSON: {\"text\": \"...\"}";
+      if (isDigestSend(irNode)) {
+        const aggName = `تجميع المدخلات: ${nodeName}`;
+        nodes.push({
+          id: `${irNode.id}-agg`,
+          name: aggName,
+          type: "n8n-nodes-base.aggregate",
+          typeVersion: 1,
+          position: [step(), Y],
+          parameters: {
+            aggregate: "aggregateAllItemData",
+            destinationFieldName: "items",
+          },
+        });
+        connectPrev(aggName);
+        prev = aggName;
+      }
+
       const llmNode: N8nNode = {
         id: irNode.id,
         name: nodeName,
@@ -460,6 +477,9 @@ export function irToN8n(
           parameters: { aggregate: "aggregateAllItemData", destinationFieldName: "items" },
         });
         connectPrev(aggName);
+        // بلا هذا يبقى التجميع فرعًا ميتًا: الوصل التالي يخرج من العقدة
+        // السابقة نفسها فيلتفّ حوله، فيظلّ التأليف يجري مرّة لكل عنصر.
+        prev = aggName;
       }
 
       const composeName = `تأليف: ${nodeName}`;
