@@ -3,19 +3,11 @@
 // شاشة الإنجاز — «وش صار» كمخطط معماري بلغة لوحة الرسم: مهامك ← وَتيرة ← النتائج
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useLang } from "@/lib/i18n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
 import { providerIcon } from "./icons";
 import WeeklyBars, { type WeekDatum } from "./WeeklyBars";
 
-const LEVEL_EN: Record<string, string> = {
-  "مبتدئ الأتمتة": "Automation Rookie",
-  "مُنجِز": "Achiever",
-  "متمكّن": "Proficient",
-  "خبير أتمتة": "Automation Expert",
-  "محترف وَتيرة": "Wateera Pro",
-};
 
 interface ProgressData {
   headline: {
@@ -52,139 +44,6 @@ interface ProgressData {
   };
 }
 
-/* ===== سلامة التشغيل: نسبة واحدة + الأعطال مشروحة بلغة صاحب المهمة ===== */
-
-function HealthCard({ health }: { health: ProgressData["health"] }) {
-  const { lang } = useLang();
-  const ar = lang === "ar";
-  const { score, runs, needs_attention: attention, incidents } = health;
-
-  // أخضر فوق 95، كهرماني 80-95، أحمر تحت 80 — العتبات نفسها لنقطة الحالة والحلقة
-  const tone =
-    score >= 95 ? "var(--ok)" : score >= 80 ? "var(--warn)" : "var(--bad)";
-  const clean = incidents.length === 0 && attention.length === 0;
-
-  return (
-    <div className="card p-6 rise-1">
-      <div className="flex items-start justify-between flex-wrap gap-4 mb-4">
-        <div>
-          <h2 className="font-semibold text-[0.95rem]">
-            {ar ? "سلامة التشغيل" : "System health"}
-          </h2>
-          <p className="text-[0.76rem] text-[var(--text-soft)] mt-1">
-            {runs.settled === 0
-              ? ar
-                ? "لا توجد تشغيلات محسومة بعد"
-                : "No settled runs yet"
-              : ar
-                ? `${runs.ok} من ${runs.settled} تشغيلة نجحت خلال ٣٠ يومًا`
-                : `${runs.ok} of ${runs.settled} runs succeeded in 30 days`}
-          </p>
-        </div>
-
-        {/* حلقة النسبة */}
-        <div className="relative shrink-0 w-[74px] h-[74px]">
-          <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-            <circle
-              cx="18"
-              cy="18"
-              r="15.5"
-              fill="none"
-              stroke="var(--line)"
-              strokeWidth="3"
-            />
-            <circle
-              cx="18"
-              cy="18"
-              r="15.5"
-              fill="none"
-              stroke={tone}
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray={`${(score / 100) * 97.4} 97.4`}
-            />
-          </svg>
-          <span
-            className="absolute inset-0 flex items-center justify-center text-[1.05rem] font-bold tabular-nums"
-            style={{ color: tone }}
-          >
-            {score}%
-          </span>
-        </div>
-      </div>
-
-      {clean ? (
-        <p className="text-[0.82rem] text-[var(--text-soft)] flex items-center gap-2">
-          <span className="status-dot" style={{ background: "var(--ok)" }} />
-          {ar
-            ? "كل مساراتك سليمة — لا أعطال مسجّلة."
-            : "All flows are healthy — no incidents recorded."}
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {incidents.map((inc) => (
-            <div
-              key={inc.run_id}
-              className="rounded-xl border p-3.5"
-              style={{
-                borderColor:
-                  inc.severity === "transient" ? "var(--line)" : "var(--accent-bg)",
-                background: "var(--well)",
-              }}
-            >
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span
-                  className="status-dot shrink-0"
-                  style={{
-                    background:
-                      inc.severity === "transient" ? "var(--warn)" : "var(--bad)",
-                  }}
-                />
-                <span className="text-[0.78rem] font-semibold">{inc.flow_name}</span>
-                <span className="text-[0.66rem] text-[var(--text-soft)]">
-                  {new Date(inc.at).toLocaleDateString(ar ? "ar-SA" : "en-GB", {
-                    day: "2-digit",
-                    month: "2-digit",
-                  })}
-                </span>
-                {inc.severity === "transient" && (
-                  <span className="chip text-[0.62rem] py-0.5">
-                    {ar ? "عارض" : "Transient"}
-                  </span>
-                )}
-              </div>
-              <p className="text-[0.8rem] leading-relaxed text-[var(--text)] mb-2.5">
-                {ar ? inc.message : inc.message_en}
-              </p>
-              <Link
-                href={inc.href}
-                className="btn btn-primary text-[0.72rem] py-1.5 px-3.5"
-              >
-                {inc.action_label}
-              </Link>
-            </div>
-          ))}
-
-          {attention.length > 0 && (
-            <p className="text-[0.75rem] text-[var(--text-soft)] pt-1">
-              {ar
-                ? `${attention.length} مسار يحتاج انتباهك: `
-                : `${attention.length} flow(s) need attention: `}
-              {attention.map((f, i) => (
-                <span key={f.id}>
-                  {i > 0 && "، "}
-                  <Link href={`/flow/${f.id}`} className="text-[var(--accent)]">
-                    {f.name}
-                  </Link>
-                </span>
-              ))}
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ===== المخطط المعماري: نفس لغة عقد لوحة الرسم ===== */
 
@@ -443,13 +302,12 @@ export default function ProgressView() {
       </div>
     );
 
-  const { headline, weeks, level, plan, health } = data;
+  const { headline, weeks } = data;
   const hours = Math.round((headline.minutes_saved_this_week / 60) * 10) / 10;
   const chartWeeks = weeks.map((w) => ({
     ...w,
     label: w.is_today ? t("prog.today") : (w.date ?? w.label),
   }));
-  const levelName = lang === "en" ? (LEVEL_EN[level.name] ?? level.name) : level.name;
   const wowChip =
     headline.wow > 0
       ? {
@@ -489,93 +347,10 @@ export default function ProgressView() {
         />
       </div>
 
-      <HealthCard health={health} />
-
       <div className="card p-6 rise-1">
         <h2 className="font-semibold text-[0.95rem] mb-4">{t("prog.chart")}</h2>
         <WeeklyBars weeks={chartWeeks} />
       </div>
-
-      <div className="card p-5 rise-2">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-          <h2 className="font-semibold text-[0.9rem]">
-            {t("prog.level")} {levelName}
-          </h2>
-          <span className="text-xs text-[var(--text-soft)]">
-            {level.total_closed} {t("prog.totalClosed")}
-          </span>
-        </div>
-        <div className="h-2 rounded-full bg-[var(--line-soft)] overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700"
-            style={{ width: `${level.progress}%`, background: "var(--accent-bg)" }}
-          />
-        </div>
-        <p className="text-xs text-[var(--text-soft)] mt-2">
-          {level.next
-            ? lang === "ar"
-              ? `باقي ${level.next.remaining} ${level.next.remaining === 1 ? "مهمة" : "مهام"} لمستوى «${level.next.name}»`
-              : `${level.next.remaining} ${level.next.remaining === 1 ? "task" : "tasks"} to reach “${LEVEL_EN[level.next.name] ?? level.next.name}”`
-            : lang === "ar"
-              ? "وصلت أعلى مستوى."
-              : "You reached the top level."}
-        </p>
-      </div>
-
-      {/* أفكار جاهزة — تبدأ محادثة بالنص مباشرة */}
-      <div className="rise-3">
-        <h2 className="font-semibold text-[0.95rem] mb-1">{t("prog.ideas")}</h2>
-        <p className="text-xs text-[var(--text-soft)] mb-3">{t("prog.ideasSub")}</p>
-        <div className="flex gap-2 flex-wrap">
-          {(lang === "ar"
-            ? [
-                "سجّل طلبات العملاء من الإيميل في جدول ورد عليهم بتأكيد",
-                "أرسل لي على بريدي ملخص رسائل تيليجرام كل مساء",
-                "انشر صورة اليوم على إنستقرام بكابشن جاهز",
-                "لخّص اجتماعات الأسبوع وأرسلها للفريق على Slack",
-              ]
-            : [
-                "Log email orders into a sheet and send confirmations",
-                "Email me a summary of Telegram messages every evening",
-                "Post today's photo to Instagram with a ready caption",
-                "Summarize this week's meetings and send them to Slack",
-              ]
-          ).map((idea) => (
-            <Link
-              key={idea}
-              href={`/chat?q=${encodeURIComponent(idea)}`}
-              className="rounded-full border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2 text-[0.78rem] text-[var(--text-soft)] hover:text-[var(--accent)] hover:border-[var(--accent-bg)] transition-colors"
-            >
-              {idea}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {plan.length > 0 && (
-      <div className="rise-3">
-        <h2 className="font-semibold text-[0.95rem] mb-3">{t("prog.plan")}</h2>
-        <div className="space-y-2.5">
-          {plan.map((p, i) => (
-            <div key={i} className="card p-4 flex items-center gap-3.5">
-              <span
-                className="w-7 h-7 shrink-0 rounded-full text-[0.78rem] font-bold text-white flex items-center justify-center"
-                style={{ background: "var(--accent-bg)" }}
-              >
-                {i + 1}
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-[0.85rem] mb-0.5">{p.title}</div>
-                <p className="text-xs text-[var(--text-soft)] leading-relaxed">{p.why}</p>
-              </div>
-              <Link href={p.cta.href} className="btn btn-primary text-xs shrink-0">
-                {p.cta.label}
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-      )}
     </div>
   );
 }
