@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase/server";
 import { createN8nCredential, hasN8nKey } from "@/lib/n8n";
 import { PROVIDER_LABELS, type Provider } from "@/lib/types";
 import { activeConnections } from "@/lib/connections";
+import { storeTelegramToken } from "@/lib/telegram-chat";
 
 // خريطة اتصالات المنصة: حسابات Google مربوطة مسبقًا في المحرك لحساب هذا المستخدم الأول
 // (OAuth لكل مستخدم على حدة يأتي في مرحلة لاحقة — PRD يسمح بمستخدم واحد في MVP)
@@ -112,6 +113,9 @@ export async function POST(req: NextRequest) {
       };
       label = `Telegram (@${botInfo.username})`;
       if (botInfo.chat_id) metadata.chat_id = botInfo.chat_id;
+      // يُحفظ التوكن في الجدول المقفل: من ربط قبل أن يراسل بوته يبقى معرّف
+      // محادثته مجهولًا، وبلا التوكن لا سبيل لالتقاطه إلا بإعادة إدخاله.
+      await storeTelegramToken(user.id, token);
     }
 
     const { type, data } = maker(token);

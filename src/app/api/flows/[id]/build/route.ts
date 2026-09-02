@@ -5,6 +5,7 @@ import { activeConnections } from "@/lib/connections";
 import { validateIR } from "@/lib/validate-ir";
 import { stripApprovals } from "@/lib/ir";
 import { resolveSpreadsheetId } from "@/lib/google-lookup";
+import { resolveTelegramChatId } from "@/lib/telegram-chat";
 import {
   activateWorkflow,
   createWorkflow,
@@ -55,11 +56,23 @@ export async function POST(
   const tgMeta = (conns ?? []).find((c) => c.provider === "telegram")?.metadata as
     | { chat_id?: string }
     | undefined;
-  if (tgMeta?.chat_id) {
-    ir.nodes.forEach((n) => {
-      if (n.provider === "telegram" && !n.params.chat_id)
-        n.params.chat_id = String(tgMeta.chat_id);
-    });
+  const tgNodes = ir.nodes.filter(
+    (n) => n.provider === "telegram" && !n.params.chat_id
+  );
+  if (tgNodes.length > 0) {
+    // المحفوظ عند الربط أولًا، وإلا نسأل تيليجرام مباشرةً — فمن راسل بوته
+    // بعد الربط يُلتقط معرّفه هنا بلا أن يُطالَب بإعادة إدخال التوكن.
+    let chatId = tgMeta?.chat_id ? String(tgMeta.chat_id) : null;
+    if (!chatId) chatId = await resolveTelegramChatId(user.id);
+    if (chatId) {
+      tgNodes.forEach((n) => (n.params.chat_id = chatId));
+      // يُحفظ ليُستعمل مباشرةً في البناءات التالية
+      await supabase
+        .from("connections")
+        .update({ metadata: { ...(tgMeta ?? {}), chat_id: chatId } })
+        .eq("provider", "telegram")
+        .eq("status", "connected");
+    }
   }
 
   // المستخدم ربط حسابه، فاسم الجدول يكفي: نحلّه إلى معرّف من Drive حسابه
