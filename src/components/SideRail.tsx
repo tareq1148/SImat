@@ -406,7 +406,10 @@ export default function SideRail() {
         )}
 
         {/* أسفل: الإعدادات والحساب */}
-        <div className={`mt-auto flex flex-col gap-1.5 ${open ? "" : "items-center"}`}>
+        {/* بلا items-center: كان يُطبَّق لحظةَ الطيّ والشريط ما زال عريضًا،
+            فينكمش الزرّ إلى محتواه ويتوسّط العرض القديم ثم يرتدّ. العنصر
+            يملأ العمود وحده، وحشوه يتكفّل بالمحاذاة في الحالتين. */}
+        <div className="mt-auto flex flex-col gap-1.5">
           <button onClick={() => setDrawer(true)} title={t("nav.settings")} className={item(false)}>
             <Icon name="gear" />
             {open && <span>{t("drawer.title")}</span>}
