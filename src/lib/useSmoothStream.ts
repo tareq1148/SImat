@@ -24,6 +24,14 @@ export interface SmoothStream {
   push: (chunk: string) => void;
   /** انتهى الورود: يُترك المعروض يلحق بالهدف ثم يتوقّف */
   finish: () => void;
+  /** يحبس المعروض: تتجمّع الدفعات ولا يظهر منها حرف */
+  hold: () => void;
+  /**
+   * يطلق المحبوس. مع مدّة (ملّي ثانية) يُوزَّع الباقي عليها فينتهي النصّ
+   * مع انتهائها — وهي مدّة النطق، فيسير الحرف مع الصوت. وبلا مدّة يعود
+   * إلى وتيرته المعتادة.
+   */
+  release: (durationMs?: number) => void;
   /** يوقف الإطارات المعلّقة عند التفكيك */
   dispose: () => void;
   /** يحدّث المتلقّي — يُستدعى من تأثير لا أثناء العرض */
@@ -37,6 +45,11 @@ function createStream(): SmoothStream {
   let shown = 0;
   let raf = 0;
   let streaming = false;
+  // محبوس: النصّ يتجمّع ولا يظهر — ينتظر بدء النطق
+  let holding = false;
+  // اللحظة التي يجب أن يكتمل عندها العرض — تُشتقّ من مدّة الصوت
+  let paceEnd = 0;
+  let lastT = 0;
 
   const flush = () => {
     shown = target.length;
@@ -44,15 +57,26 @@ function createStream(): SmoothStream {
   };
 
   const tick = () => {
+    const now = performance.now();
+    const dt = lastT ? Math.max(1, now - lastT) : 16;
+    lastT = now;
+
     const remaining = target.length - shown;
     if (remaining > 0) {
-      // نحو عُشر المتبقّي في كل إطار: تسارعٌ لطيف يذيب التراكم بلا وثبة
-      shown = Math.min(target.length, shown + Math.max(1, Math.round(remaining / 10)));
+      // مع الصوت: يُقسَّم الباقي على ما بقي من زمن النطق فينتهيان معًا. وإن
+      // تأخّر العرض حتى انقضى الصوت لحق دفعةً واحدة بدل أن يتخلّف.
+      // وبلا صوت: نحو عُشر المتبقّي في كل إطار — تسارعٌ لطيف يذيب التراكم.
+      const step = paceEnd
+        ? Math.max(1, Math.ceil(remaining * (dt / Math.max(dt, paceEnd - now))))
+        : Math.max(1, Math.round(remaining / 10));
+      shown = Math.min(target.length, shown + step);
       onText(target.slice(0, shown));
     }
     // يتوقّف حين يلحق المعروضُ بالهدف ولا مزيد قادم
     if (!streaming && shown >= target.length) {
       raf = 0;
+      lastT = 0;
+      paceEnd = 0;
       return;
     }
     raf = requestAnimationFrame(tick);
@@ -69,9 +93,13 @@ function createStream(): SmoothStream {
       shown = 0;
       raf = 0;
       streaming = true;
+      holding = false;
+      paceEnd = 0;
+      lastT = 0;
     },
     push(chunk: string) {
       target += chunk;
+      if (holding) return;
       if (prefersReducedMotion()) {
         flush();
         return;
@@ -80,6 +108,7 @@ function createStream(): SmoothStream {
     },
     finish() {
       streaming = false;
+      if (holding) return; // ينتظر إطلاقًا من المتصل — النطق أو مهلة أمانه
       if (prefersReducedMotion()) {
         if (raf) cancelAnimationFrame(raf);
         raf = 0;
@@ -87,6 +116,23 @@ function createStream(): SmoothStream {
         return;
       }
       if (shown < target.length) ensureRunning();
+    },
+    hold() {
+      holding = true;
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+    },
+    release(durationMs = 0) {
+      if (!holding && !durationMs) return;
+      holding = false;
+      lastT = 0;
+      // بلا مدّة — تعذّر النطق أو جهلنا طوله — تعود الوتيرة المعتادة
+      paceEnd = durationMs > 0 ? performance.now() + durationMs : 0;
+      if (prefersReducedMotion() && !durationMs) {
+        flush();
+        return;
+      }
+      if (shown < target.length || streaming) ensureRunning();
     },
     dispose() {
       if (raf) cancelAnimationFrame(raf);

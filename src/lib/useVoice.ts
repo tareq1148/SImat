@@ -268,7 +268,15 @@ export function useVoice(
 
   // force: وضع المحادثة الصوتية ينطق دائمًا، بغض النظر عن مفتاح «اسمع الردود»
   const speak = useCallback(
-    async (text: string, force = false) => {
+    async (
+      text: string,
+      force = false,
+      /**
+       * يُستدعى لحظة انطلاق الصوت ومعه طوله بالملّي ثانية (صفرٌ إن جُهل).
+       * به تسير الكتابة على الشاشة مع النطق بدل أن تسبقه.
+       */
+      onStart?: (durationMs: number) => void
+    ) => {
       if ((!speakEnabled && !force) || !text.trim()) return;
       if (mode === "server" && serverTts) {
         try {
@@ -283,7 +291,11 @@ export function useVoice(
           audioRef.current?.pause();
           const audio = new Audio(url);
           audioRef.current = audio;
-          audio.onplay = () => setSpeaking(true);
+          audio.onplay = () => {
+            setSpeaking(true);
+            const d = audio.duration;
+            onStart?.(Number.isFinite(d) && d > 0 ? d * 1000 : 0);
+          };
           audio.onpause = () => setSpeaking(false);
           audio.onended = () => {
             setSpeaking(false);
@@ -300,7 +312,11 @@ export function useVoice(
         const u = new SpeechSynthesisUtterance(text);
         u.lang = "ar-SA";
         u.rate = 1.05;
-        u.onstart = () => setSpeaking(true);
+        // نطق المتصفح لا يُعلن طوله، فيُترك العرض على وتيرته
+        u.onstart = () => {
+          setSpeaking(true);
+          onStart?.(0);
+        };
         u.onend = () => setSpeaking(false);
         u.onerror = () => setSpeaking(false);
         window.speechSynthesis.speak(u);

@@ -161,6 +161,24 @@ export default function ChatPage() {
     ]);
     stream.begin();
 
+    // في الوضع الصوتي يُحبس النصّ حتى ينطلق الصوت، ثم يُوزَّع على مدّته
+    // فيسير الحرف مع الكلمة. وبدون الحبس يكتمل النصّ على الشاشة قبل أن
+    // تُنطق أوّل كلمة — لأن الحروف تصل بالبثّ والصوت ينتظر توليده كاملًا.
+    let released = false;
+    let safety: ReturnType<typeof setTimeout> | null = null;
+    const releaseText = (durationMs = 0) => {
+      if (released) return;
+      released = true;
+      if (safety) clearTimeout(safety);
+      safety = null;
+      stream.release(durationMs);
+    };
+    if (voiceModeRef.current) {
+      stream.hold();
+      // شبكةُ أمان: إن تعذّر النطق لأي سبب لا يبقى النصّ محبوسًا إلى الأبد
+      safety = setTimeout(() => releaseText(0), 6000);
+    }
+
     try {
       const res = await fetch("/api/interview", {
         method: "POST",
@@ -204,7 +222,7 @@ export default function ChatPage() {
             // فيسمعها المستخدم بعد ~3 ثوانٍ بدل ~13
             if (voiceModeRef.current && assistantText.trim() && !spoken) {
               spoken = true;
-              voice.speak(speechText(assistantText), true);
+              voice.speak(speechText(assistantText), true, (ms) => releaseText(ms));
             }
           }
           else if (evt.type === "delta") {
@@ -223,10 +241,13 @@ export default function ChatPage() {
       setOptions(extractOptions(assistantText));
       // في الوضع الصوتي ينطق دائمًا، وإلا يحترم مفتاح «اسمع الردود»
       if (assistantText.trim() && !spoken)
-        voice.speak(speechText(assistantText), voiceModeRef.current);
+        voice.speak(speechText(assistantText), voiceModeRef.current, (ms) =>
+          releaseText(ms)
+        );
       // اكتملت المواصفة ← يُولَّد المسار مباشرةً وتُفتح مساحة العمل
       if (ready) await evaluate(sid ?? undefined);
     } catch (err) {
+      releaseText(0); // خطأٌ في الأثناء: لا يُترك المكتوب محبوسًا خلف صوتٍ لن يأتي
       stream.finish();
       setError(err instanceof Error ? err.message : "حدث خطأ");
       setMessages((m) => m.slice(0, -1));
