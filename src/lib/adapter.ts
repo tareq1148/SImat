@@ -1196,9 +1196,44 @@ export function irToN8n(
         /download|تنزيل|جلب|fetch_file|get_file/i.test(
           `${before.operation} ${before.label}`
         );
-      const imageRef = irNode.params.image_url
+      const rawImageRef = irNode.params.image_url
         ? JSON.stringify(String(irNode.params.image_url))
         : "Object.values($json).find(v => typeof v === 'string' && v.startsWith('http'))";
+      // روابط درايف التي ينسخها المستخدم روابط عرضٍ لا تنزيل: من يجلبها
+      // يستقبل صفحة HTML لا صورة، فيردّ remove.bg «Is the given file an
+      // image?». نحوّلها إلى صيغة التنزيل المباشر، وما ليس درايف يمرّ كما هو.
+      const imageRef =
+        "(u => { const s = String(u || ''); if (!/drive\\.google\\.com|docs\\.google\\.com/.test(s)) return s;" +
+        " const m = s.match(/\\/d\\/([-\\w]{10,})/) || s.match(/[?&]id=([-\\w]{10,})/);" +
+        " return m ? 'https://drive.google.com/uc?export=download&id=' + m[1] : s; })(" +
+        rawImageRef +
+        ")";
+      // الجدول يُقرأ كاملًا، وفيه صفوفٌ بلا صورة (فارغة أو لم تُملأ بعد).
+      // remove.bg يُنادى مرّة لكل صفّ، فيردّ على الفارغ «زوّدني بالمصدر»
+      // ويسقط التنفيذ كلّه. نُسقط ما لا صورة فيه قبل أن يصل إليه.
+      if (!binaryUpstream) {
+        const filterName = "صفوف فيها صورة";
+        nodes.push({
+          id: `${irNode.id}-filter`,
+          name: filterName,
+          type: "n8n-nodes-base.code",
+          typeVersion: 2,
+          position: [step(), Y],
+          parameters: {
+            jsCode: [
+              "// يُبقي الصفوف التي فيها رابطٌ صالح، ويُسقط سواها بلا خطأ",
+              "return $input.all().filter((i) =>",
+              "  Object.values(i.json).some(",
+              "    (v) => typeof v === 'string' && /^https?:\\/\\//.test(v.trim())",
+              "  )",
+              ");",
+            ].join("\n"),
+          },
+        });
+        connectPrev(filterName);
+        prev = filterName;
+      }
+
       const rbNode: N8nNode = {
         id: irNode.id,
         name: nodeName,
