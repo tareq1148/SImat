@@ -220,7 +220,7 @@ export function irToN8n(
   const buildSensitiveGate = (
     irNode: IRNode,
     actionNodeName: string,
-    connectAction: (fromName: string) => void
+    connectAction: (fromName: string, outputIndex?: number) => void
   ): string => {
     approvalCount += 1;
     const n = approvalCount;
@@ -274,66 +274,11 @@ export function irToN8n(
       },
     });
 
-    const askName = `طلب الموافقة ${n}`;
-    const askBody =
-      '={{ JSON.stringify({ run_token: $(\'' +
-      INPUT_NODE +
-      "').item.json.run_token, event: 'approval_requested', summary: " +
-      JSON.stringify(irNode.description) +
-      ", gated_step: " +
-      JSON.stringify(irNode.label) +
-      ", resume_url: $execution.resumeUrl, data: $json }) }}";
-    nodes.push(reportNode(`ask-${n}`, askName, x + 130, Y + 180, askBody));
-
-    const waitName = `انتظار قرارك ${n}`;
-    nodes.push({
-      id: `wait-${n}`,
-      name: waitName,
-      type: "n8n-nodes-base.wait",
-      typeVersion: 1.1,
-      position: [x + 390, Y + 180],
-      parameters: { resume: "webhook", httpMethod: "POST", options: {} },
-    });
-
-    const approvedIf = `تمت الموافقة؟ ${n}`;
-    nodes.push({
-      id: `approved-if-${n}`,
-      name: approvedIf,
-      type: "n8n-nodes-base.if",
-      typeVersion: 2.2,
-      position: [x + 650, Y + 180],
-      parameters: {
-        conditions: {
-          options: { caseSensitive: true, leftValue: "", typeValidation: "loose", version: 2 },
-          conditions: [
-            {
-              id: `c-appr-${n}`,
-              leftValue: "={{ $json.body.approved }}",
-              rightValue: "",
-              operator: { type: "boolean", operation: "true", singleValue: true },
-            },
-          ],
-          combinator: "and",
-        },
-      },
-    });
-
-    const rejectedName = `تبليغ الرفض ${n}`;
-    const rejectedBody =
-      '={{ JSON.stringify({ run_token: $(\'' +
-      INPUT_NODE +
-      "').item.json.run_token, event: 'finished', status: 'rejected', output: { message: 'رفض المستخدم تنفيذ الإجراء الحساس — أُوقف التشغيل.' } }) }}";
-    nodes.push(
-      reportNode(`rejected-${n}`, rejectedName, x + 910, Y + 350, rejectedBody)
-    );
-
     link(gateIf, previewName, 0);
-    link(gateIf, askName, 1);
-    link(askName, waitName);
-    link(waitName, approvedIf);
-    link(approvedIf, rejectedName, 1);
-    // فرع الموافقة → عقدة التنفيذ الفعلية
-    connectAction(approvedIf);
+    // بوابة الموافقة أُلغيت: الفرع الفعلي ينفّذ مباشرةً. تبقى قسمة وضع
+    // الاختبار وحدها — فالاختبار يعاين ولا يُرسل. لولا هذا لظلّ كل إرسال
+    // حقيقي واقفًا عند «انتظار قرارك» بلا شاشة تعتمده.
+    connectAction(gateIf, 1);
 
     // نقطة الالتقاء: المعاينة (اختبار) أو نتيجة التنفيذ الفعلي
     return `__merge__:${previewName}|${actionNodeName}`;
@@ -395,6 +340,37 @@ export function irToN8n(
     }
 
     if (irNode.provider === "gmail") {
+      // قراءة البريد لا تأليفه: كانت خطوة «اجلب الإيميلات» تُبنى عقدةَ إرسال
+      // فيؤلّف النموذج مستلمًا ونصًّا ويُرسل بريدًا بدل أن يقرأ شيئًا.
+      if (
+        /read|list|fetch|search|get_?mail|جلب|قراءة|اقرأ/i.test(
+          `${irNode.operation} ${irNode.label}`
+        )
+      ) {
+        const readMail: N8nNode = {
+          id: irNode.id,
+          name: nodeName,
+          type: "n8n-nodes-base.gmail",
+          typeVersion: 2.1,
+          position: [xPos, Y],
+          parameters: {
+            resource: "message",
+            operation: "getAll",
+            returnAll: false,
+            limit: Number(irNode.params.limit ?? 10),
+            simple: true,
+            filters: {
+              q: String(irNode.params.query ?? "newer_than:1d"),
+            },
+          },
+        };
+        if (creds.gmail) readMail.credentials = { gmailOAuth2: creds.gmail };
+        nodes.push(readMail);
+        connectPrev(nodeName);
+        prev = nodeName;
+        continue;
+      }
+
       // تأليف محتوى الرسالة أولًا ثم الإرسال
       const composeName = `تأليف: ${nodeName}`;
       nodes.push({
@@ -446,10 +422,10 @@ export function irToN8n(
       if (creds.gmail) gmailNode.credentials = { gmailOAuth2: creds.gmail };
 
       // PRD: كل إرسال يمر ببوابة موافقة مهما كان تصنيف المواصفة — لا استثناء
-      const mergePoint = buildSensitiveGate(irNode, sendName, (fromName) => {
+      const mergePoint = buildSensitiveGate(irNode, sendName, (fromName, out = 0) => {
         gmailNode.position = [x + 910, Y + 180];
         nodes.push(gmailNode);
-        link(fromName, sendName, 0);
+        link(fromName, sendName, out);
       });
       link(composeName, `وضع الاختبار؟ ${approvalCount}`);
       prev = mergePoint;
@@ -527,10 +503,10 @@ export function irToN8n(
         msgNode.credentials = { slackApi: creds.slack };
 
       // PRD: كل إرسال يمر ببوابة موافقة مهما كان تصنيف المواصفة — لا استثناء
-      const msgMergePoint = buildSensitiveGate(irNode, sendName, (fromName) => {
+      const msgMergePoint = buildSensitiveGate(irNode, sendName, (fromName, out = 0) => {
         msgNode.position = [x + 910, Y + 180];
         nodes.push(msgNode);
-        link(fromName, sendName, 0);
+        link(fromName, sendName, out);
       });
       link(composeName, `وضع الاختبار؟ ${approvalCount}`);
       prev = msgMergePoint;
@@ -622,10 +598,10 @@ export function irToN8n(
         publishNode.credentials = { facebookGraphApi: creds.instagram };
       }
 
-      const igMerge = buildSensitiveGate(irNode, nodeName, (fromName) => {
+      const igMerge = buildSensitiveGate(irNode, nodeName, (fromName, out = 0) => {
         nodes.push(containerNode);
         nodes.push(publishNode);
-        link(fromName, containerName, 0);
+        link(fromName, containerName, out);
         link(containerName, nodeName);
       });
       link(composeName, `وضع الاختبار؟ ${approvalCount}`);
@@ -689,9 +665,9 @@ export function irToN8n(
       if (creds.tiktok)
         ttNode.credentials = { httpHeaderAuth: creds.tiktok };
 
-      const ttMerge = buildSensitiveGate(irNode, nodeName, (fromName) => {
+      const ttMerge = buildSensitiveGate(irNode, nodeName, (fromName, out = 0) => {
         nodes.push(ttNode);
-        link(fromName, nodeName, 0);
+        link(fromName, nodeName, out);
       });
       link(composeName, `وضع الاختبار؟ ${approvalCount}`);
       prev = ttMerge;

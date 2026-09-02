@@ -64,19 +64,23 @@ export async function POST(
 
   // المستخدم ربط حسابه، فاسم الجدول يكفي: نحلّه إلى معرّف من Drive حسابه
   // بدل مطالبته بلصق رابط. يبقى النقص ظاهرًا إن لم يوجد أو تعدّدت المطابقات.
+  // النموذج يخلط أحيانًا بين اسم المستند (spreadsheet_name) واسم الورقة
+  // (sheet_name) — «جدول اسمه منتجات» يحتملهما. فنجرّب الاثنين.
   const sheetsNeedingId = ir.nodes.filter(
-    (n) =>
-      n.provider === "google_sheets" &&
-      !n.params.spreadsheet_url &&
-      typeof n.params.spreadsheet_name === "string" &&
-      n.params.spreadsheet_name.trim()
+    (n) => n.provider === "google_sheets" && !n.params.spreadsheet_url
   );
   for (const node of sheetsNeedingId) {
-    const found = await resolveSpreadsheetId(
-      user.id,
-      String(node.params.spreadsheet_name)
-    );
-    if (found) node.params.spreadsheet_url = found;
+    const byDoc = String(node.params.spreadsheet_name ?? "").trim();
+    const byTab = String(node.params.sheet_name ?? "").trim();
+    const candidate = byDoc || byTab;
+    if (!candidate) continue;
+
+    const found = await resolveSpreadsheetId(user.id, candidate);
+    if (!found) continue;
+    node.params.spreadsheet_url = found;
+    // إن كان الاسم في الحقيقة اسم المستند، فهو ليس اسم ورقة — يُترك ليقع
+    // الاختيار على الورقة الأولى بدل البحث عن ورقة بهذا الاسم فتُفقد.
+    if (!byDoc && byTab) delete node.params.sheet_name;
   }
 
   const credMap: CredentialMap = {};
