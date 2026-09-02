@@ -101,6 +101,19 @@ const NO_PLUMBING =
   "ممنوع منعًا باتًا أن تذكر معرّفات أو روابط أو أسماء حقول تقنية أو حمولة التشغيل " +
   "أو أنك داخل أتمتة أو أن البيانات تجريبية — القارئ لا يعرف شيئًا عن ذلك ولا يعنيه.";
 
+
+// هل هذه خطوة إرسال «ملخّص واحد» أم «رسالة لكل عنصر»؟
+// n8n ينفّذ كل عقدة مرة لكل عنصر داخل، فخطوة إرسال بعد جلب عشرين إيميلًا
+// تُرسل عشرين رسالة. حين تكون النية تلخيصًا نجمع العناصر في عنصر واحد أولًا.
+// نبقى محافظين: الافتراضي هو السلوك القديم (رسالة لكل عنصر)، ولا نجمع إلا
+// حين يقول الوصف صراحةً إنه ملخّص أو تقرير أو تجميع.
+const DIGEST_RE =
+  /ملخّ?ص|تلخيص|لخّ?ص|تقرير|مجمّ?ع|تجميع|خلاصة|digest|summar|report|combined|overview/i;
+
+function isDigestSend(irNode: IRNode): boolean {
+  return DIGEST_RE.test(`${irNode.label} ${irNode.description}`);
+}
+
 export function irToN8n(
   ir: WorkflowIR,
   creds: CredentialMap
@@ -434,6 +447,21 @@ export function irToN8n(
 
     if (irNode.provider === "telegram" || irNode.provider === "slack") {
       const isTelegram = irNode.provider === "telegram";
+      // ملخّص واحد؟ اجمع كل العناصر في عنصر واحد قبل التأليف، وإلا صارت
+      // رسالة مستقلة لكل إيميل بدل رسالة واحدة مرتّبة.
+      if (isDigestSend(irNode)) {
+        const aggName = `تجميع العناصر: ${nodeName}`;
+        nodes.push({
+          id: `${irNode.id}-agg`,
+          name: aggName,
+          type: "n8n-nodes-base.aggregate",
+          typeVersion: 1,
+          position: [step(), Y],
+          parameters: { aggregate: "aggregateAllItemData", destinationFieldName: "items" },
+        });
+        connectPrev(aggName);
+      }
+
       const composeName = `تأليف: ${nodeName}`;
       nodes.push({
         id: `${irNode.id}-compose`,
@@ -445,7 +473,11 @@ export function irToN8n(
           promptType: "define",
           text: composePromptFor(
             irNode,
-            'أخرج JSON بالمفاتيح {"text": "نص الرسالة"}. ' + STRICT_JSON
+            'أخرج JSON بالمفاتيح {"text": "نص الرسالة"}. ' +
+              (isDigestSend(irNode)
+                ? "المدخل يحوي كل العناصر في الحقل items — اكتب رسالة واحدة مرتّبة تجمعها كلها، بنقاط قصيرة، بلا تكرار، وبلا رموز تنسيق. "
+                : "") +
+            STRICT_JSON
           ),
           messages: {
             messageValues: [
@@ -473,8 +505,12 @@ export function irToN8n(
               chatId:
                 irNode.params.chat_id ??
                 "={{ $('" + INPUT_NODE + "').item.json.payload.chat_id }}",
-              text: `={{ JSON.parse(${composeRef}).text }}`,
-              additionalFields: { appendAttribution: false },
+              // العقدة تفسّر النصّ MarkdownV2 حيث حتى «.» و«-» رموز خاصة، فأي
+              // ملخّص يكتبه نموذج يُرفض بـ«can't parse entities» وتصل صفر رسائل
+              // بلا سبب ظاهر. إفراغ parse_mode لا يعطّل التفسير — الحل HTML:
+              // رموزه الخاصة ثلاثة فقط، ونادرة في نصّ عربي، ونحذفها من المصدر.
+              text: `={{ String(JSON.parse(${composeRef}).text).split("<").join("").split(">").join("").split("&").join("و") }}`,
+              additionalFields: { appendAttribution: false, parse_mode: "HTML" },
             },
           }
         : {
