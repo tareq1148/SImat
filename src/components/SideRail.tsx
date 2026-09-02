@@ -299,17 +299,25 @@ export default function SideRail() {
 
   useEffect(() => {
     try {
-      setOpen(localStorage.getItem("wt_rail") === "1");
+      // فتحُ صفحة مسار مباشرةً يبدأ مطويًّا — التفضيل المحفوظ لسائر الشاشات
+      if (!window.location.pathname.startsWith("/flow/"))
+        setOpen(localStorage.getItem("wt_rail") === "1");
     } catch {}
   }, []);
 
   // رسوّ مساحة العمل تُبلّغ عنه شاشة المحادثة: عندها يُطوى الشريط ويعلو
   // فوق المحادثة عند فتحه بدل أن يدفعها. التفضيل المحفوظ لا يُمَس.
-  const [docked, setDocked] = useState(false);
+  //
+  // وصفحة المسار مرسوّة بحكم مسارها لا بإشعارٍ منها: الإشعار يصل بعد وصول
+  // الصفحة، فكان هيكل الانتظار يُرسم والشريط مفتوح ثم ينكمش الشريط فتتّسع
+  // الشاشة فجأة. والمسار يُعرف قبل الصفحة، فيثبت العرض من أوّل لحظة.
+  const onFlow = pathname.startsWith("/flow/");
+  const [dockedByEvent, setDockedByEvent] = useState(false);
+  const docked = dockedByEvent || onFlow;
   useEffect(() => {
     const onDock = (e: Event) => {
       const on = !!(e as CustomEvent<{ docked: boolean }>).detail?.docked;
-      setDocked(on);
+      setDockedByEvent(on);
       if (on) setOpen(false);
       else
         try {
@@ -319,6 +327,15 @@ export default function SideRail() {
     window.addEventListener("wt:workspace", onDock);
     return () => window.removeEventListener("wt:workspace", onDock);
   }, []);
+
+  // الانتقال إلى صفحة مسار يطوي الشريط كما يطويه الإشعار — والخروج منها
+  // يعيده من التفضيل المحفوظ عبر إشعار فكّ الرسوّ. والتعديل أثناء العرض
+  // لا في تأثير: التأثير يرسمه مفتوحًا أوّلًا ثم يطويه، فيومض.
+  const [wasOnFlow, setWasOnFlow] = useState(onFlow);
+  if (onFlow !== wasOnFlow) {
+    setWasOnFlow(onFlow);
+    if (onFlow) setOpen(false);
+  }
 
   const toggle = useCallback(() => {
     setOpen((v) => {
