@@ -25,7 +25,12 @@ export function buildIR(spec: TaskSpec, flowId: string): WorkflowIR {
     operation:
       spec.trigger.type === "schedule" ? "schedule" : "platform_trigger",
     description: spec.trigger.description,
-    params: {},
+    // الموعد يُحفظ حقلًا يُقرأ لا وصفًا في العنوان: العنوان للعرض، وهذا
+    // ما يبني منه المحوِّل مؤقّت المحرّك
+    params:
+      spec.trigger.type === "schedule" && spec.trigger.schedule
+        ? { schedule: spec.trigger.schedule }
+        : {},
     provider: null,
     sensitive: "none",
     needsApproval: false,

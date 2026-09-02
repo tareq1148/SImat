@@ -171,7 +171,7 @@ export async function POST(
     );
   }
 
-  const payload = irToN8n(ir, credMap);
+  const payload = irToN8n(ir, credMap, flow.id);
 
   let n8nId = flow.n8n_workflow_id as string | null;
   try {

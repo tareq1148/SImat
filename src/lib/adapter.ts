@@ -3,6 +3,7 @@
 
 import type { IRNode, Provider, WorkflowIR } from "./types";
 import type { N8nWorkflowPayload } from "./n8n";
+import { parseSchedule } from "./schedule";
 
 export interface CredentialMap {
   gmail?: { id: string; name: string };
@@ -116,7 +117,9 @@ function isDigestSend(irNode: IRNode): boolean {
 
 export function irToN8n(
   ir: WorkflowIR,
-  creds: CredentialMap
+  creds: CredentialMap,
+  /** معرّف المسار — يصير رمز التشغيل للانطلاقات المجدولة التي لا طالب لها */
+  flowId?: string
 ): N8nWorkflowPayload {
   const nodes: N8nNode[] = [];
   const connections: Connections = {};
@@ -141,18 +144,40 @@ export function irToN8n(
   };
 
   // 1) المدخل
+  const inX = step();
   nodes.push({
     id: "webhook",
     name: "المدخل",
     type: "n8n-nodes-base.webhook",
     typeVersion: 2.1,
-    position: [step(), Y],
+    position: [inX, Y],
     parameters: {
       httpMethod: "POST",
       path: ir.webhookPath,
       responseMode: "onReceived",
     },
   });
+
+  // 1‑ب) الموعد — مدخلٌ ثانٍ للمسار المجدول.
+  //
+  // الـwebhook ينتظر نداءً ولا ينطلق من نفسه، فمسارٌ لا مؤقّت له لا يعمل
+  // إلا بضغطة زرّ. ويبقى الـwebhook معه لا بدلًا منه: منه يأتي الاختبار
+  // والتشغيل اليدوي، ومن المؤقّت يأتي الموعد. كلاهما يصبّ في تجهيز المدخلات.
+  const triggerIR = ir.nodes.find((n) => n.type === "trigger");
+  const scheduleText =
+    triggerIR?.operation === "schedule"
+      ? triggerIR.params?.schedule || triggerIR.label
+      : null;
+  if (scheduleText) {
+    nodes.push({
+      id: "schedule",
+      name: "الموعد",
+      type: "n8n-nodes-base.scheduleTrigger",
+      typeVersion: 1.2,
+      position: [inX, Y + 190],
+      parameters: { rule: parseSchedule(scheduleText) },
+    });
+  }
 
   // 2) تجهيز المدخلات
   nodes.push({
@@ -165,23 +190,26 @@ export function irToN8n(
       mode: "manual",
       includeOtherFields: false,
       assignments: {
+        // المؤقّت لا يرسل body، فتُقرأ الحقول من كائنٍ بديل بدل أن ينكسر
+        // التعبير. ورمز التشغيل يقع على المسار نفسه حين لا طالب له —
+        // فيعرف المستقبِل لمن يسجّل الانطلاقة المجدولة.
         assignments: [
           {
             id: "a1",
             name: "run_token",
-            value: "={{ $json.body.run_token }}",
+            value: `={{ ($json.body || {}).run_token || '${flowId ? `flow:${flowId}` : ""}' }}`,
             type: "string",
           },
           {
             id: "a2",
             name: "test_mode",
-            value: "={{ $json.body.test_mode === true }}",
+            value: "={{ ($json.body || {}).test_mode === true }}",
             type: "boolean",
           },
           {
             id: "a3",
             name: "payload",
-            value: "={{ $json.body.input || {} }}",
+            value: "={{ ($json.body || {}).input || {} }}",
             type: "object",
           },
         ],
@@ -189,6 +217,7 @@ export function irToN8n(
     },
   });
   link("المدخل", INPUT_NODE);
+  if (scheduleText) link("الموعد", INPUT_NODE);
 
   // 3) تبليغ بدء التشغيل
   const startedBody =
@@ -1258,7 +1287,11 @@ export function irToN8n(
     link(prev, "تبليغ الانتهاء");
   }
 
-  const settings: N8nWorkflowPayload["settings"] = { executionOrder: "v1" };
+  // المواعيد تُقرأ بتوقيت الرياض: «٨ صباحًا» عند المستخدم لا عند خادم المحرّك
+  const settings: N8nWorkflowPayload["settings"] = {
+    executionOrder: "v1",
+    timezone: "Asia/Riyadh",
+  };
   if (process.env.N8N_ERROR_WORKFLOW_ID) {
     // أي فشل تنفيذ يُبلَّغ للمنصة عبر معالج الأخطاء العام (PRD 10.7)
     settings.errorWorkflow = process.env.N8N_ERROR_WORKFLOW_ID;

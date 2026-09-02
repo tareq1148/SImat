@@ -46,7 +46,7 @@ export interface N8nWorkflowPayload {
   name: string;
   nodes: unknown[];
   connections: Record<string, unknown>;
-  settings: { executionOrder: string; errorWorkflow?: string };
+  settings: { executionOrder: string; errorWorkflow?: string; timezone?: string };
 }
 
 export async function createWorkflow(

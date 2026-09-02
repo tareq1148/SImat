@@ -164,5 +164,37 @@ export async function POST(req: NextRequest) {
     return Response.json({ ok: true });
   }
 
+  // انطلاقة مجدولة: لا صفَّ سبقها، فالمؤقّت ينطلق من المحرّك لا من التطبيق.
+  // يُنشأ الصفّ عند البدء، ويُطابَق عند الانتهاء بمعرّف التنفيذ لا بالرمز —
+  // فالرمز واحدٌ لكل انطلاقات المسار ولا يميّز واحدةً من أخرى.
+  if (kind === "flow") {
+    const { data: flow } = await db
+      .from("flows")
+      .select("id, current_version")
+      .eq("id", refId)
+      .maybeSingle();
+    if (!flow) return Response.json({ error: "unknown flow" }, { status: 404 });
+
+    if (event.event === "started") {
+      await db.from("runs").insert({
+        flow_id: flow.id,
+        version: flow.current_version,
+        n8n_execution_id: event.execution_id ?? null,
+        status: "running",
+      });
+    } else if (event.event === "finished" && event.execution_id) {
+      await db
+        .from("runs")
+        .update({
+          status: event.status === "rejected" ? "rejected" : "success",
+          result: event.output ?? null,
+          finished_at: new Date().toISOString(),
+        })
+        .eq("flow_id", flow.id)
+        .eq("n8n_execution_id", event.execution_id);
+    }
+    return Response.json({ ok: true });
+  }
+
   return Response.json({ error: "unknown kind" }, { status: 400 });
 }
