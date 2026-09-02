@@ -4,7 +4,7 @@ import { irToN8n, missingProviders, type CredentialMap } from "@/lib/adapter";
 import { activeConnections } from "@/lib/connections";
 import { validateIR } from "@/lib/validate-ir";
 import { stripApprovals } from "@/lib/ir";
-import { resolveSpreadsheetId } from "@/lib/google-lookup";
+import { listSpreadsheets, resolveSpreadsheetId } from "@/lib/google-lookup";
 import { resolveTelegramChatId } from "@/lib/telegram-chat";
 import {
   activateWorkflow,
@@ -145,11 +145,20 @@ export async function POST(
   // فحص حتمي: أي عقدة تنقصها حقول؟ (بعد الحقن التلقائي لـchat_id)
   const blocking = validateIR(ir);
   if (blocking.length > 0) {
+    // نقص الجدول وحسابه مربوط: نسمّي له جداوله بدل أن نطلب رابطًا يبحث عنه.
+    // فالربط أعطانا Drive حسابه، والاسم يكفينا لنحلّه بأنفسنا.
+    const needsSheet = blocking.some((b) =>
+      b.missing.some((m) => m.field === "spreadsheet_url")
+    );
+    const sheets = needsSheet
+      ? (await listSpreadsheets(user.id)).map((f) => f.name)
+      : [];
+
     await supabase
       .from("flows")
       .update({ status: "NeedsInformation", blocking })
       .eq("id", id);
-    return Response.json({ status: "NeedsInformation", blocking });
+    return Response.json({ status: "NeedsInformation", blocking, sheets });
   }
 
   const missing = missingProviders(ir, credMap);

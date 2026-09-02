@@ -59,18 +59,63 @@ export async function findDriveFilesByName(
   }
 }
 
+/**
+ * ينزع كلمة الوعاء من الاسم: المستخدم يقول «تيبل منتجات» و«جدول الطلبات»
+ * و«شيت العملاء»، والملف في Drive اسمه «منتجات». وDrive يطابق بالاحتواء،
+ * فالاسم كاملًا لا يجد شيئًا بينما جوهره يجده.
+ */
+const CONTAINER_WORDS =
+  /^\s*(?:ال)?(?:تيبل|تابل|تبل|table|جدول|جداول|شيت|شيتس|sheets?|spreadsheet|ملف|ورقة)\s+/i;
+
+export function bareSheetName(name: string): string {
+  return name.replace(CONTAINER_WORDS, "").trim();
+}
+
 /** المطابقة الوحيدة أو الأدقّ اسمًا — وإلا null ليبقى النقص ظاهرًا للمستخدم */
 export async function resolveSpreadsheetId(
   userId: string,
   name: string
 ): Promise<string | null> {
-  const files = await findDriveFilesByName(userId, name, SPREADSHEET_MIME);
-  if (files.length === 0) return null;
-  if (files.length === 1) return files[0].id;
+  // الاسم كما قيل أوّلًا، فإن خلا فبجوهره بعد نزع كلمة الوعاء
+  const tries = [name.trim()];
+  const bare = bareSheetName(name);
+  if (bare && bare !== tries[0]) tries.push(bare);
 
-  // تطابق تامّ يفصل عند تعدّد المطابقات؛ وإلا لا نخمّن
-  const exact = files.filter(
-    (f) => f.name.trim().toLowerCase() === name.trim().toLowerCase()
-  );
-  return exact.length === 1 ? exact[0].id : null;
+  for (const candidate of tries) {
+    const files = await findDriveFilesByName(userId, candidate, SPREADSHEET_MIME);
+    if (files.length === 0) continue;
+    if (files.length === 1) return files[0].id;
+
+    // تطابق تامّ يفصل عند تعدّد المطابقات؛ وإلا لا نخمّن
+    const exact = files.filter(
+      (f) => f.name.trim().toLowerCase() === candidate.toLowerCase()
+    );
+    if (exact.length === 1) return exact[0].id;
+  }
+  return null;
+}
+
+/** جداول المستخدم الأحدث — تُعرض له ليختار بالاسم بدل أن يُطالَب برابط */
+export async function listSpreadsheets(
+  userId: string,
+  limit = 8
+): Promise<DriveMatch[]> {
+  const token = await getValidGoogleAccessToken(userId);
+  if (!token.ok) return [];
+  const url =
+    `${DRIVE_FILES}?q=${encodeURIComponent(
+      `mimeType = '${SPREADSHEET_MIME}' and trashed = false`
+    )}` +
+    `&fields=files(id,name)&orderBy=modifiedTime desc&pageSize=${limit}` +
+    "&supportsAllDrives=true&includeItemsFromAllDrives=true";
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${token.accessToken}` },
+    });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { files?: DriveMatch[] };
+    return data.files ?? [];
+  } catch {
+    return [];
+  }
 }

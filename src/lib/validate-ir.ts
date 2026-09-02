@@ -11,7 +11,8 @@ export interface BlockingIssue {
 
 const FIELD_LABELS: Record<string, string> = {
   chat_id: "معرف المحادثة (chat_id)",
-  spreadsheet_url: "رابط جدول البيانات",
+  // الاسم يكفي: البناء يحلّه إلى معرّف من Drive الحساب المربوط
+  spreadsheet_url: "اسم جدول البيانات",
   ig_user_id: "معرف حساب إنستقرام التجاري",
   image_url: "رابط الصورة",
   slack_channel: "قناة Slack",

@@ -298,7 +298,7 @@ export default function ChatPage() {
         // نقص معلومة لا ارتباط — يُصلحه المستخدم بالكتابة ثم يُعاد البناء
         // n8n يردّ أسماء حقوله الخام — تُترجم وإلا قرأ المستخدم «documentId»
         const N8N_FIELDS: Record<string, string> = {
-          documentId: "رابط جدول البيانات",
+          documentId: "اسم جدول البيانات",
           sheetName: "اسم الورقة",
           chatId: "معرف محادثة تيليجرام",
           channel: "قناة Slack",
@@ -315,9 +315,14 @@ export default function ChatPage() {
               .map((f: string) => N8N_FIELDS[f.trim()] ?? f.trim())
               .filter(Boolean)
               .join("، ");
+        // حسابه مربوط فجداوله معروفة لنا: نسمّيها له بدل «اذكرها» المجرّدة
+        const sheets = Array.isArray(data.sheets) ? (data.sheets as string[]) : [];
+        const hint = sheets.length
+          ? ` جداولك: ${sheets.slice(0, 6).join("، ")}.`
+          : "";
         setError(
           fields
-            ? `ينقص المسار: ${fields} — اذكرها في المحادثة وسأعيد البناء.`
+            ? `ينقص المسار: ${fields} — اذكرها في المحادثة وسأعيد البناء.${hint}`
             : "ينقص المسار معلومة — وضّحها في المحادثة وسأعيد البناء."
         );
       }
