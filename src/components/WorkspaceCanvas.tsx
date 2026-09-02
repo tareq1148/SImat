@@ -212,16 +212,14 @@ export default function WorkspaceCanvas({
       ) : null}
 
       <div className="flex-1 min-h-0">
-        {building ? (
+        {/* الرسم موجود قبل البناء (يصنعه التقييم)، فيُعرض وهو يتشكّل عقدةً
+            بعد عقدة بدل شاشة انتظار تقول «بناء المسار» ولا تُري شيئًا */}
+        {info?.ir ? (
+          <ExecutionGraph ir={info.ir} height="100%" />
+        ) : building || loading ? (
           <div className="h-full grid place-items-center">
             <NeuralThinking phase="building" />
           </div>
-        ) : loading ? (
-          <div className="h-full grid place-items-center text-[0.8rem] text-[var(--text-soft)]">
-            جارٍ تحميل الرسم…
-          </div>
-        ) : info?.ir ? (
-          <ExecutionGraph ir={info.ir} height="100%" />
         ) : (
           <div className="h-full grid place-items-center text-[0.8rem] text-[var(--text-soft)]">
             لا يوجد رسم بعد.

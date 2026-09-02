@@ -37,6 +37,8 @@ interface NodeData extends Record<string, unknown> {
   title: string;
   action: string;
   glyph: string;
+  /** رتبة العقدة في المسار — تؤخّر ظهورها فيبدو الرسم وهو يتشكّل */
+  idx: number;
   state: RunState;
 }
 
@@ -94,7 +96,12 @@ function Glyph({ name }: { name: string }) {
 function GraphNode({ data }: NodeProps<Node<NodeData>>) {
   const s = STATE_STYLE[data.state];
   return (
-    <div dir="rtl" className="xg-node" title={`${data.title} — ${data.action}`}>
+    <div
+      dir="rtl"
+      className="xg-node"
+      title={`${data.title} — ${data.action}`}
+      style={{ animationDelay: `${Math.max(0, data.idx) * 110}ms` }}
+    >
       {/* المقابض مخفية: لا توصيل في وضع القراءة، لكن الحواف تحتاج نقاط ارتساء */}
       <Handle type="target" position={Position.Right} className="xg-handle" isConnectable={false} />
 
@@ -137,11 +144,17 @@ function GraphEdge({
     sourcePosition,
     targetPosition,
   });
-  const live = (data as { live?: boolean } | undefined)?.live;
+  const meta = data as { live?: boolean; idx?: number } | undefined;
+  const live = meta?.live;
 
   return (
     <>
-      <BaseEdge id={id} path={path} className="xg-edge" />
+      <BaseEdge
+        id={id}
+        path={path}
+        className="xg-edge"
+        style={{ animationDelay: `${Math.max(0, meta?.idx ?? 0) * 110 - 40}ms` }}
+      />
       {live && (
         <circle r="3.2" className="xg-particle">
           <animateMotion dur="1.8s" repeatCount="indefinite" path={path} />
@@ -187,6 +200,7 @@ function demoGraph(states: Record<string, RunState>): {
         title: d.title,
         action: d.action,
         glyph: d.glyph,
+        idx: leafIdx >= 0 ? 3 + leafIdx : chainIdx,
         state: states[d.id] ?? d.state,
       },
     };
@@ -239,14 +253,21 @@ function irToGraph(ir: WorkflowIR): { nodes: Node<NodeData>[]; edges: Edge[] } {
       id: n.id,
       type: "graph",
       position: { x: -(order.get(n.id) ?? 0) * 210, y: ((order.get(n.id) ?? 0) % 2) * 20 },
-      data: { title: n.label, action: n.operation, glyph: glyphOf(n), state: "idle" as RunState },
+      data: {
+        title: n.label,
+        action: n.operation,
+        glyph: glyphOf(n),
+        state: "idle" as RunState,
+        idx: order.get(n.id) ?? 0,
+      },
     })),
     edges: ir.edges.map((e) => ({
       id: e.id,
       source: e.source,
       target: e.target,
       type: "graph",
-      data: { live: false },
+      // الحافّة تلي عقدتها: تظهر بعدها بقليل فيبدو الوصل نابعًا منها
+      data: { live: false, idx: order.get(e.target) ?? 0 },
     })),
   };
 }

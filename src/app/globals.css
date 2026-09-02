@@ -1185,8 +1185,33 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   min-height: 0 !important;
 }
 
+/* ظهور متدرّج: كل عقدة تلي سابقتها فيبدو المسار وهو يتشكّل لا وهو
+   يظهر دفعةً واحدة بعد انتظار. التأخير يأتي من رتبة العقدة نفسها. */
+@keyframes xgNodeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes xgEdgeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.xg-node {
+  animation: xgNodeIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* الحواف: منحنية هادئة، وجزيء ضوء يسري عند التنفيذ */
 .xg-edge {
+  animation: xgEdgeIn 0.4s ease both;
   stroke: color-mix(in srgb, var(--text) 22%, transparent);
   stroke-width: 2;
   fill: none;
@@ -1196,6 +1221,8 @@ html[dir="rtl"] .voice-back svg { transform: scaleX(-1); }
   filter: drop-shadow(0 0 6px var(--accent));
 }
 @media (prefers-reduced-motion: reduce) {
+  .xg-node,
+  .xg-edge { animation: none; }
   .xg-icon.is-running { animation: none; }
   .xg-particle { display: none; }
 }
