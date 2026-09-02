@@ -92,7 +92,10 @@ export default function AccountMenu({ email }: { email: string | null }) {
       <div
         ref={wrapRef}
         className="fixed bottom-5 z-40"
-        style={{ insetInlineStart: "1.25rem" }}
+        // عمود أيقونات الشريط يقع على 34px من الحافّة (حشو 12 + نصف عنصر 22).
+        // الأفاتار 36px، فبدايته 16px تضع مركزه على 34 تمامًا — و1.25rem كانت
+        // تزيحه 4px فيبدو خارج العمود مهما اتّسع الشريط أو انطوى.
+        style={{ insetInlineStart: "1rem" }}
       >
         {open && (
           <div
