@@ -332,12 +332,16 @@ export default function SideRail() {
       .then(({ data }) => setFlows((data as never) ?? []));
   }, []);
 
+  // حشو واحد للحالتين عمدًا: px-4 يضع مركز الأيقونة على 37.5 من حافّة الشريط،
+  // وهو نصف عرضه المطويّ (76/2) تقريبًا — فتبدو متوسّطة مطويًّا ومحاذية مفتوحًا
+  // بلا تبديل أصناف. التبديل كان يقع لحظةَ الضغط بينما العرض ما زال يتحرّك،
+  // فتقفز الأيقونات إلى وسط الشريط العريض ثم ترتدّ — وهو الاهتزاز الملحوظ.
   const item = (active: boolean) =>
     `flex items-center gap-3 rounded-xl h-11 px-4 text-[0.85rem] whitespace-nowrap overflow-hidden transition-colors ${
       active
         ? "bg-[var(--accent-soft)] text-[var(--accent)] font-semibold"
         : "text-[var(--text-soft)] hover:text-[var(--text)] hover:bg-[var(--well)]"
-    } ${open ? "" : "justify-center px-0"}`;
+    }`;
 
   const NAV = [
     { href: "/chat", key: "rail.new", icon: "edit", on: pathname.startsWith("/chat") },
