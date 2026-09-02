@@ -10,8 +10,9 @@ export interface WeekDatum {
   minutes_saved: number;
 }
 
-const BAR = "#0891b2";
-const BAR_HOVER = "#22d3ee";
+// بلون المنصّة لا بالسماوي — تُقرأ من المتغيّرات فتتبع السمة الفاتحة والداكنة
+const BAR = "var(--accent-bg)";
+const BAR_HOVER = "var(--accent)";
 
 export default function WeeklyBars({ weeks }: { weeks: WeekDatum[] }) {
   const [hover, setHover] = useState<number | null>(null);
