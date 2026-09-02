@@ -1276,7 +1276,9 @@ export function irToN8n(
   const finishBody =
     '={{ JSON.stringify({ run_token: $(\'' +
     INPUT_NODE +
-    "').item.json.run_token, event: 'finished', status: 'success', output: $json }) }}";
+    // معرّف التنفيذ يلزم المجدول وحده: رمزه واحدٌ لكل انطلاقاته فلا يميّز
+    // واحدةً من أخرى، والمطابقة عنده بالتنفيذ لا بالرمز
+    "').item.json.run_token, event: 'finished', status: 'success', execution_id: $execution.id, output: $json }) }}";
   const finishNode = reportNode("report-finish", "تبليغ الانتهاء", step(), Y, finishBody);
   nodes.push(finishNode);
   if (prev.startsWith("__merge__:")) {
