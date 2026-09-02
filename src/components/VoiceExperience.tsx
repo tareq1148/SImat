@@ -233,7 +233,7 @@ export default function VoiceExperience({
           title={voice.recording ? t("input.stopVoice") : t("voice.resume")}
           className="rounded-full"
         >
-          <VoiceOrb size={154} big state={orbState} />
+          <VoiceOrb size={220} big state={orbState} />
         </button>
 
         <p className="voice-q">{question}</p>

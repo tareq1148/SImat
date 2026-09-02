@@ -138,7 +138,7 @@ export default function NeuralField({
     <canvas
       ref={ref}
       style={{ height }}
-      className="w-full touch-none cursor-crosshair"
+      className="w-full touch-none"
       aria-hidden
     />
   );
