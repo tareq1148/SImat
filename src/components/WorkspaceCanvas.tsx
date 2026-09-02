@@ -2,7 +2,7 @@
 
 // لوحة المسار (75%) — تظهر بجوار المحادثة المرساة.
 // عرض للقراءة فقط: تصفّح وتفتيش بلا سحب عقد ولا تحرير.
-// في شريطها زرّان لا ثالث لهما: اختبار ثم اعتماد.
+// في شريطها زرّان: اختبار، ومفتاحُ تشغيلٍ وإيقاف يتبدّل في موضعه.
 
 import { useCallback, useEffect, useState } from "react";
 import ExecutionGraph from "./ExecutionGraph";
@@ -36,9 +36,7 @@ export default function WorkspaceCanvas({
 }) {
   const [info, setInfo] = useState<FlowInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<"test" | "approve" | "run" | "pause" | null>(
-    null
-  );
+  const [busy, setBusy] = useState<"test" | "approve" | "pause" | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -115,7 +113,7 @@ export default function WorkspaceCanvas({
     return null;
   }
 
-  async function act(kind: "test" | "approve" | "run" | "pause") {
+  async function act(kind: "test" | "approve" | "pause") {
     setBusy(kind);
     setNotice(null);
     try {
@@ -123,7 +121,7 @@ export default function WorkspaceCanvas({
       // قبله يؤخّر إطفاءً هو المقصود بالضغط
       if (kind === "pause") {
         await post(`/api/flows/${flowId}/activate`, { action: "pause" });
-        setNotice({ ok: true, text: "أُوقف المسار — لن يعمل في موعده حتى تعتمده مجددًا" });
+        setNotice({ ok: true, text: "أُوقف المسار — لن يعمل في موعده حتى تشغّله من جديد" });
         await load();
         return;
       }
@@ -139,12 +137,9 @@ export default function WorkspaceCanvas({
       if (kind === "test") {
         await post(`/api/flows/${flowId}/test`, {});
         setNotice(null); // النتيجة نفسها تظهر أدناه متى وصلت
-      } else if (kind === "run") {
-        await post(`/api/flows/${flowId}/run`, {});
-        setNotice({ ok: true, text: "بدأ التشغيل الفعلي — النتيجة خلال لحظات…" });
       } else {
         await post(`/api/flows/${flowId}/activate`, { action: "activate" });
-        setNotice({ ok: true, text: "تم الاعتماد ✓ — تقدر تشغّله الآن" });
+        setNotice({ ok: true, text: "يعمل الآن ✓ — سينفّذ نفسه في موعده" });
       }
       await load();
     } catch (err) {
@@ -174,37 +169,26 @@ export default function WorkspaceCanvas({
           >
             {busy === "test" || testing ? "جارٍ الاختبار…" : "اختبار"}
           </button>
-          {/* بعد الاعتماد يحلّ «تشغيل» محلّ «اعتماد» في موضعه — فالمعتمَد
-              لا يُعتمد مرّتين، والحاجة بعده أن يُشغَّل الآن لا أن ينتظر موعده */}
+          {/* مفتاحٌ واحد في موضعٍ واحد: يشغّل المسار فيصير «إيقاف»، ويوقفه
+              فيعود «تشغيل». زرّان متجاوران — أحدهما يشغّل والآخر يوقف —
+              يجعلان الحالة الراهنة لغزًا؛ والمفتاح يقولها بنفسه. */}
           {active ? (
-            <>
-              {/* المفعَّل يعمل في موعده وحده، فيلزمه مخرج: زرٌّ يطفئ مؤقّته
-                  في المحرك. وبدونه لا سبيل لإيقافه إلا حذف المسار كلّه. */}
-              <button
-                onClick={() => act("pause")}
-                disabled={busy !== null || testing}
-                className="btn btn-ghost text-[0.75rem] py-1.5"
-                title="يطفئ موعده فلا يعمل تلقائيًا حتى تعتمده مجددًا"
-              >
-                {busy === "pause" ? "جارٍ الإيقاف…" : "إيقاف"}
-              </button>
-              <button
-                onClick={() => act("run")}
-                disabled={busy !== null || testing}
-                className="btn btn-primary text-[0.75rem] py-1.5"
-                title="شغّله الآن تشغيلًا فعليًا بلا انتظار موعده"
-              >
-                {busy === "run" ? "جارٍ التشغيل…" : "تشغيل"}
-              </button>
-            </>
+            <button
+              onClick={() => act("pause")}
+              disabled={busy !== null || testing}
+              className="btn btn-ghost text-[0.75rem] py-1.5"
+              title="يطفئ موعده في المحرك فلا يعمل تلقائيًا حتى تشغّله من جديد"
+            >
+              {busy === "pause" ? "جارٍ الإيقاف…" : "إيقاف"}
+            </button>
           ) : (
             <button
               onClick={() => act("approve")}
               disabled={busy !== null || testing || !status}
               className="btn btn-primary text-[0.75rem] py-1.5"
-              title="يبني المسار إن لزم ثم يعتمده ليعمل تلقائيًا"
+              title="يبني المسار إن لزم ثم يشغّله ليعمل في موعده تلقائيًا"
             >
-              {busy === "approve" ? "…" : "اعتماد"}
+              {busy === "approve" ? "…" : "تشغيل"}
             </button>
           )}
         </div>

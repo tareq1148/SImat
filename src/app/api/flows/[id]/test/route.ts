@@ -54,7 +54,12 @@ export async function POST(
   if (error || !testRun)
     return Response.json({ error: "تعذر إنشاء تشغيل الاختبار" }, { status: 500 });
 
-  await supabase.from("flows").update({ status: "Testing" }).eq("id", id);
+  // المسار المفعّل يبقى مفعّلًا أثناء اختباره. لو كُتبت «Testing» فوقه لصار
+  // مفتاح الشريط يقول «تشغيل» بينما مؤقّته يعمل في المحرك — والمفتاح يجب
+  // أن يصف الحقيقة لا أن يخالفها.
+  if (flow.status !== "Active") {
+    await supabase.from("flows").update({ status: "Testing" }).eq("id", id);
+  }
 
   const hook = await callFlowWebhook(ir.webhookPath, {
     run_token: `test:${testRun.id}`,

@@ -112,14 +112,23 @@ export async function POST(req: NextRequest) {
           error: success ? null : "أوقف التنفيذ قبل الاكتمال",
         })
         .eq("id", refId);
-      await db
+      // اختبارٌ على مسارٍ مفعّل لا يغيّر حالته — نجح أو أخفق. نتيجته تظهر في
+      // سطر «آخر اختبار»، أما الحالة فتصف ما في المحرك: وهو ما زال يعمل.
+      const { data: cur } = await db
         .from("flows")
-        .update(
-          success
-            ? { status: "Ready", repair_attempts: 0 }
-            : { status: "NeedsRepair" }
-        )
-        .eq("id", testRun.flow_id);
+        .select("status")
+        .eq("id", testRun.flow_id)
+        .maybeSingle();
+      if (cur?.status !== "Active") {
+        await db
+          .from("flows")
+          .update(
+            success
+              ? { status: "Ready", repair_attempts: 0 }
+              : { status: "NeedsRepair" }
+          )
+          .eq("id", testRun.flow_id);
+      }
     }
     return Response.json({ ok: true });
   }
