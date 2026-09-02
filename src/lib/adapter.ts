@@ -200,7 +200,6 @@ export function irToN8n(
 
   let prev = "تبليغ البدء";
   let modelCount = 0;
-  let approvalCount = 0;
 
   const addOpenAiModel = (consumerName: string, xPos: number): void => {
     modelCount += 1;
@@ -230,71 +229,16 @@ export function irToN8n(
 
   // بوابة الإجراء الحساس: التأليف مشترك، ثم اختبار → معاينة فقط (لا تنفيذ)؛
   // فعلي → طلب موافقة → انتظار → موافقة → تنفيذ. الرفض يُنهي التشغيل.
-  const buildSensitiveGate = (
-    irNode: IRNode,
+  // الاختبار صار ينفّذ فعليًا كالتشغيل، فلا قسمةَ وضعٍ ولا معاينة: الإجراء
+  // الحسّاس يوصَل بما قبله مباشرةً. أُبقي الوصل في موضع واحد كي لا يتكرّر
+  // في فروع المزوّدين الأربعة.
+  const attachSensitiveAction = (
     actionNodeName: string,
+    fromName: string,
     connectAction: (fromName: string, outputIndex?: number) => void
   ): string => {
-    approvalCount += 1;
-    const n = approvalCount;
-    const gateIf = `وضع الاختبار؟ ${n}`;
-    nodes.push({
-      id: `gate-if-${n}`,
-      name: gateIf,
-      type: "n8n-nodes-base.if",
-      typeVersion: 2.2,
-      position: [step(), Y],
-      parameters: {
-        conditions: {
-          options: { caseSensitive: true, leftValue: "", typeValidation: "loose", version: 2 },
-          conditions: [
-            {
-              id: `c-gate-${n}`,
-              leftValue: "={{ $('" + INPUT_NODE + "').item.json.test_mode }}",
-              rightValue: "",
-              operator: { type: "boolean", operation: "true", singleValue: true },
-            },
-          ],
-          combinator: "and",
-        },
-      },
-    });
-
-    const previewName = `معاينة بدون تنفيذ ${n}`;
-    nodes.push({
-      id: `preview-${n}`,
-      name: previewName,
-      type: "n8n-nodes-base.set",
-      typeVersion: 3.4,
-      position: [x + 130, Y - 180],
-      parameters: {
-        mode: "manual",
-        includeOtherFields: true,
-        assignments: {
-          assignments: [
-            {
-              id: "p1",
-              name: "approval_preview",
-              value:
-                "وضع الاختبار: الإجراء الحساس «" +
-                irNode.label +
-                "» لم يُنفَّذ فعليًا — أعلاه معاينة لما كان سيحدث.",
-              type: "string",
-            },
-            { id: "p2", name: "skipped_sensitive", value: "={{ true }}", type: "boolean" },
-          ],
-        },
-      },
-    });
-
-    link(gateIf, previewName, 0);
-    // بوابة الموافقة أُلغيت: الفرع الفعلي ينفّذ مباشرةً. تبقى قسمة وضع
-    // الاختبار وحدها — فالاختبار يعاين ولا يُرسل. لولا هذا لظلّ كل إرسال
-    // حقيقي واقفًا عند «انتظار قرارك» بلا شاشة تعتمده.
-    connectAction(gateIf, 1);
-
-    // نقطة الالتقاء: المعاينة (اختبار) أو نتيجة التنفيذ الفعلي
-    return `__merge__:${previewName}|${actionNodeName}`;
+    connectAction(fromName, 0);
+    return actionNodeName;
   };
 
   for (const irNode of executable) {
@@ -452,12 +396,11 @@ export function irToN8n(
       if (creds.gmail) gmailNode.credentials = { gmailOAuth2: creds.gmail };
 
       // PRD: كل إرسال يمر ببوابة موافقة مهما كان تصنيف المواصفة — لا استثناء
-      const mergePoint = buildSensitiveGate(irNode, sendName, (fromName, out = 0) => {
+      const mergePoint = attachSensitiveAction(sendName, composeName, (fromName, out = 0) => {
         gmailNode.position = [x + 910, Y + 180];
         nodes.push(gmailNode);
         link(fromName, sendName, out);
       });
-      link(composeName, `وضع الاختبار؟ ${approvalCount}`);
       prev = mergePoint;
       continue;
     }
@@ -567,12 +510,11 @@ export function irToN8n(
         msgNode.credentials = { slackApi: creds.slack };
 
       // PRD: كل إرسال يمر ببوابة موافقة مهما كان تصنيف المواصفة — لا استثناء
-      const msgMergePoint = buildSensitiveGate(irNode, sendName, (fromName, out = 0) => {
+      const msgMergePoint = attachSensitiveAction(sendName, composeName, (fromName, out = 0) => {
         msgNode.position = [x + 910, Y + 180];
         nodes.push(msgNode);
         link(fromName, sendName, out);
       });
-      link(composeName, `وضع الاختبار؟ ${approvalCount}`);
       prev = msgMergePoint;
       continue;
     }
@@ -662,13 +604,12 @@ export function irToN8n(
         publishNode.credentials = { facebookGraphApi: creds.instagram };
       }
 
-      const igMerge = buildSensitiveGate(irNode, nodeName, (fromName, out = 0) => {
+      const igMerge = attachSensitiveAction(nodeName, composeName, (fromName, out = 0) => {
         nodes.push(containerNode);
         nodes.push(publishNode);
         link(fromName, containerName, out);
         link(containerName, nodeName);
       });
-      link(composeName, `وضع الاختبار؟ ${approvalCount}`);
       prev = igMerge;
       continue;
     }
@@ -729,11 +670,10 @@ export function irToN8n(
       if (creds.tiktok)
         ttNode.credentials = { httpHeaderAuth: creds.tiktok };
 
-      const ttMerge = buildSensitiveGate(irNode, nodeName, (fromName, out = 0) => {
+      const ttMerge = attachSensitiveAction(nodeName, composeName, (fromName, out = 0) => {
         nodes.push(ttNode);
         link(fromName, nodeName, out);
       });
-      link(composeName, `وضع الاختبار؟ ${approvalCount}`);
       prev = ttMerge;
       continue;
     }

@@ -36,7 +36,7 @@ export default function WorkspaceCanvas({
 }) {
   const [info, setInfo] = useState<FlowInfo | null>(null);
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<"test" | "approve" | null>(null);
+  const [busy, setBusy] = useState<"test" | "approve" | "run" | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
   const load = useCallback(async () => {
@@ -113,7 +113,7 @@ export default function WorkspaceCanvas({
     return null;
   }
 
-  async function act(kind: "test" | "approve") {
+  async function act(kind: "test" | "approve" | "run") {
     setBusy(kind);
     setNotice(null);
     try {
@@ -128,9 +128,12 @@ export default function WorkspaceCanvas({
       if (kind === "test") {
         await post(`/api/flows/${flowId}/test`, {});
         setNotice(null); // النتيجة نفسها تظهر أدناه متى وصلت
+      } else if (kind === "run") {
+        await post(`/api/flows/${flowId}/run`, {});
+        setNotice({ ok: true, text: "بدأ التشغيل الفعلي — النتيجة خلال لحظات…" });
       } else {
         await post(`/api/flows/${flowId}/activate`, { action: "activate" });
-        setNotice({ ok: true, text: "تم الاعتماد ✓" });
+        setNotice({ ok: true, text: "تم الاعتماد ✓ — تقدر تشغّله الآن" });
       }
       await load();
     } catch (err) {
@@ -160,14 +163,27 @@ export default function WorkspaceCanvas({
           >
             {busy === "test" || testing ? "جارٍ الاختبار…" : "اختبار"}
           </button>
-          <button
-            onClick={() => act("approve")}
-            disabled={busy !== null || testing || active || !status}
-            className="btn btn-primary text-[0.75rem] py-1.5"
-            title={active ? "المسار معتمد ويعمل" : "يبني المسار إن لزم ثم يعتمده ليعمل تلقائيًا"}
-          >
-            {busy === "approve" ? "…" : active ? "معتمد ✓" : "اعتماد"}
-          </button>
+          {/* بعد الاعتماد يحلّ «تشغيل» محلّ «اعتماد» في موضعه — فالمعتمَد
+              لا يُعتمد مرّتين، والحاجة بعده أن يُشغَّل الآن لا أن ينتظر موعده */}
+          {active ? (
+            <button
+              onClick={() => act("run")}
+              disabled={busy !== null || testing}
+              className="btn btn-primary text-[0.75rem] py-1.5"
+              title="شغّله الآن تشغيلًا فعليًا بلا انتظار موعده"
+            >
+              {busy === "run" ? "جارٍ التشغيل…" : "تشغيل"}
+            </button>
+          ) : (
+            <button
+              onClick={() => act("approve")}
+              disabled={busy !== null || testing || !status}
+              className="btn btn-primary text-[0.75rem] py-1.5"
+              title="يبني المسار إن لزم ثم يعتمده ليعمل تلقائيًا"
+            >
+              {busy === "approve" ? "…" : "اعتماد"}
+            </button>
+          )}
         </div>
       </header>
 
