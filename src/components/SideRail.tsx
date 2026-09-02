@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { supabaseBrowser } from "@/lib/supabase/client";
+import Logo from "./Logo";
 import { useLang } from "@/lib/i18n";
 import SettingsDrawer from "./SettingsDrawer";
 import type { FlowStatus } from "@/lib/types";
@@ -354,6 +355,22 @@ export default function SideRail() {
             : "sticky top-0 bg-[var(--panel)]"
         } ${open ? "w-[248px]" : "w-[68px]"} ${docked && open ? "shadow-2xl" : ""}`}
       >
+        {/* الشعار في رأس الشريط بلا إطار — علامةٌ وحدها كما في الشرائط المشابهة */}
+        <Link
+          href="/"
+          title={t("brand")}
+          className={`flex items-center gap-2.5 h-11 mb-2 shrink-0 ${
+            open ? "px-2" : "justify-center"
+          }`}
+        >
+          <Logo size={28} id="wLogoRail" />
+          {open && (
+            <span className="text-[1.05rem] font-bold whitespace-nowrap">
+              {t("brand")}
+            </span>
+          )}
+        </Link>
+
         <button
           onClick={toggle}
           title={open ? t("rail.collapse") : t("rail.expand")}
