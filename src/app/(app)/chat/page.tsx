@@ -445,7 +445,7 @@ export default function ChatPage() {
             <div className="flex gap-2 items-center rounded-xl border border-[var(--line)] focus-within:border-[var(--text-soft)] bg-[var(--surface)] p-1.5 rise transition-colors">
               <input
                 autoFocus
-                className="flex-1 bg-transparent border-0 outline-none focus:outline-none focus-visible:outline-none px-2.5 text-[0.83rem] text-[var(--text)] placeholder:text-[var(--text-soft)]"
+                className="opt-answer flex-1 bg-transparent border-0 px-2.5 text-[0.83rem] text-[var(--text)] placeholder:text-[var(--text-soft)]"
                 placeholder={t("opts.otherPlaceholder")}
                 value={otherText}
                 onChange={(e) => setOtherText(e.target.value)}
