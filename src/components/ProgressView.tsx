@@ -267,7 +267,7 @@ function ArchDiagram({
 /* ===== الصفحة ===== */
 
 export default function ProgressView() {
-  const { lang, t } = useLang();
+  const { t } = useLang();
   const [data, setData] = useState<ProgressData | null>(null);
   const [active, setActive] = useState(0);
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -308,24 +308,6 @@ export default function ProgressView() {
     ...w,
     label: w.is_today ? t("prog.today") : (w.date ?? w.label),
   }));
-  const wowChip =
-    headline.wow > 0
-      ? {
-          text:
-            lang === "ar"
-              ? `أنشط من أمس بنسبة ${headline.wow}%`
-              : `${headline.wow}% busier than yesterday`,
-          cls: "border-emerald-400/40 text-emerald-300 bg-emerald-400/10",
-        }
-      : headline.wow < 0
-        ? {
-            text:
-              lang === "ar"
-                ? `أهدأ من أمس بنسبة ${Math.abs(headline.wow)}%`
-                : `${Math.abs(headline.wow)}% quieter than yesterday`,
-            cls: "border-amber-400/40 text-amber-300 bg-amber-400/10",
-          }
-        : { text: lang === "ar" ? "نفس وتيرة أمس" : "Same pace as yesterday", cls: "chip-neutral" };
 
   return (
     <div className="space-y-5">
@@ -337,7 +319,6 @@ export default function ProgressView() {
             <span className="text-[var(--accent)]">{headline.closed_this_week}</span>{" "}
             {headline.closed_this_week === 1 ? t("prog.task1") : t("prog.taskN")}
           </h1>
-          <span className={`chip ${wowChip.cls}`}>{wowChip.text}</span>
         </div>
         <ArchDiagram
           closed={headline.closed_this_week}
