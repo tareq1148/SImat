@@ -188,6 +188,11 @@ function HealthCard({ health }: { health: ProgressData["health"] }) {
 
 /* ===== المخطط المعماري: نفس لغة عقد لوحة الرسم ===== */
 
+/** قطر الدائرة — تشترك فيه العقدة وحسابُ مرابط الحواف */
+const NODE_H = 52;
+/** ارتفاع الاسم تحت الدائرة — يُزاد على ارتفاع اللوحة لئلّا يُقصّ آخر صفّ */
+const LABEL_H = 26;
+
 function NodeIcon({ kind, size = 30 }: { kind: string; size?: number }) {
   const glyphs: Record<string, React.ReactNode> = {
     tasks: <path d="M4 5h16v14H4zM4 13h5l1.5 2h3L15 13h5" />,
@@ -231,9 +236,9 @@ function NodeIcon({ kind, size = 30 }: { kind: string; size?: number }) {
   );
 }
 
+// الشكل المعتمد في اللوحة: دائرة فيها شعار الخدمة، واسمها تحتها خارجها
 function DiagramNode({
   kind,
-  category,
   label,
   value,
   style,
@@ -241,7 +246,6 @@ function DiagramNode({
   brandIcon,
 }: {
   kind?: string;
-  category: string;
   label: string;
   value?: string;
   style: React.CSSProperties;
@@ -249,62 +253,35 @@ function DiagramNode({
   brandIcon?: React.ReactNode;
 }) {
   return (
-    <div
-      className="absolute bg-[var(--surface)] border border-[var(--line)] rounded-xl px-3.5 py-3 flex items-center gap-2.5"
-      style={{
-        ...style,
-        boxShadow: engine
-          ? "0 0 26px rgba(34,211,238,0.28), var(--card-shadow)"
-          : "var(--card-shadow)",
-        borderColor: engine ? "color-mix(in srgb, var(--accent-bg) 55%, var(--line))" : undefined,
-      }}
-    >
-      {brandIcon ? (
-        <span className="shrink-0 w-[30px] h-[30px] rounded-[9px] bg-[var(--well)] border border-[var(--line-soft)] flex items-center justify-center">
-          {brandIcon}
-        </span>
-      ) : (
-        <span
-          className="mark shrink-0 rounded-[9px] flex items-center justify-center"
-          style={{ width: engine ? 34 : 30, height: engine ? 34 : 30 }}
-        >
-          <NodeIcon kind={kind ?? "tasks"} size={engine ? 34 : 30} />
-        </span>
-      )}
-      <span className="min-w-0 flex-1">
-        <span
-          dir="ltr"
-          className="block text-[0.55rem] font-semibold tracking-[0.08em] text-[var(--text-soft)] leading-none mb-1 text-right"
-        >
-          {category}
-        </span>
-        <span className="block text-[0.78rem] font-semibold leading-tight whitespace-nowrap truncate">
-          {label}
-        </span>
+    <div className="absolute flex flex-col items-center gap-2" style={style}>
+      <span
+        className="shrink-0 rounded-full bg-[var(--panel-solid)] border flex items-center justify-center"
+        style={{
+          width: NODE_H,
+          height: NODE_H,
+          borderColor: engine
+            ? "color-mix(in srgb, var(--accent-bg) 55%, var(--line))"
+            : "color-mix(in srgb, var(--text) 14%, transparent)",
+          boxShadow: engine
+            ? "0 0 22px color-mix(in srgb, var(--accent-bg) 30%, transparent), 0 4px 14px rgba(0,0,0,0.1)"
+            : "0 4px 14px rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        {brandIcon ?? <NodeIcon kind={kind ?? "tasks"} size={engine ? 26 : 24} />}
       </span>
-      {value !== undefined && (
-        <span className="text-[1.25rem] font-bold tabular-nums text-[var(--accent)] shrink-0">
-          {value}
-        </span>
-      )}
+
+      <span className="text-center leading-tight">
+        <span className="block text-[0.74rem] font-semibold">{label}</span>
+        {value !== undefined && (
+          <span className="block text-[1.05rem] font-bold tabular-nums text-[var(--accent)]">
+            {value}
+          </span>
+        )}
+      </span>
     </div>
   );
 }
 
-const PROVIDER_CATEGORY: Record<Provider, string> = {
-  gmail: "GMAIL",
-  removebg: "REMOVE.BG",
-  google_sheets: "SHEETS",
-  google_drive: "DRIVE",
-  google_slides: "SLIDES",
-  google_calendar: "CALENDAR",
-  google_docs: "DOCS",
-  openai: "AI",
-  telegram: "TELEGRAM",
-  slack: "SLACK",
-  instagram: "INSTAGRAM",
-  tiktok: "TIKTOK",
-};
 
 function ArchDiagram({
   closed,
@@ -322,7 +299,6 @@ function ArchDiagram({
   const provs = providers.slice(0, 6);
   const rows = Math.max(provs.length, 3);
   const H = Math.max(250, rows * 84);
-  const NODE_H = 56;
   const slotTop = (count: number, i: number) => {
     const s = H / count;
     return Math.round(i * s + s / 2 - NODE_H / 2);
@@ -330,11 +306,16 @@ function ArchDiagram({
   const engineTop = Math.round(H / 2 - NODE_H / 2);
   const engineY = engineTop + NODE_H / 2;
 
-  // حواف الأعمدة داخل حاوية 640 عرضًا (إحداثيات SVG من اليسار)
-  const P_LEFT = 640 - 4 - 150; // حافة عقدة الموقع اليسرى
-  const E_RIGHT = 640 - 243; // حافة وَتيرة اليمنى
-  const E_LEFT = 640 - 243 - 152;
-  const R_RIGHT = 4 + 194;
+  // مراكز الأعمدة داخل حاوية 640 عرضًا (إحداثيات SVG من اليسار)، والحواف
+  // ترتبط بمحيط الدائرة لا بحافّة صندوق — فالعقدة صارت دائرة.
+  const R = NODE_H / 2;
+  const P_CX = 640 - 4 - 150 / 2; // مركز عمود الخدمات
+  const E_CX = 640 - 243 - 152 / 2; // مركز عقدة المحرّك
+  const R_CX = 4 + 194 / 2; // مركز عمود النتائج
+  const P_LEFT = P_CX - R;
+  const E_RIGHT = E_CX + R;
+  const E_LEFT = E_CX - R;
+  const R_RIGHT = R_CX + R;
 
   const provEdges = (provs.length ? provs : [null]).map((_, i) => {
     const y = slotTop(Math.max(provs.length, 1), i) + NODE_H / 2;
@@ -358,7 +339,8 @@ function ArchDiagram({
         className="relative mx-auto"
         style={{
           width: 640,
-          height: H,
+          // الاسم صار تحت الدائرة، فيلزم متّسع أسفل آخر صفٍّ وإلا قُصّ
+          height: H + LABEL_H,
           backgroundImage: "radial-gradient(var(--edge) 1.2px, transparent 1.2px)",
           backgroundSize: "20px 20px",
         }}
@@ -389,7 +371,6 @@ function ArchDiagram({
           provs.map((p, i) => (
             <DiagramNode
               key={p}
-              category={PROVIDER_CATEGORY[p]}
               label={PROVIDER_LABELS[p]}
               brandIcon={providerIcon(p, 17)}
               style={{ right: 4, top: slotTop(provs.length, i), width: 150 }}
@@ -398,7 +379,6 @@ function ArchDiagram({
         ) : (
           <DiagramNode
             kind="tasks"
-            category="CONNECT"
             label={lang === "ar" ? "اربط حساباتك" : "Connect accounts"}
             style={{ right: 4, top: slotTop(1, 0), width: 150 }}
           />
@@ -406,7 +386,6 @@ function ArchDiagram({
 
         <DiagramNode
           kind="engine"
-          category="ENGINE"
           label={t("brand")}
           engine
           style={{ right: 243, top: engineTop, width: 152 }}
@@ -416,7 +395,6 @@ function ArchDiagram({
           <DiagramNode
             key={r.kind}
             kind={r.kind}
-            category={r.category}
             label={r.label}
             value={r.value}
             style={{ left: 4, top: slotTop(3, i), width: 194 }}
