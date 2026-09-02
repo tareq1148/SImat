@@ -10,6 +10,11 @@ import VoiceWave from "@/components/VoiceWave";
 import WorkspaceCanvas from "@/components/WorkspaceCanvas";
 import { useLang } from "@/lib/i18n";
 import { cleanText, extractOptions, speechText } from "@/lib/transcript";
+import {
+  PROMPT_SAMPLES_AR,
+  PROMPT_SAMPLES_EN,
+  useTypingPlaceholder,
+} from "@/lib/useTypingPlaceholder";
 import type { Provider } from "@/lib/types";
 import { useVoice } from "@/lib/useVoice";
 
@@ -76,6 +81,13 @@ export default function ChatPage() {
     () => {
       if (voiceModeRef.current) setNoSpeech((n) => n + 1);
     }
+  );
+
+  // أمثلة متبدّلة في خانة الكتابة، تقف متى بدأ يكتب أو انشغل النظام
+  const typedPlaceholder = useTypingPlaceholder(
+    lang === "en" ? PROMPT_SAMPLES_EN : PROMPT_SAMPLES_AR,
+    !input && !busy && !voice.recording,
+    t("input.placeholder")
   );
 
   useEffect(() => {
@@ -503,7 +515,7 @@ export default function ChatPage() {
             <input
               ref={textInputRef}
               className="composer-input"
-              placeholder={t("input.placeholder")}
+              placeholder={typedPlaceholder}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={busy}
