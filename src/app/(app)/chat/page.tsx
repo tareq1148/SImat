@@ -9,6 +9,7 @@ import VoiceOrb from "@/components/VoiceOrb";
 import VoiceWave from "@/components/VoiceWave";
 import WorkspaceCanvas from "@/components/WorkspaceCanvas";
 import { useLang } from "@/lib/i18n";
+import { useSmoothStream } from "@/lib/useSmoothStream";
 import { cleanText, extractOptions, speechText } from "@/lib/transcript";
 import {
   PROMPT_SAMPLES_AR,
@@ -90,6 +91,17 @@ export default function ChatPage() {
     "" // لا نصّ ثابت — الأمثلة وحدها
   );
 
+  // البثّ يصل دفعاتٍ متقطّعة — يُنعَّم قبل العرض فيسيل الحرفُ بوتيرة واحدة
+  const stream = useSmoothStream((text) => {
+    setMessages((m) => {
+      const copy = [...m];
+      const last = copy[copy.length - 1];
+      if (!last || last.role !== "assistant") return m;
+      copy[copy.length - 1] = { role: "assistant", text };
+      return copy;
+    });
+  });
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, busy]);
@@ -147,6 +159,7 @@ export default function ChatPage() {
       { role: "user", text: displayText },
       { role: "assistant", text: "" },
     ]);
+    stream.begin();
 
     try {
       const res = await fetch("/api/interview", {
@@ -196,14 +209,7 @@ export default function ChatPage() {
           }
           else if (evt.type === "delta") {
             assistantText += evt.text;
-            setMessages((m) => {
-              const copy = [...m];
-              copy[copy.length - 1] = {
-                role: "assistant",
-                text: copy[copy.length - 1].text + evt.text,
-              };
-              return copy;
-            });
+            stream.push(evt.text);
           } else if (evt.type === "spec_saved" && evt.confirmed) {
             setConfirmed(true);
             ready = true;
@@ -212,6 +218,8 @@ export default function ChatPage() {
           }
         }
       }
+      // انتهى الورود: يُترك المعروض يلحق بالهدف بدل قطعه فجأة
+      stream.finish();
       setOptions(extractOptions(assistantText));
       // في الوضع الصوتي ينطق دائمًا، وإلا يحترم مفتاح «اسمع الردود»
       if (assistantText.trim() && !spoken)
@@ -219,6 +227,7 @@ export default function ChatPage() {
       // اكتملت المواصفة ← يُولَّد المسار مباشرةً وتُفتح مساحة العمل
       if (ready) await evaluate(sid ?? undefined);
     } catch (err) {
+      stream.finish();
       setError(err instanceof Error ? err.message : "حدث خطأ");
       setMessages((m) => m.slice(0, -1));
     } finally {
