@@ -36,6 +36,7 @@ const DICT: Record<string, { ar: string; en: string }> = {
     ar: "هذه العقدة لا تحتوي تعليمات نصية قابلة للتعديل.",
     en: "This node has no editable prompt.",
   },
+  "nav.search": { ar: "بحث", en: "Search" },
   "nav.progress": { ar: "إنجازاتي", en: "Progress" },
   "nav.settings": { ar: "الإعدادات والاتصالات", en: "Settings & connections" },
   "nav.theme.dark": { ar: "الوضع الداكن", en: "Dark mode" },

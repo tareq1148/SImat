@@ -31,6 +31,12 @@ function Icon({ name, size = 19 }: { name: string; size?: number }) {
       </>
     ),
     edit: <path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l4 4" />,
+    search: (
+      <>
+        <circle cx="11" cy="11" r="6.5" />
+        <path d="M15.8 15.8 20 20" />
+      </>
+    ),
     flows: (
       <>
         <circle cx="5" cy="6" r="2.2" />
@@ -345,6 +351,7 @@ export default function SideRail() {
 
   const NAV = [
     { href: "/chat", key: "rail.new", icon: "edit", on: pathname.startsWith("/chat") },
+    { href: "/search", key: "nav.search", icon: "search", on: pathname.startsWith("/search") },
     { href: "/progress", key: "nav.progress", icon: "progress", on: pathname.startsWith("/progress") },
   ];
 
