@@ -9,10 +9,12 @@ import { getTheme, toggleTheme, type Theme } from "@/lib/theme";
 import Logo from "./Logo";
 import NeuralField from "./NeuralField";
 
-export default function LandingView({ authed }: { authed: boolean }) {
+export default function LandingView() {
   const { lang, t } = useLang();
   const ar = lang === "ar";
-  const startHref = authed ? "/chat" : "/login";
+  // «ابدأ» تقود إلى المحادثة دائمًا. كانت تفرز الزائر إلى صفحة دخول،
+  // وقد صار التخطيط يفتح له جلسة ضيف — فالفرز هنا يردّه قبل أن يبلغها.
+  const startHref = "/chat";
   const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
