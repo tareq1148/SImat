@@ -292,6 +292,18 @@ export default function ChatPage() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? "تعذر البناء");
 
+      // ما أنشأته المنصّة عنه في حسابه يُقال صراحةً: ملفٌّ ظهر في درايفه
+      // بلا خبر أسوأ من ملفٍّ طلبه
+      if (Array.isArray(data.created) && data.created.length > 0) {
+        setMessages((m) => [
+          ...m,
+          {
+            role: "assistant",
+            text: `أنشأت لك في حسابك: ${(data.created as string[]).join("، ")}`,
+          },
+        ]);
+      }
+
       if (data.status === "NeedsConnections") {
         setMissing((data.missing ?? []) as Provider[]);
       } else if (data.status === "NeedsInformation") {

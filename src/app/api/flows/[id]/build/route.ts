@@ -4,7 +4,13 @@ import { irToN8n, missingProviders, type CredentialMap } from "@/lib/adapter";
 import { activeConnections } from "@/lib/connections";
 import { validateIR } from "@/lib/validate-ir";
 import { stripApprovals } from "@/lib/ir";
-import { listSpreadsheets, resolveSpreadsheetId } from "@/lib/google-lookup";
+import {
+  bareSheetName,
+  ensureFolder,
+  ensureSheetTab,
+  ensureSpreadsheet,
+  listSpreadsheets,
+} from "@/lib/google-lookup";
 import { resolveTelegramChatId } from "@/lib/telegram-chat";
 import {
   activateWorkflow,
@@ -75,25 +81,78 @@ export async function POST(
     }
   }
 
-  // المستخدم ربط حسابه، فاسم الجدول يكفي: نحلّه إلى معرّف من Drive حسابه
-  // بدل مطالبته بلصق رابط. يبقى النقص ظاهرًا إن لم يوجد أو تعدّدت المطابقات.
-  // النموذج يخلط أحيانًا بين اسم المستند (spreadsheet_name) واسم الورقة
-  // (sheet_name) — «جدول اسمه منتجات» يحتملهما. فنجرّب الاثنين.
-  const sheetsNeedingId = ir.nodes.filter(
-    (n) => n.provider === "google_sheets" && !n.params.spreadsheet_url
-  );
-  for (const node of sheetsNeedingId) {
-    const byDoc = String(node.params.spreadsheet_name ?? "").trim();
-    const byTab = String(node.params.sheet_name ?? "").trim();
-    const candidate = byDoc || byTab;
-    if (!candidate) continue;
+  // المستخدم ربط حسابه وسمّى ما يريد في كلامه، فالمنصّة تتكفّل بالباقي:
+  // تبحث عنه في حسابه، وتُنشئه إن لم تجده. وكان الغائب يوقف المسار
+  // ويطالبه بما لا يملك — فيخرج ليصنعه بيده ثم يعود.
+  const created: string[] = [];
+  let irChanged = false;
 
-    const found = await resolveSpreadsheetId(user.id, candidate);
-    if (!found) continue;
-    node.params.spreadsheet_url = found;
-    // إن كان الاسم في الحقيقة اسم المستند، فهو ليس اسم ورقة — يُترك ليقع
-    // الاختيار على الورقة الأولى بدل البحث عن ورقة بهذا الاسم فتُفقد.
-    if (!byDoc && byTab) delete node.params.sheet_name;
+  // خطوةُ جداولٍ بلا جدولٍ تخصّها ترث جدول ما قبلها: المسار الواحد يعمل على
+  // مستندٍ واحد في الغالب، والنموذج يسمّيه في أوّل خطوة ثم يسكت عنه فيما
+  // بعدها. وكان سكوته يوقف المسار طالبًا اسمًا قاله المستخدم مرّةً وكفى.
+  let carriedDoc: { url?: string; name?: string } | null = null;
+  for (const node of ir.nodes.filter((n) => n.provider === "google_sheets")) {
+    const hasOwn =
+      String(node.params.spreadsheet_url ?? "").trim() ||
+      String(node.params.spreadsheet_name ?? "").trim();
+    if (hasOwn) {
+      carriedDoc = {
+        url: node.params.spreadsheet_url,
+        name: node.params.spreadsheet_name,
+      };
+    } else if (carriedDoc) {
+      if (carriedDoc.url) node.params.spreadsheet_url = carriedDoc.url;
+      if (carriedDoc.name) node.params.spreadsheet_name = carriedDoc.name;
+      irChanged = true;
+    }
+  }
+
+  for (const node of ir.nodes.filter((n) => n.provider === "google_sheets")) {
+    const byDoc = String(node.params.spreadsheet_name ?? "").trim();
+    // النموذج يخلط أحيانًا بين اسم المستند واسم الورقة — «جدول اسمه منتجات»
+    // يحتملهما. فإن لم يُسمَّ المستند حُمل اسم الورقة عليه.
+    const byTab = String(node.params.sheet_name ?? "").trim();
+    const docName = byDoc || byTab;
+
+    if (!node.params.spreadsheet_url && docName) {
+      const doc = await ensureSpreadsheet(user.id, docName);
+      if (doc) {
+        node.params.spreadsheet_url = doc.id;
+        irChanged = true;
+        if (doc.created)
+          created.push(`جدول «${bareSheetName(docName) || docName}»`);
+        // كان الاسم للمستند لا لورقةٍ فيه — يُترك ليقع على الورقة الأولى
+        if (!byDoc && byTab) delete node.params.sheet_name;
+      }
+    }
+
+    // الورقة لسانٌ داخل الجدول لا ملفّ في درايف: تُنشأ بواجهة الجداول
+    const tab = String(node.params.sheet_name ?? "").trim();
+    const docId = String(node.params.spreadsheet_url ?? "");
+    if (docId && tab) {
+      const made = await ensureSheetTab(user.id, docId, tab);
+      if (made?.created) created.push(`ورقة «${tab}»`);
+    }
+  }
+
+  // مجلّد الحفظ لمن يكتب في درايف — بالاسم، ويُنشأ إن لم يوجد
+  for (const node of ir.nodes.filter(
+    (n) => n.provider === "google_drive" || n.provider === "google_docs"
+  )) {
+    const name = String(node.params.folder_name ?? "").trim();
+    if (!name || node.params.folder_id) continue;
+    const folder = await ensureFolder(user.id, name);
+    if (folder) {
+      node.params.folder_id = folder.id;
+      irChanged = true;
+      if (folder.created) created.push(`مجلّد «${name}»`);
+    }
+  }
+
+  // المعرّفات تُثبَّت في الإصدار: بدونها يُبحث في كل بناء من جديد، وقد
+  // يُنشأ نظيرٌ ثانٍ لما أُنشئ قبل قليل
+  if (irChanged) {
+    await supabase.from("flow_versions").update({ ir }).eq("id", versionRow.id);
   }
 
   const credMap: CredentialMap = {};
@@ -158,7 +217,7 @@ export async function POST(
       .from("flows")
       .update({ status: "NeedsInformation", blocking })
       .eq("id", id);
-    return Response.json({ status: "NeedsInformation", blocking, sheets });
+    return Response.json({ status: "NeedsInformation", blocking, sheets, created });
   }
 
   const missing = missingProviders(ir, credMap);
@@ -240,5 +299,5 @@ export async function POST(
     .update({ n8n_workflow_id: n8nId, status: "ReadyToTest", blocking: null })
     .eq("id", id);
 
-  return Response.json({ status: "ReadyToTest", n8n_workflow_id: n8nId });
+  return Response.json({ status: "ReadyToTest", n8n_workflow_id: n8nId, created });
 }

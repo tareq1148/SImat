@@ -125,3 +125,128 @@ export async function listDriveFilesByType(
 export function listSpreadsheets(userId: string, limit = 8): Promise<DriveMatch[]> {
   return listDriveFilesByType(userId, SPREADSHEET_MIME, limit);
 }
+
+// ===== الإنشاء عند الغياب =====
+//
+// المستخدم يسمّي ما يريد في كلامه: «جدول منتجات»، «ورقة جديدة»، «مجلّد
+// الصور». وكان ما لا يوجد يوقف المسار ويطالبه بما لا يملك — فيخرج من
+// الشاشة ليصنعه بيده ثم يعود. وما دام قد ربط حسابه فالمنصّة تصنعه عنه.
+
+async function createDriveFile(
+  userId: string,
+  name: string,
+  mimeType: string
+): Promise<DriveMatch | null> {
+  const token = await getValidGoogleAccessToken(userId);
+  if (!token.ok) return null;
+  try {
+    const res = await fetch(`${DRIVE_FILES}?fields=id,name`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, mimeType }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return null;
+    const d = (await res.json()) as DriveMatch;
+    return d.id ? d : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * الجدول باسمه، ويُنشأ إن لم يوجد.
+ *
+ * ولا يُنشأ عند الالتباس: resolveSpreadsheetId يردّ فراغًا حين يتعدّد
+ * المتشابهون لأنه لا يخمّن، ولو بنينا الإنشاء على فراغه لصنعنا ثالثًا كلّما
+ * وُجد اثنان — فيتكاثر ما نظنّ أننا نوفّره. فإن وُجد شيءٌ اختير الأحدث،
+ * ولا يُنشأ إلا حين لا يوجد شيء البتّة.
+ */
+export async function ensureSpreadsheet(
+  userId: string,
+  name: string
+): Promise<{ id: string; created: boolean } | null> {
+  const bare = bareSheetName(name);
+  const tries = [name.trim(), ...(bare && bare !== name.trim() ? [bare] : [])];
+
+  for (const candidate of tries) {
+    const files = await findDriveFilesByName(userId, candidate, SPREADSHEET_MIME);
+    if (files.length === 0) continue;
+    // القائمة مرتّبة بالأحدث تعديلًا: التطابق التامّ أولًا ثم أوّل ما وُجد
+    const exact = files.find(
+      (f) => f.name.trim().toLowerCase() === candidate.toLowerCase()
+    );
+    return { id: (exact ?? files[0]).id, created: false };
+  }
+
+  // يُنشأ بجوهر الاسم لا بوعائه: «تيبل منتجات» يصير ملفًّا اسمه «منتجات»
+  const made = await createDriveFile(userId, bare || name.trim(), SPREADSHEET_MIME);
+  return made ? { id: made.id, created: true } : null;
+}
+
+/** المجلّد باسمه، ويُنشأ إن لم يوجد */
+export async function ensureFolder(
+  userId: string,
+  name: string
+): Promise<{ id: string; created: boolean } | null> {
+  const trimmed = name.trim();
+  if (!trimmed) return null;
+  const files = await findDriveFilesByName(userId, trimmed, FOLDER_MIME);
+  const exact = files.find(
+    (f) => f.name.trim().toLowerCase() === trimmed.toLowerCase()
+  );
+  if (exact) return { id: exact.id, created: false };
+  if (files.length === 1) return { id: files[0].id, created: false };
+
+  const made = await createDriveFile(userId, trimmed, FOLDER_MIME);
+  return made ? { id: made.id, created: true } : null;
+}
+
+/**
+ * ورقةٌ داخل جدول — تُنشأ إن لم تكن فيه. الورقة ليست ملفًّا في درايف بل
+ * لسانٌ داخل الجدول، فلا يجدها بحث الملفّات ولا تُصنع بواجهته.
+ */
+export async function ensureSheetTab(
+  userId: string,
+  spreadsheetId: string,
+  tabName: string
+): Promise<{ created: boolean } | null> {
+  const title = tabName.trim();
+  if (!title) return null;
+  const token = await getValidGoogleAccessToken(userId);
+  if (!token.ok) return null;
+
+  const base = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(spreadsheetId)}`;
+  try {
+    const res = await fetch(`${base}?fields=sheets(properties(title))`, {
+      headers: { Authorization: `Bearer ${token.accessToken}` },
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) return null;
+    const d = (await res.json()) as {
+      sheets?: { properties?: { title?: string } }[];
+    };
+    const exists = (d.sheets ?? []).some(
+      (s) => (s.properties?.title ?? "").trim().toLowerCase() === title.toLowerCase()
+    );
+    if (exists) return { created: false };
+
+    const add = await fetch(`${base}:batchUpdate`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        requests: [{ addSheet: { properties: { title } } }],
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+    return add.ok ? { created: true } : null;
+  } catch {
+    return null;
+  }
+}
