@@ -277,12 +277,15 @@ export default function ExecutionGraph({
   ir,
   height = 420,
   serviceStates,
+  onSelect,
 }: {
   /** رسم حقيقي؛ بدونه يُعرض مسار المعمارية */
   ir?: WorkflowIR | null;
   height?: number | string;
   /** حالات حيّة تصل من المحرك (drive/sheets/slides/calendar/docs) */
   serviceStates?: Record<string, RunState>;
+  /** يُبلَّغ بالعقدة المختارة — لتعرض الشاشة تفاصيلها وتتيح تعديلها */
+  onSelect?: (nodeId: string | null) => void;
 }) {
 
   // التحديد يُدار هنا: React Flow لا يضيف صنف selected بالنقر ما دام السحب معطّلًا
@@ -330,8 +333,17 @@ export default function ExecutionGraph({
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable
-        onNodeClick={(_, n) => setSelectedId((cur) => (cur === n.id ? null : n.id))}
-        onPaneClick={() => setSelectedId(null)}
+        onNodeClick={(_, n) =>
+          setSelectedId((cur) => {
+            const next = cur === n.id ? null : n.id;
+            onSelect?.(next);
+            return next;
+          })
+        }
+        onPaneClick={() => {
+          setSelectedId(null);
+          onSelect?.(null);
+        }}
         edgesFocusable={false}
         deleteKeyCode={null}
         panOnDrag

@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import ExecutionGraph from "./ExecutionGraph";
 import NeuralThinking from "./NeuralThinking";
+import NodeInspector from "./NodeInspector";
 import { PROVIDER_LABELS, type FlowStatus, type Provider, type WorkflowIR } from "@/lib/types";
 
 interface LastTest {
@@ -38,6 +39,8 @@ export default function WorkspaceCanvas({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<"test" | "approve" | "pause" | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
+  // العقدة المنقورة — تُفتح تفاصيلها أسفل الرسم
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -152,6 +155,8 @@ export default function WorkspaceCanvas({
   const status = info?.status;
   const testing = status === "Testing";
   const active = status === "Active";
+  const selectedNode =
+    (selectedId && info?.ir?.nodes.find((n) => n.id === selectedId)) || null;
 
   return (
     <div className="ws-canvas-inner">
@@ -222,7 +227,7 @@ export default function WorkspaceCanvas({
         {/* الرسم موجود قبل البناء (يصنعه التقييم)، فيُعرض وهو يتشكّل عقدةً
             بعد عقدة بدل شاشة انتظار تقول «بناء المسار» ولا تُري شيئًا */}
         {info?.ir ? (
-          <ExecutionGraph ir={info.ir} height="100%" />
+          <ExecutionGraph ir={info.ir} height="100%" onSelect={setSelectedId} />
         ) : building || loading ? (
           <div className="h-full grid place-items-center">
             <NeuralThinking phase="building" />
@@ -233,6 +238,17 @@ export default function WorkspaceCanvas({
           </div>
         )}
       </div>
+
+      {/* تفاصيل العقدة المنقورة أسفل الرسم: يراها ويصحّح حقولها في موضعها،
+          بدل جملةٍ في المحادثة تُعيد توليد المسار كلّه من أجل حقل واحد */}
+      {selectedNode && (
+        <NodeInspector
+          node={selectedNode}
+          flowId={flowId}
+          onSaved={load}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
     </div>
   );
 }
