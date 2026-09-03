@@ -1,11 +1,12 @@
 "use client";
 
-// إدارة الثيم: داكن افتراضيًا، والفاتح عبر html.light — محفوظ في localStorage
+// إدارة الثيم: فاتح افتراضيًا عبر html.light المصيَّر على العنصر،
+// والداكن اختيارٌ يرفع الصنف — محفوظ في localStorage
 
 export type Theme = "dark" | "light";
 
 export function getTheme(): Theme {
-  if (typeof document === "undefined") return "dark";
+  if (typeof document === "undefined") return "light";
   return document.documentElement.classList.contains("light") ? "light" : "dark";
 }
 

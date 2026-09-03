@@ -20,13 +20,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html
       lang="ar"
       dir="rtl"
-      className={`${arabic.variable} h-full antialiased`}
+      // الفاتح هو الأصل: يُصيَّر على العنصر نفسه فلا يومض قبل عمل النصّ
+      className={`light ${arabic.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        {/* تثبيت الثيم المحفوظ قبل أول رسم — بلا وميض */}
+        {/* الداكن اختيارٌ محفوظ يُرفع به صنف الفاتح قبل أول رسم — بلا وميض */}
         <Script id="simat-theme-boot" strategy="beforeInteractive">
-          {`try{if(localStorage.getItem("simat_theme")==="light")document.documentElement.classList.add("light");if(localStorage.getItem("simat_lang")==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";document.title="Wateera — from a described task to a working automation"}}catch(e){}`}
+          {`try{if(localStorage.getItem("simat_theme")==="dark")document.documentElement.classList.remove("light");if(localStorage.getItem("simat_lang")==="en"){document.documentElement.lang="en";document.documentElement.dir="ltr";document.title="Wateera — from a described task to a working automation"}}catch(e){}`}
         </Script>
         {children}
       </body>

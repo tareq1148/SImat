@@ -51,7 +51,7 @@ export default function AccountMenu({ email }: { email: string | null }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [drawer, setDrawer] = useState(false);
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>("light");
   const wrapRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
