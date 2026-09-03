@@ -95,16 +95,17 @@ export async function resolveSpreadsheetId(
   return null;
 }
 
-/** جداول المستخدم الأحدث — تُعرض له ليختار بالاسم بدل أن يُطالَب برابط */
-export async function listSpreadsheets(
+/** ملفّات المستخدم من نوعٍ بعينه، الأحدث أولًا — يختار منها بدل أن يكتب اسمًا */
+export async function listDriveFilesByType(
   userId: string,
+  mimeType: string,
   limit = 8
 ): Promise<DriveMatch[]> {
   const token = await getValidGoogleAccessToken(userId);
   if (!token.ok) return [];
   const url =
     `${DRIVE_FILES}?q=${encodeURIComponent(
-      `mimeType = '${SPREADSHEET_MIME}' and trashed = false`
+      `mimeType = '${mimeType}' and trashed = false`
     )}` +
     `&fields=files(id,name)&orderBy=modifiedTime desc&pageSize=${limit}` +
     "&supportsAllDrives=true&includeItemsFromAllDrives=true";
@@ -118,4 +119,9 @@ export async function listSpreadsheets(
   } catch {
     return [];
   }
+}
+
+/** جداول المستخدم — الاستعمال الأشيع، يبقى باسمه لوضوح موضع النداء */
+export function listSpreadsheets(userId: string, limit = 8): Promise<DriveMatch[]> {
+  return listDriveFilesByType(userId, SPREADSHEET_MIME, limit);
 }

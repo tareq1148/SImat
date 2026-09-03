@@ -40,6 +40,17 @@ type Connections = Record<
 
 const INPUT_NODE = "تجهيز المدخلات";
 
+/**
+ * موضع الحفظ في درايف. كان الجذر مكتوبًا في الكود، فكل ما يُنتجه المسار
+ * يهبط في أعلى الدرايف مهما بلغ عدده. صار المستخدم ينتقي مجلّده، والجذر
+ * ملاذًا لا حكمًا.
+ */
+function driveFolderRl(folderId?: string): Record<string, unknown> {
+  return folderId
+    ? { __rl: true, mode: "id", value: folderId }
+    : { __rl: true, mode: "list", value: "root", cachedResultName: "/ (Root folder)" };
+}
+
 function hookUrl(): string {
   const base = process.env.APP_BASE_URL ?? "http://localhost:3000";
   return `${base}/api/hooks/run-event`;
@@ -878,12 +889,7 @@ export function irToN8n(
               irNode.params.file_name ??
               "={{ 'watirah-' + $now.toFormat('yyyy-MM-dd-HHmmss') + '.png' }}",
             driveId: { __rl: true, mode: "list", value: "My Drive" },
-            folderId: {
-              __rl: true,
-              mode: "list",
-              value: "root",
-              cachedResultName: "/ (Root folder)",
-            },
+            folderId: driveFolderRl(irNode.params.folder_id),
             options: {},
           },
         };
@@ -910,12 +916,7 @@ export function irToN8n(
             irNode.params.file_name ??
             "={{ 'muhawwil-' + $now.toFormat('yyyy-MM-dd-HHmm') + '.txt' }}",
           driveId: { __rl: true, mode: "list", value: "My Drive" },
-          folderId: {
-            __rl: true,
-            mode: "list",
-            value: "root",
-            cachedResultName: "/ (Root folder)",
-          },
+          folderId: driveFolderRl(irNode.params.folder_id),
           options: {},
         },
       };
@@ -963,7 +964,7 @@ export function irToN8n(
           title:
             irNode.params.title ??
             "={{ 'وَتيرة - ' + $now.toFormat('yyyy-MM-dd HH:mm') }}",
-          folderId: "default",
+          folderId: irNode.params.folder_id ?? "default",
         },
       };
       if (creds.google_docs)

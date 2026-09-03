@@ -23,12 +23,10 @@ const FIELDS: Partial<Record<Provider, Field[]>> = {
   google_sheets: [
     { key: "sheet_name", label: "اسم الورقة", hint: "اتركه فارغًا للورقة الأولى" },
   ],
-  google_drive: [
-    { key: "file_name", label: "اسم الملف" },
-    { key: "folder_name", label: "اسم المجلد" },
-  ],
-  google_docs: [{ key: "file_name", label: "اسم المستند" }],
-  google_slides: [{ key: "file_name", label: "اسم العرض" }],
+  // المجلّد يُنتقى لا يُكتب — انظر ResourcePicker أدناه
+  google_drive: [{ key: "file_name", label: "اسم الملف" }],
+  google_docs: [{ key: "title", label: "اسم المستند" }],
+  google_slides: [{ key: "title", label: "اسم العرض" }],
   google_calendar: [{ key: "calendar", label: "التقويم" }],
   gmail: [
     { key: "recipient", label: "المُرسَل إليه", hint: "بريد المستلم" },
@@ -49,7 +47,15 @@ const LABELS: Record<string, string> = {
   spreadsheet_url: "معرّف الجدول",
   recipient: "المُرسَل إليه",
   chat_id: "معرّف المحادثة",
+  file_name: "اسم الملف",
+  title: "الاسم",
 };
+
+/** من ينتقي مجلّد الحفظ: كل ما يكتب في درايف — رفعًا أو إنشاءً */
+const FOLDER_PROVIDERS = new Set<Provider>([
+  "google_drive",
+  "google_docs",
+]);
 
 /** العقد النظامية (محفّز، نتيجة) لا تُعدّل حقولها — الخادم يرفضها بحق */
 const EDITABLE = /^step-\d+$/;
@@ -71,7 +77,11 @@ export default function NodeInspector({
   // ما التقطه النموذج ولم يكن في القائمة يظهر أيضًا — لا نُخفي عن المستخدم
   // قيمةً تؤثّر في مساره لمجرّد أننا لم نتوقّعها
   const isSheets = node.provider === "google_sheets";
-  const HIDDEN = isSheets ? ["spreadsheet_name", "spreadsheet_url"] : [];
+  const hasFolder = !!node.provider && FOLDER_PROVIDERS.has(node.provider);
+  const HIDDEN = [
+    ...(isSheets ? ["spreadsheet_name", "spreadsheet_url"] : []),
+    ...(hasFolder ? ["folder_name", "folder_id"] : []),
+  ];
   const extras = Object.keys(node.params).filter(
     (k) => !known.some((f) => f.key === k) && !HIDDEN.includes(k)
   );
@@ -174,7 +184,11 @@ export default function NodeInspector({
       ) : (
         <>
           {isSheets && (
-            <SheetPicker
+            <ResourcePicker
+              kind="sheet"
+              label="الجدول"
+              createHint="اسم الجدول الجديد"
+              emptyHint="ما لقيت جداول في حسابك — أنشئ واحدًا."
               name={values.spreadsheet_name ?? ""}
               id={values.spreadsheet_url ?? ""}
               disabled={busy}
@@ -184,6 +198,25 @@ export default function NodeInspector({
                   spreadsheet_name: picked.name,
                   // المعرّف يُثبَّت مع الاسم: لا بحثَ ولا التباسَ عند البناء
                   spreadsheet_url: picked.id,
+                }))
+              }
+            />
+          )}
+
+          {hasFolder && (
+            <ResourcePicker
+              kind="folder"
+              label="مجلّد الحفظ"
+              createHint="اسم المجلد الجديد"
+              emptyHint="ما لقيت مجلدات — أنشئ واحدًا، أو اتركه فيُحفظ في جذر درايفك."
+              name={values.folder_name ?? ""}
+              id={values.folder_id ?? ""}
+              disabled={busy}
+              onPick={(picked) =>
+                setValues((v) => ({
+                  ...v,
+                  folder_name: picked.name,
+                  folder_id: picked.id,
                 }))
               }
             />
@@ -236,18 +269,26 @@ export default function NodeInspector({
  * فإن أخطأ حرفًا وقف المسار ولا يدري لماذا. وهنا لا مجال للخطأ: ما يظهر
  * موجود، وما ليس موجودًا يُصنع بضغطة.
  */
-function SheetPicker({
+function ResourcePicker({
+  kind,
+  label,
+  createHint,
+  emptyHint,
   name,
   id,
   disabled,
   onPick,
 }: {
+  kind: "sheet" | "folder";
+  label: string;
+  createHint: string;
+  emptyHint: string;
   name: string;
   id: string;
   disabled: boolean;
   onPick: (picked: { id: string; name: string }) => void;
 }) {
-  const [sheets, setSheets] = useState<{ id: string; name: string }[] | null>(null);
+  const [items, setItems] = useState<{ id: string; name: string }[] | null>(null);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -255,18 +296,18 @@ function SheetPicker({
 
   useEffect(() => {
     let alive = true;
-    fetch("/api/google/sheets")
+    fetch(`/api/google/files?kind=${kind}`)
       .then((r) => r.json())
       .then((d) => {
-        if (alive) setSheets(Array.isArray(d.sheets) ? d.sheets : []);
+        if (alive) setItems(Array.isArray(d.files) ? d.files : []);
       })
       .catch(() => {
-        if (alive) setSheets([]);
+        if (alive) setItems([]);
       });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [kind]);
 
   async function create() {
     const title = newName.trim();
@@ -274,14 +315,14 @@ function SheetPicker({
     setBusy(true);
     setErr(null);
     try {
-      const r = await fetch("/api/google/sheets", {
+      const r = await fetch(`/api/google/files?kind=${kind}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: title }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(d.error ?? "تعذّر الإنشاء");
-      setSheets((s) => [{ id: d.id, name: d.name }, ...(s ?? [])]);
+      setItems((s) => [{ id: d.id, name: d.name }, ...(s ?? [])]);
       onPick({ id: d.id, name: d.name });
       setCreating(false);
       setNewName("");
@@ -294,26 +335,26 @@ function SheetPicker({
 
   // الاسم الملتقط من الكلام قد لا يقابله معرّف بعد — يُعرض خيارًا مؤقتًا
   // بدل أن يختفي فيظنّ المستخدم أن اختياره ضاع
-  const options = sheets ?? [];
+  const options = items ?? [];
   const unlisted = name && !options.some((o) => o.name === name || o.id === id);
 
   return (
     <div className="mb-3 flex flex-col gap-1">
-      <span className="text-[0.72rem] font-semibold">الجدول</span>
+      <span className="text-[0.72rem] font-semibold">{label}</span>
 
       {!creating ? (
         <div className="flex items-center gap-2">
           <select
             className="flex-1 min-w-0 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[0.8rem] focus:border-[var(--accent-bg)] outline-none"
             value={id || (unlisted ? "__unlisted__" : "")}
-            disabled={disabled || sheets === null}
+            disabled={disabled || items === null}
             onChange={(e) => {
               const picked = options.find((o) => o.id === e.target.value);
               if (picked) onPick(picked);
             }}
           >
-            {sheets === null && <option value="">جارٍ قراءة جداولك…</option>}
-            {sheets !== null && <option value="">اختر جدولًا…</option>}
+            {items === null && <option value="">جارٍ القراءة…</option>}
+            {items !== null && <option value="">اختر…</option>}
             {unlisted && <option value="__unlisted__">{name} (لم يُطابَق بعد)</option>}
             {options.map((o) => (
               <option key={o.id} value={o.id}>
@@ -326,7 +367,7 @@ function SheetPicker({
             onClick={() => setCreating(true)}
             disabled={disabled}
             className="btn btn-ghost text-[0.72rem] py-1.5 shrink-0"
-            title="ينشئ جدولًا جديدًا في حسابك ويثبّته في هذه الخطوة"
+            title="ينشئ واحدًا جديدًا في حسابك ويثبّته في هذه الخطوة"
           >
             جديد
           </button>
@@ -336,7 +377,7 @@ function SheetPicker({
           <input
             autoFocus
             className="flex-1 min-w-0 rounded-lg border border-[var(--line)] bg-[var(--bg)] px-3 py-2 text-[0.8rem] focus:border-[var(--accent-bg)] outline-none"
-            placeholder="اسم الجدول الجديد"
+            placeholder={createHint}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => {
@@ -365,10 +406,8 @@ function SheetPicker({
       )}
 
       {err && <span className="text-[0.72rem] text-amber-600">{err}</span>}
-      {sheets !== null && sheets.length === 0 && !creating && (
-        <span className="text-[0.72rem] text-[var(--text-soft)]">
-          ما لقيت جداول في حسابك — أنشئ واحدًا.
-        </span>
+      {items !== null && items.length === 0 && !creating && (
+        <span className="text-[0.72rem] text-[var(--text-soft)]">{emptyHint}</span>
       )}
     </div>
   );
