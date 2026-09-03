@@ -294,9 +294,15 @@ export async function POST(
     });
   }
 
+  // المفعّل يبقى مفعّلًا بعد إعادة البناء: مؤقّته في المحرّك ما زال مسلّحًا،
+  // فإنزاله إلى «جاهز للاختبار» يقول للمستخدم إنه توقّف وهو يعمل.
   await supabase
     .from("flows")
-    .update({ n8n_workflow_id: n8nId, status: "ReadyToTest", blocking: null })
+    .update({
+      n8n_workflow_id: n8nId,
+      status: flow.status === "Active" ? "Active" : "ReadyToTest",
+      blocking: null,
+    })
     .eq("id", id);
 
   return Response.json({ status: "ReadyToTest", n8n_workflow_id: n8nId, created });

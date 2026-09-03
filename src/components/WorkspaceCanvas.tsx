@@ -22,9 +22,6 @@ interface FlowInfo {
   lastTest: LastTest | null;
 }
 
-/** حالات لم يُبنَ فيها المسار بعد — «اختبار» يبنيه أولًا بدل أن يقف معطّلًا */
-const UNBUILT: FlowStatus[] = ["Draft", "NeedsInformation", "NeedsConnections"];
-
 export default function WorkspaceCanvas({
   flowId,
   building = false,
@@ -91,9 +88,15 @@ export default function WorkspaceCanvas({
     return d as Record<string, unknown>;
   }
 
-  /** يبني المسار إن لم يُبنَ بعد — يرجع رسالة العائق إن وُجد */
+  /**
+   * يبني المسار قبل كل اختبار أو تشغيل — يرجع رسالة العائق إن وُجد.
+   *
+   * كان لا يبني إلا المسودّات، فيبقى ما في المحرّك على بنائه الأوّل مهما
+   * تحسّن المحوّل بعده: يُصلَح عطلٌ في المنصّة ولا يصل إلى مسارٍ قائم إلا
+   * بتعديلٍ يدويّ يستدعي البناء. والبناء لا يستدعي نموذجًا — ترجمةٌ حتميّة
+   * رخيصة، فلا وجه للبخل بها.
+   */
   async function ensureBuilt(): Promise<string | null> {
-    if (status && !UNBUILT.includes(status)) return null;
     const d = await post(`/api/flows/${flowId}/build`, {});
 
     if (d.status === "NeedsConnections") {
@@ -129,7 +132,6 @@ export default function WorkspaceCanvas({
         return;
       }
 
-      // الاختبار يبني أولًا إن لزم، فلا يقف الزر معطّلًا على مسودة
       const blocked = await ensureBuilt();
       if (blocked) {
         setNotice({ ok: false, text: blocked });
