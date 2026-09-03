@@ -1209,30 +1209,115 @@ export function irToN8n(
         " return m ? 'https://drive.google.com/uc?export=download&id=' + m[1] : s; })(" +
         rawImageRef +
         ")";
-      // الجدول يُقرأ كاملًا، وفيه صفوفٌ بلا صورة (فارغة أو لم تُملأ بعد).
-      // remove.bg يُنادى مرّة لكل صفّ، فيردّ على الفارغ «زوّدني بالمصدر»
-      // ويسقط التنفيذ كلّه. نُسقط ما لا صورة فيه قبل أن يصل إليه.
+      // الصورة تُنزَّل قبل أن تُرسل، لا يُترك رابطها لـremove.bg يجلبه.
+      //
+      // فهو يجلب مجهولًا، وصور درايف الخاصّة تردّ عليه صفحةَ إذنٍ لا صورة —
+      // فيقول «Is the given file an image?» ويسقط التنفيذ كلّه بسبب صفٍّ
+      // واحد ملفُّه غير معلن. وحساب المستخدم مربوط عندنا، فننزّله باعتماده.
+      //
+      // ويتشعّب المسار لأن المصدر يُعرف وقت التشغيل لا وقت البناء: ما كان
+      // في درايف يُنزَّل باعتماده، وما كان رابطًا عامًّا يُجلب بلا اعتماد —
+      // ولا يُرسل اعتماد جوجل إلى مضيفٍ أجنبي بحال.
+      let downloadPair: [string, string] | null = null;
       if (!binaryUpstream) {
-        const filterName = "صفوف فيها صورة";
+        const pickName = "تحديد مصدر الصورة";
         nodes.push({
-          id: `${irNode.id}-filter`,
-          name: filterName,
+          id: `${irNode.id}-pick`,
+          name: pickName,
           type: "n8n-nodes-base.code",
           typeVersion: 2,
           position: [step(), Y],
           parameters: {
             jsCode: [
-              "// يُبقي الصفوف التي فيها رابطٌ صالح، ويُسقط سواها بلا خطأ",
-              "return $input.all().filter((i) =>",
-              "  Object.values(i.json).some(",
-              "    (v) => typeof v === 'string' && /^https?:\\/\\//.test(v.trim())",
-              "  )",
-              ");",
+              "// أوّل رابط في الصفّ مهما كان اسم عموده، ومعرّفه إن كان من درايف",
+              "return $input.all()",
+              "  .map((i) => {",
+              "    const url = Object.values(i.json).find(",
+              "      (v) => typeof v === 'string' && /^https?:\/\//.test(v.trim())",
+              "    );",
+              "    const s = String(url || '').trim();",
+              "    const drive = /drive\.google\.com|docs\.google\.com/.test(s);",
+              "    const m = s.match(/\/d\/([-\w]{10,})/) || s.match(/[?&]id=([-\w]{10,})/);",
+              "    return { json: { ...i.json, image_url: s, drive_file_id: drive && m ? m[1] : '' } };",
+              "  })",
+              "  .filter((i) => i.json.image_url);",
             ].join("\n"),
           },
         });
-        connectPrev(filterName);
-        prev = filterName;
+        connectPrev(pickName);
+
+        const ifName = "الصورة في درايف؟";
+        nodes.push({
+          id: `${irNode.id}-if`,
+          name: ifName,
+          type: "n8n-nodes-base.if",
+          typeVersion: 2.2,
+          position: [step(), Y],
+          parameters: {
+            conditions: {
+              options: {
+                caseSensitive: true,
+                leftValue: "",
+                typeValidation: "loose",
+                version: 2,
+              },
+              conditions: [
+                {
+                  id: "src",
+                  leftValue: "={{ $json.drive_file_id }}",
+                  rightValue: "",
+                  operator: {
+                    type: "string",
+                    operation: "notEmpty",
+                    singleValue: true,
+                  },
+                },
+              ],
+              combinator: "and",
+            },
+            options: {},
+          },
+        });
+        link(pickName, ifName);
+
+        const driveDl = "تنزيل الصورة من درايف";
+        const dlNode: N8nNode = {
+          id: `${irNode.id}-drive-dl`,
+          name: driveDl,
+          type: "n8n-nodes-base.googleDrive",
+          typeVersion: 3,
+          position: [step(), Y - 150],
+          parameters: {
+            operation: "download",
+            fileId: { __rl: true, mode: "id", value: "={{ $json.drive_file_id }}" },
+            options: { binaryPropertyName: "data" },
+          },
+        };
+        if (creds.google_drive)
+          dlNode.credentials = { googleDriveOAuth2Api: creds.google_drive };
+        nodes.push(dlNode);
+
+        const httpDl = "تنزيل الصورة";
+        nodes.push({
+          id: `${irNode.id}-http-dl`,
+          name: httpDl,
+          type: "n8n-nodes-base.httpRequest",
+          typeVersion: 4.2,
+          position: [x, Y + 150],
+          parameters: {
+            method: "GET",
+            url: "={{ $json.image_url }}",
+            options: {
+              response: {
+                response: { responseFormat: "file", outputPropertyName: "data" },
+              },
+            },
+          },
+        });
+
+        link(ifName, driveDl, 0);
+        link(ifName, httpDl, 1);
+        downloadPair = [driveDl, httpDl];
       }
 
       const rbNode: N8nNode = {
@@ -1251,7 +1336,7 @@ export function irToN8n(
             ],
           },
           sendBody: true,
-          ...(binaryUpstream
+          ...(binaryUpstream || downloadPair
             ? {
                 contentType: "multipart-form-data",
                 bodyParameters: {
@@ -1282,7 +1367,13 @@ export function irToN8n(
         },
       };
       nodes.push(rbNode);
-      connectPrev(nodeName);
+      if (downloadPair) {
+        // الفرعان يصبّان في عقدة واحدة: أيّهما نزّل الصورة تابع الطريق
+        link(downloadPair[0], nodeName);
+        link(downloadPair[1], nodeName);
+      } else {
+        connectPrev(nodeName);
+      }
       prev = nodeName;
       continue;
     }
