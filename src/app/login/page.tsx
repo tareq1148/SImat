@@ -23,9 +23,31 @@ function LoginInner() {
     setBusy(true);
     setMsg(null);
     const supabase = supabaseBrowser();
+    const redirectTo = `${window.location.origin}/auth/callback`;
+
+    // الضيف يُرقّى لا يُستبدل: ربط جوجل بحسابه المجهول يبقيه هو نفسه فتبقى
+    // مساراته. ولو سجّلناه دخولًا جديدًا لصار مستخدمًا آخر وضاع ما بناه.
+    const {
+      data: { user: current },
+    } = await supabase.auth.getUser();
+    if (current?.is_anonymous) {
+      const { error: linkErr } = await supabase.auth.linkIdentity({
+        provider: "google",
+        options: { redirectTo },
+      });
+      if (!linkErr) return;
+      setMsg(
+        /manual linking|not enabled/i.test(linkErr.message)
+          ? "ربط الحساب غير مفعّل في الإعدادات — سجّل دخولًا جديدًا (لن تُنقل مسارات الضيف)."
+          : linkErr.message
+      );
+      setBusy(false);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo },
     });
     if (error) {
       setMsg(

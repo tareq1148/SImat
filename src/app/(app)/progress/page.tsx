@@ -7,7 +7,7 @@ export default async function ProgressPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/api/auth/guest?next=/progress");
 
   return (
     <main className="flex-1 max-w-4xl mx-auto w-full px-6 py-10">

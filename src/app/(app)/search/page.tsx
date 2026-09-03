@@ -10,7 +10,7 @@ export default async function SearchPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect("/api/auth/guest?next=/search");
 
   const [{ data: flows }, { data: versions }] = await Promise.all([
     supabase

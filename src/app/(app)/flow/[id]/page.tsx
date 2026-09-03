@@ -16,7 +16,7 @@ export default async function FlowPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) redirect(`/api/auth/guest?next=/flow/${id}`);
 
   const { data: flow } = await supabase
     .from("flows")
